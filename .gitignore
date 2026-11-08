@@ -1,0 +1,7 @@
+# Locally generated ROM-derived research output
+/extracted/
+__pycache__/
+*.py[cod]
+
+# Local emulator source/build used for research
+/.cache/
