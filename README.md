@@ -8,6 +8,8 @@ All artwork, sound effects and the background music were ripped directly from
 the original cartridge at runtime (see [docs/PIPELINE.md](docs/PIPELINE.md)); no
 original ROM code is reused — the game logic is written in GML.
 
+![Title screen](docs/preview_title.png)
+
 ![Stage 1 preview](docs/preview_stage1_2.png)
 
 ## Open the project
@@ -79,6 +81,13 @@ python3 gen_level.py       # bgStage1.png + level1.json (layout & platforms)
 python3 gen_sounds.py      # SFX synthesis + bgm copy
 python3 gen_project.py     # all .gmx files (sprites, objects, rooms, ...)
 python3 preview_stage.py   # docs/preview_stage1_*.png
+```
+
+Verification:
+
+```bash
+python3 tools/verify_project.py   # every .gmx parses, every PNG/WAV reference exists
+python3 tools/lint_gml.py         # every spr*/obj*/snd*/rm*/bgm* used in GML exists
 ```
 
 `gen_project.py` is the single source of truth for the project structure — it
