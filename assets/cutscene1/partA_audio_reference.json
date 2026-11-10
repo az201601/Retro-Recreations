@@ -1,0 +1,100 @@
+{
+ "meta": {
+  "frameBasis": "t=0 is the first non-black frame of the prison scene (Part A). Emulator frame 506.",
+  "method": "nes-emu; sound commands latched from CPU writes to $00F0 (bit7 masked off)"
+ },
+ "audio": {
+  "bgm": {
+   "file": "assets/cutscene1/music/bgm_02_cutscene.wav",
+   "gms_name": "snd_bgm_cutscene",
+   "commandHex": "0x02",
+   "startFrame": 1058,
+   "loopFrames": 1920,
+   "note": "starts at the very end of Part A and continues through Part B"
+  },
+  "alarm": {
+   "file": "assets/cutscene1/sfx/sfx_55_prison_alarm.wav",
+   "gms_name": "snd_sfx_alarm",
+   "commandHex": "0x55",
+   "firstFrame": 523,
+   "intervalFrames": 49,
+   "count": 11,
+   "frames": [
+    523,
+    572,
+    621,
+    670,
+    719,
+    768,
+    817,
+    866,
+    915,
+    964,
+    1013
+   ]
+  },
+  "mute": {
+   "commandHex": "0x7b",
+   "frame": 1002,
+   "note": "stops music/SFX before the 4-step fade-out"
+  }
+ },
+ "partA_timeline": {
+  "fadeIn": {
+   "frames": [
+    0,
+    4,
+    8
+   ],
+   "blackAlpha": [
+    0.19,
+    0.08,
+    0.0
+   ]
+  },
+  "scrollTop": {
+   "startFrame": 44,
+   "speed": 1,
+   "from": 0,
+   "to": 256
+  },
+  "scrollFence": {
+   "startFrame": 43,
+   "speed": 2,
+   "wrap": 256,
+   "distance": 512
+  },
+  "blimp": {
+   "enter": 113,
+   "stop": 332,
+   "xHold": 118,
+   "exitStart": 524,
+   "dipStart": 397,
+   "dipEnd": 429,
+   "riseStart": 491,
+   "riseEnd": 522,
+   "lightOn": 527,
+   "propPeriod": 8
+  },
+  "beams": {
+   "startFrame": 526,
+   "period": 64
+  },
+  "fadeOut": {
+   "frames": [
+    1041,
+    1045,
+    1049,
+    1053
+   ],
+   "blackAlpha": [
+    0.5,
+    0.82,
+    0.94,
+    1.0
+   ]
+  },
+  "muteFrame": 1002,
+  "endFrame": 1058
+ }
+}
