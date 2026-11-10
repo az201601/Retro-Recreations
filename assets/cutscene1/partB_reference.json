@@ -10681,7 +10681,7 @@
    "romEnd": "t=9643 (fade-out 9624..9636, mute 9587)",
    "charRate": "1 character per 5 frames (measured: 36/42 gaps = 5; occasional 6 or 10)",
    "pageCount": 25,
-   "speakerRow": "row 1 (y=8). Some pages have no speaker name; row1 then holds body text."
+   "speakerRow": "Speaker names share the same 4-row grid: they occupy y=24 and the body starts at y=40. Pages with no speaker put body text on y=24."
   },
   "font": {
    "image": "spr_cutscene_font_strip71.png",
@@ -10692,12 +10692,14 @@
    "x0": 16,
    "dx": 8,
    "rows": {
-    "speaker": 8,
-    "line1": 24,
-    "line2": 40,
-    "line3": 56
+    "name": 24,
+    "line1": 40,
+    "line2": 56,
+    "line3": 72
    },
-   "note": "ASCII order; glyph index = 8 px * index in chars string"
+   "note": "Glyph rows sit on NT rows 1/3/5/7, which is screen y = 24/40/56/72. There is a fixed +16 px offset between the NT row index and the screen y.",
+   "rowSpacing": 16,
+   "ntToScreen": "screen_y = NT_row * 8 + 16"
   },
   "pages": [
    {

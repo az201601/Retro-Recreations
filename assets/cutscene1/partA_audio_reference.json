@@ -36,7 +36,8 @@
   "mute": {
    "commandHex": "0x7b",
    "frame": 1002,
-   "note": "stops music/SFX before the 4-step fade-out"
+   "status": "CORRECTED - this is NOT a global mute",
+   "note": "0x7b at t=1002 does not silence anything. Measured RMS energy is unchanged across it (0.1132 at t=1002 vs 0.1157 at t=1003) and the ROM still issues 0x55 at t=1013, i.e. the 11th alarm. Do not gate the alarm on a muted flag - the original plays all 11."
   }
  },
  "partA_timeline": {
