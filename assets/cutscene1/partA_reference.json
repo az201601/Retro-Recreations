@@ -1,0 +1,216 @@
+{
+ "meta": {
+  "source": "Chip 'n Dale Rescue Rangers 2 (USA).nes",
+  "method": "nes-emu per-frame capture; each layer identified by exact pixel match against the extracted PNGs",
+  "frameBasis": "t=0 is the first non-black frame of the prison scene (absolute emulator frame 506). The black frames before it belong to rm_title's own fade-out, so in GMS the cutscene starts at t=0 with the scene already loaded.",
+  "verified": "background composite (panorama + fence) = 0 px mismatch at t=800; blimp sprite = 494/494 px exact at every sampled frame t=300/360/400/460 (dark) and t=540..740 (lit); whole-frame replay verifyAll over t=113..790 = 290/678 pixel-perfect with residual confined to a single 1-px edge column (NES 8-sprite/scanline clipping artefact, not reproducible)"
+ },
+ "fadeIn": {
+  "steps": [
+   0,
+   4,
+   8
+  ],
+  "blackOverlayAlpha": [
+   0.19,
+   0.08,
+   0.0
+  ],
+  "measured": "mean luminance 206.3 / 235.8 / 255.2 at 4-frame spacing, i.e. 80.8% / 92.4% / 100% of full brightness",
+  "note": "alpha is of a BLACK overlay, 4 frames per step, then 0"
+ },
+ "scroll": {
+  "top": {
+   "asset": "bg_sky_prison_panorama.png",
+   "w": 512,
+   "h": 176,
+   "drawY": 0,
+   "startFrame": 44,
+   "speed": 1,
+   "offset0": 0,
+   "offsetMax": 256,
+   "wrap": false,
+   "note": "single pan 0->256 over 256 frames, then frozen at 256 (shows the RIGHT half). Never wraps."
+  },
+  "bottom": {
+   "asset": "bg_fence_strip.png",
+   "w": 256,
+   "h": 64,
+   "drawY": 176,
+   "startFrame": 43,
+   "speed": 2,
+   "wrap": 256,
+   "totalDistance": 512,
+   "note": "2 px/frame, wraps every 256 px, travels exactly 512 px (2 laps) then stops back on offset 0 and stays."
+  }
+ },
+ "fadeOut": {
+  "steps": [
+   1041,
+   1045,
+   1049,
+   1053
+  ],
+  "blackOverlayAlpha": [
+   0.5,
+   0.82,
+   0.94,
+   1.0
+  ],
+  "measured": "mean luminance ratio 0.499 / 0.184 / 0.062 / 0.000",
+  "status": "measured and required for Step 6"
+ },
+ "blimp": {
+  "status": "COMPLETE - verified 494/494 opaque pixels",
+  "assets": [
+   "spr_blimp_dark_0.png",
+   "spr_blimp_dark_1.png",
+   "spr_blimp_lit_0.png",
+   "spr_blimp_lit_1.png"
+  ],
+  "size": [
+   34,
+   20
+  ],
+  "origin": [
+   0,
+   0
+  ],
+  "opaquePixels": 494,
+  "enterFrame": 113,
+  "x": [
+   {
+    "range": [
+     113,
+     332
+    ],
+    "formula": "x = 8 + floor((t-112)/2)",
+    "note": "0.5 px/frame, x=8 at t=113, x=118 at t=332"
+   },
+   {
+    "range": [
+     333,
+     524
+    ],
+    "x": 118,
+    "note": "holds"
+   },
+   {
+    "range": [
+     525,
+     "end"
+    ],
+    "formula": "x = 118 + floor((t-524)/2)",
+    "note": "exits right; hide when x >= 256 (~t=800)"
+   }
+  ],
+  "y": [
+   {
+    "range": [
+     0,
+     396
+    ],
+    "y": 25
+   },
+   {
+    "range": [
+     397,
+     429
+    ],
+    "formula": "y = 25 + floor((t-397)/2)",
+    "note": "dips down"
+   },
+   {
+    "range": [
+     430,
+     490
+    ],
+    "y": 41,
+    "note": "hold 61 frames at the bottom"
+   },
+   {
+    "range": [
+     491,
+     522
+    ],
+    "formula": "y = 41 - floor((t-491)/2)",
+    "note": "rises back"
+   },
+   {
+    "range": [
+     523,
+     "end"
+    ],
+    "y": 25
+   }
+  ],
+  "prop": {
+   "periodFrames": 8,
+   "formula": "p = ((t-116) >> 3) & 1",
+   "mapping": "p == 1 -> _0 ; p == 0 -> _1",
+   "before116": "use _0",
+   "verified": "0 mismatches / 287 frames",
+   "warning": "the naive mapping (p==0 -> _0) is INVERTED - it is 180 deg out of phase"
+  },
+  "lit": {
+   "formula": "lit = (t >= 527)",
+   "note": "lights up one frame after the beams start"
+  },
+  "entry": "slides in from off-screen LEFT"
+ },
+ "beams": {
+  "status": "COMPLETE",
+  "assets": [
+   "bg_prison_beams_0.png",
+   "bg_prison_beams_1.png"
+  ],
+  "size": [
+   256,
+   176
+  ],
+  "drawX": 0,
+  "drawY": 0,
+  "startFrame": 526,
+  "firstIndex": 0,
+  "periodFrames": 64,
+  "rule": "beam_index = 1 - beam_index every 64 frames",
+  "drawMode": "OPAQUE full-sky replacement (not alpha-blended) - Part A backgrounds have 0 transparent pixels",
+  "drawOrder": "after the sky layer, before the fence; the blimp is drawn ABOVE the beams",
+  "note": "beams_0 best-aligns to the panorama at scroll offset 256 (5728/45056 px differ, the rest is the beam itself)"
+ },
+ "audio": {
+  "bgm": {
+   "file": "music/bgm_02_cutscene.wav",
+   "gmsName": "snd_bgm_cutscene",
+   "command": "0x02",
+   "startFrame": 1058,
+   "loopFrames": 1920
+  },
+  "alarm": {
+   "file": "sfx/sfx_55_prison_alarm.wav",
+   "gmsName": "snd_sfx_alarm",
+   "command": "0x55",
+   "firstFrame": 523,
+   "intervalFrames": 49,
+   "count": 11,
+   "frames": [
+    523,
+    572,
+    621,
+    670,
+    719,
+    768,
+    817,
+    866,
+    915,
+    964,
+    1013
+   ]
+  },
+  "mute": {
+   "command": "0x7b",
+   "frame": 1002,
+   "note": "hardware stops all sound before the fade-out; this cuts the 11th alarm"
+  }
+ }
+}
