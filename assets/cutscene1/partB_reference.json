@@ -10679,7 +10679,9 @@
   "meta": {
    "frameBasis": "t=0 is the first non-black frame of the prison scene. Part B starts at t=1090; first dialogue page at t=1122.",
    "romEnd": "t=9643 (fade-out 9624..9636, mute 9587)",
-   "charRate": "1 character per 4 frames"
+   "charRate": "1 character per 5 frames (measured: 36/42 gaps = 5; occasional 6 or 10)",
+   "pageCount": 25,
+   "speakerRow": "Speaker names share the same 4-row grid: they occupy y=24 and the body starts at y=40. Pages with no speaker put body text on y=24."
   },
   "font": {
    "image": "spr_cutscene_font_strip71.png",
@@ -10690,11 +10692,14 @@
    "x0": 16,
    "dx": 8,
    "rows": {
-    "speaker": 24,
+    "name": 24,
     "line1": 40,
-    "line2": 56
+    "line2": 56,
+    "line3": 72
    },
-   "note": "ASCII order; glyph index = 8 px * index in chars string"
+   "note": "Glyph rows sit on NT rows 1/3/5/7, which is screen y = 24/40/56/72. There is a fixed +16 px offset between the NT row index and the screen y.",
+   "rowSpacing": 16,
+   "ntToScreen": "screen_y = NT_row * 8 + 16"
   },
   "pages": [
    {
@@ -10702,9 +10707,8 @@
     "startFrame": 1122,
     "speaker": "Newscaster",
     "lines": [
-     "Special Bulletin:"
-    ],
-    "sfx": "sfx_5b"
+     "Special Bulletin"
+    ]
    },
    {
     "idx": 1,
@@ -10714,8 +10718,7 @@
      "Police say",
      "a downtown restaurant has",
      "received a bomb threat."
-    ],
-    "sfx": "sfx_5b"
+    ]
    },
    {
     "idx": 2,
@@ -10725,8 +10728,7 @@
      "Unless the time bomb can",
      "be found, the restaurant",
      "could be destroyed."
-    ],
-    "sfx": "sfx_5b"
+    ]
    },
    {
     "idx": 3,
@@ -10734,8 +10736,7 @@
     "speaker": "Chip",
     "lines": [
      "Woah!  A time bomb!"
-    ],
-    "sfx": "sfx_56"
+    ]
    },
    {
     "idx": 4,
@@ -10743,8 +10744,7 @@
     "speaker": "Gadget",
     "lines": [
      "Chip!  What is it?"
-    ],
-    "sfx": "sfx_58"
+    ]
    },
    {
     "idx": 5,
@@ -10753,8 +10753,7 @@
     "lines": [
      "There's a time bomb",
      "in a restaurant downtown!"
-    ],
-    "sfx": "sfx_56"
+    ]
    },
    {
     "idx": 6,
@@ -10762,8 +10761,7 @@
     "speaker": null,
     "lines": [
      "We've got to find it!"
-    ],
-    "sfx": "sfx_56"
+    ]
    },
    {
     "idx": 7,
@@ -10771,8 +10769,7 @@
     "speaker": "Gadget",
     "lines": [
      "This is an emergency!"
-    ],
-    "sfx": "sfx_58"
+    ]
    },
    {
     "idx": 8,
@@ -10781,8 +10778,7 @@
     "lines": [
      "There's no time to waste!",
      "Let's go, Mates!"
-    ],
-    "sfx": "sfx_58"
+    ]
    },
    {
     "idx": 9,
@@ -10790,8 +10786,7 @@
     "speaker": "Chip",
     "lines": [
      "We've got a bomb to find!"
-    ],
-    "sfx": "sfx_56"
+    ]
    },
    {
     "idx": 10,
@@ -10800,8 +10795,7 @@
     "lines": [
      "We'll go ahead",
      "to investigate!"
-    ],
-    "sfx": "sfx_58"
+    ]
    },
    {
     "idx": 11,
@@ -10811,8 +10805,7 @@
      "Look for us",
      "and we'll give you",
      "any clues we've found."
-    ],
-    "sfx": "sfx_58"
+    ]
    },
    {
     "idx": 12,
@@ -10820,8 +10813,7 @@
     "speaker": "Monterey",
     "lines": [
      "Or give you some help..."
-    ],
-    "sfx": "sfx_59"
+    ]
    },
    {
     "idx": 13,
@@ -10831,8 +10823,7 @@
      "Never would o' made it",
      "through the battle of the",
      "brie without a bit o' help."
-    ],
-    "sfx": "sfx_59"
+    ]
    },
    {
     "idx": 14,
@@ -10840,8 +10831,7 @@
     "speaker": null,
     "lines": [
      "Ahh, those were the days--"
-    ],
-    "sfx": "sfx_59"
+    ]
    },
    {
     "idx": 15,
@@ -10849,8 +10839,7 @@
     "speaker": "Zipper",
     "lines": [
      "... .. ..... .."
-    ],
-    "sfx": "sfx_5a"
+    ]
    },
    {
     "idx": 16,
@@ -10859,8 +10848,7 @@
     "lines": [
      "Right, Zipper!",
      "There's no time to lose!"
-    ],
-    "sfx": "sfx_56"
+    ]
    },
    {
     "idx": 17,
@@ -10868,8 +10856,7 @@
     "speaker": null,
     "lines": [
      "Dale, you come with me!"
-    ],
-    "sfx": "sfx_56"
+    ]
    },
    {
     "idx": 18,
@@ -10878,8 +10865,7 @@
     "lines": [
      "Now!?  But I was about",
      "to start my afternoon nap!"
-    ],
-    "sfx": "sfx_57"
+    ]
    },
    {
     "idx": 19,
@@ -10887,8 +10873,7 @@
     "speaker": "Chip",
     "lines": [
      "No can do, Dale!"
-    ],
-    "sfx": "sfx_56"
+    ]
    },
    {
     "idx": 20,
@@ -10896,36 +10881,41 @@
     "speaker": "Dale",
     "lines": [
      "OK, Partner!  Let's go!"
-    ],
-    "sfx": "sfx_57"
+    ]
    },
    {
     "idx": 21,
+    "startFrame": 8443,
+    "speaker": null,
+    "lines": [
+     "Rescue Rangers away!"
+    ]
+   },
+   {
+    "idx": 22,
     "startFrame": 8678,
     "speaker": "Newscaster",
     "lines": [
      "Also in the news..."
-    ],
-    "sfx": "sfx_5b"
-   },
-   {
-    "idx": 22,
-    "startFrame": 8956,
-    "speaker": "Fatcat",
-    "lines": [
-     "the notorious feline felon,"
-    ],
-    "sfx": "sfx_5b"
+    ]
    },
    {
     "idx": 23,
+    "startFrame": 8956,
+    "speaker": null,
+    "lines": [
+     "Fatcat,",
+     "the notorious feline felon,"
+    ]
+   },
+   {
+    "idx": 24,
     "startFrame": 9254,
     "speaker": null,
     "lines": [
      "escaped from prison",
      "last night..."
-    ],
-    "sfx": "sfx_5b"
+    ]
    }
   ],
   "ui": {

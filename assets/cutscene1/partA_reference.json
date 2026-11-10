@@ -212,5 +212,39 @@
    "frame": 1002,
    "note": "hardware stops all sound before the fade-out; this cuts the 11th alarm"
   }
+ },
+ "partAToPartBTransition": {
+  "status": "MEASURED - per-frame luminance + OAM sprite count from the ROM",
+  "absoluteFrames": {
+   "1041-1044": "lum 26.8  fade step 1  alpha 0.50",
+   "1045-1048": "lum  8.5  fade step 2  alpha 0.82",
+   "1049-1052": "lum  3.7  fade step 3  alpha 0.94",
+   "1053-1056": "lum  0.0  fade step 4  alpha 1.00  (fully black)",
+   "1057-1065": "lum  0.0  OAM cleared, 0 sprites  (blank hold, 9 frames)",
+   "1066-1071": "lum  0.0  8 sprites present, still black  (6 frames)",
+   "1072-1075": "lum 35.3  fade-in step 1",
+   "1076-1079": "lum 68.3  fade-in step 2",
+   "1080-1083": "lum 96.8  fade-in step 3",
+   "1084+": "lum 99.1  full brightness",
+   "1122": "first dialogue character appears"
+  },
+  "fadeInAlpha": [
+   0.67,
+   0.33,
+   0.0
+  ],
+  "fadeInStepFrames": 4,
+  "blackHoldBeforeFadeIn": 6,
+  "textStartDelayAfterRoomLoad": 56,
+  "model": {
+   "anchor": "pb_t = 0 at absolute frame 1066 (the frame Part B sprites load)",
+   "pb_t_0_5": "fade_in = 1.00  (black)",
+   "pb_t_6_9": "fade_in = 0.67",
+   "pb_t_10_13": "fade_in = 0.33",
+   "pb_t_14": "fade_in = 0.00",
+   "pb_t_56": "typing starts"
+  },
+  "partAGotoFrame": 1066,
+  "note": "Part A's 1057-1065 is visually identical black, so the room_goto can sit at 1066 without any visible difference; this makes Part B's pb_t=0 line up exactly with the original."
  }
 }
