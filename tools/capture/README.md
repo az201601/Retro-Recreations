@@ -15,9 +15,11 @@ cd Libretro && make -j2
 cp mesen_libretro.so /path/to/Retro-Recreations/tools/capture/work/
 ```
 
-The patch only adds read-only debug outputs to the core (pattern tables, nametables, palette,
-OAM, scroll registers, and a per-scanline record used to find mid-frame bank switches). It does
-not change emulation. `work/` is git-ignored. Set `MESEN_CORE` to use a core stored elsewhere.
+The patch adds read-only debug outputs to the core (pattern tables, nametables, palette, OAM,
+scroll registers, a per-scanline record used to find mid-frame bank switches, and a log of the
+CPU writes to the sound registers $4000-$4017). It does not change emulation. It also adds the
+environment variable `MESEN_MUTE`, a bit mask that silences sound channels in the output
+(1 square 1, 2 square 2, 4 triangle, 8 noise, 16 DMC), used to record channels separately. `work/` is git-ignored. Set `MESEN_CORE` to use a core stored elsewhere.
 
 ## Run
 
@@ -26,6 +28,8 @@ cd tools/capture
 python3 capture.py       # ~30 s: all emulator runs -> work/
 python3 build_gfx.py     # PNGs  -> recreation/01_intro_title/assets
 python3 build_audio.py   # OGGs  -> recreation/01_intro_title/assets/sounds
+python3 capture_menu.py  # ~1 min: menu runs -> work/menu_*.pkl (about 2 GB)
+python3 build_menu.py    # PNGs and OGGs -> recreation/02_title_menu/assets
 python3 sim.py           # checks the GML logic against the emulator, pixel for pixel
 ```
 
@@ -38,4 +42,10 @@ python3 sim.py           # checks the GML logic against the emulator, pixel for 
 | `capture.py` | The emulator runs: no input, and START pressed on various frames. |
 | `build_gfx.py` | Cuts the spotlight, wall masks and title layers out of the PPU state. |
 | `build_audio.py` | Cuts the four sounds and retimes them to 800 samples per frame at 48 kHz. |
+| `scenario.py` | Runs one input schedule per process and stores frames, PPU state, RAM, sound-register writes and audio. |
+| `capture_menu.py` | The menu runs: every button, timing probes, and the separated sound channels. |
+| `build_menu.py` | Cuts the menu panels, the title fade-out and the menu sounds / music stems. |
 | `sim.py` | Python port of `obj_intro` Create/Step/Draw. Keep it in step with the `.gml` files. |
+
+`tools/dis/dis6502.py` is a small 6502 disassembler for the ROM's PRG banks
+(`dis6502.py 7 C5A2 C690`, or `dis6502.py find 85 49` to search for bytes).

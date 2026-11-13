@@ -1,5 +1,6 @@
 """Python port of the GML in obj_intro (Create/Step/Draw), used to verify the logic + exported PNGs
-pixel-for-pixel against the emulator. Keep in sync with recreation/01_intro_title/gml/*.gml"""
+pixel-for-pixel against the emulator. Keep in sync with recreation/02_title_menu/gml/*.gml
+(the newest version of obj_intro; deliverable 1 is the same code without the menu part)."""
 import os
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 WORK = os.path.join(ROOT, "tools", "capture", "work")
@@ -12,17 +13,37 @@ SPOT=[ld('sprites/spr_spotlight_%d.png'%i) for i in range(4)]
 TBG=[ld('sprites/spr_title_bg_%d.png'%i) for i in range(4)]
 TFG=[ld('sprites/spr_title_fg_%d.png'%i) for i in range(4)]
 WALL=ld('backgrounds/bg_intro_wall.png'); SIL=ld('backgrounds/bg_intro_silhouette.png')
+A2=os.path.join(ROOT,'recreation','02_title_menu','assets','sprites')+'/'
+ld2=lambda p: np.array(Image.open(A2+p).convert('RGBA'))
+MENU=[ld2('spr_menu_%02d.png'%i) for i in range(24)]
+TOUT=[ld2('spr_title_out_%d.png'%i) for i in range(3)]
 EMU0=156
+# emulator button ids (emu.py) -> pad bits of the GML
+BITS={3:1,2:2,8:4,4:8,5:16}
 class Intro:
     def __init__(s):   # Create
         s.frame=-1; s.skip_frame=-1; s.fade_start=711
         s.spot_on=False; s.spot_x=0; s.spot_y=0; s.spot_vx=0; s.spot_vy=0; s.spot_fade=0
-        s.bg_mode=0; s.title_fade=-1; s.accept_start=False; s.menu=False
-        s.snd_queue=None; s.sounds=[]
-    def step(s,start_pressed):   # Step
+        s.bg_mode=0; s.title_fade=-1
+        s.pad_prev=0
+        s.menu_state=0; s.menu_t=0; s.menu_cursor=0; s.menu_from=0; s.act_move=False; s.act_confirm=False
+        s.players=1; s.p1_char=0
+        s.snd_queue=None; s.sounds=[]; s.sq2_unmute=-1; s.sq2_gain=[]
+    def step(s,keys=()):   # Step; keys = emulator button ids held on this frame (True = START, for the old callers)
         s.frame+=1; n=s.frame
+        if keys is True: keys=(3,)
+        elif keys is False: keys=()
+        pad=0
+        for k in keys: pad|=BITS.get(k,0)
+        if pad&24==24: pad-=24
+        pressed=pad&(s.pad_prev^31); s.pad_prev=pad
+        start_pressed=(pressed&1)!=0
+        if n==s.sq2_unmute: s.sq2_gain.append((n,1))
         if s.snd_queue is not None:
-            s.sounds.append((n,s.snd_queue)); s.snd_queue=None
+            s.sounds.append((n,s.snd_queue))
+            if s.snd_queue in ('select','move'):
+                s.sq2_gain.append((n,0)); s.sq2_unmute=n+(12 if s.snd_queue=='select' else 10)
+            s.snd_queue=None
         if n==0: s.sounds.append((n,'pops'))
         if s.skip_frame<0 and n<s.fade_start:      # scripted part (frozen once START skipped it)
             if n==14: s.bg_mode=1
@@ -50,7 +71,26 @@ class Intro:
             elif f==29: s.title_fade=1
             elif f==33: s.title_fade=2
             elif f==37: s.title_fade=3
-            if f>=38 and start_pressed and not s.menu: s.menu=True
+        # 4a
+        if s.act_move:
+            s.act_move=False; s.menu_cursor=1-s.menu_cursor; s.snd_queue='move'
+        if s.act_confirm:
+            s.act_confirm=False; s.snd_queue='select'; s.menu_t=n
+            if s.menu_state==0: s.menu_state=1; s.menu_cursor=0
+            elif s.menu_state==1 and s.menu_cursor==0: s.menu_state=2
+            else:
+                if s.menu_state==1: s.players=2; s.p1_char=0
+                else: s.players=1; s.p1_char=s.menu_cursor
+                s.menu_from=s.menu_state; s.menu_state=3
+        # 4b
+        if s.menu_state==0:
+            if f>=38 and start_pressed: s.act_confirm=True
+        elif (s.menu_state==1 and n>=s.menu_t+2) or (s.menu_state==2 and n>=s.menu_t+1):
+            if pressed&26: s.act_move=True
+            if pressed&5: s.act_confirm=True
+        # 4c
+        if s.menu_state==3 and n==s.menu_t+16: s.menu_state=4
+        if s.menu_state==4 and n==s.menu_t+23: s.sounds.append((n,'stop theme'))
     def draw(s):
         scr=np.zeros((240,256,3),np.uint8)
         def blit(img,sx,sy,w,h,dx,dy):
@@ -71,8 +111,18 @@ class Intro:
             if top>=0 and left<64: blit(SPOT[s.spot_fade],left,top,64-left,63-top,ox+left,oy+top)
         if s.bg_mode==1: blit(WALL,0,0,256,240,0,0)
         elif s.bg_mode==2: blit(SIL,0,0,256,240,0,0)
-        if s.title_fade>=0:
-            blit(TBG[s.title_fade],0,0,256,240,0,0); blit(TFG[s.title_fade],0,0,256,240,0,0)
+        if s.title_fade>=0 and s.menu_state<4:
+            t=s.frame-s.menu_t; par=s.frame&1; k=-1
+            if s.menu_state==3: k=t//4-1
+            if k<0: blit(TBG[s.title_fade],0,0,256,240,0,0); blit(TFG[s.title_fade],0,0,256,240,0,0)
+            else: blit(TOUT[k],0,0,256,240,0,0)
+            sub=-1
+            if s.menu_state==1: sub=t if t<2 else 2+s.menu_cursor
+            elif s.menu_state==2: sub=4 if t<1 else 5+s.menu_cursor*2+par
+            elif s.menu_state==3:
+                if s.menu_from==1: sub=3 if k<0 else 9+k
+                else: sub=5+s.menu_cursor*2+par if k<0 else 12+s.menu_cursor*6+k*2+par
+            if sub>=0: blit(MENU[sub],0,0,160,32,48,188)
         return scr
 def run(nframes,press=()):
     g=Intro(); out=[]
@@ -89,3 +139,24 @@ if __name__=='__main__':
         out,g=run(t+398-EMU0,press=(t,))
         bad=[k+t-2 for k in range(400) if not np.array_equal(out[k+t-2-EMU0],ref[k])]
         print('START on NES frame',t,'-> mismatches',len(bad),bad[:10],'skipped' if g.skip_frame>=0 else 'ignored',g.sounds)
+    # ---- deliverable 2: menus (capture_menu.py runs) ----
+    from capture_menu import RUNS
+    from scenario import load
+    total=0
+    for name,(sched,nfr,f0) in RUNS.items():
+        d=load('menu_'+name); g=Intro(); bad=[]; cmp=0; sfx=[]
+        for n in range(nfr-EMU0):
+            g.step(tuple(sched.get(n+EMU0,())))
+            if g.snd_queue in ('select','move','theme'): sfx.append(n+EMU0)
+            if n+EMU0<f0: continue
+            if g.menu_state>=3 and n>g.menu_t+40: break        # the next screen starts here
+            cmp+=1
+            if not np.array_equal(g.draw(),d['frames'][n+EMU0-f0]): bad.append(n+EMU0)
+        last=n+EMU0
+        # frames on which the NES sound driver starts an effect (first APU write of the frame is $400C=$F0)
+        ref=[i+f0 for i,w in enumerate(d['apu']) if w and w[0]==(0x400C,0xF0) and i+f0<last]
+        ref=[x for x in ref if not (g.menu_state>=3 and x==g.menu_t+EMU0+23)]
+        sfx=[x for x in sfx if x>=f0]
+        total+=len(bad)+(ref!=sfx)
+        print('%-5s frames %4d mismatches %d %s | sfx %s %s | state %d players %d char %d'%(name,cmp,len(bad),bad[:6],'OK' if ref==sfx else 'DIFF %s vs %s'%(ref,sfx),[(a+EMU0,b) for a,b in g.sounds if a+EMU0>=f0],g.menu_state,g.players,g.p1_char))
+    print('menu runs: total problems',total)
