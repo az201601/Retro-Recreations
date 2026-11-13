@@ -21,9 +21,9 @@ def _run(args):
     pickle.dump(d, open(os.path.join(WORK, name + '.pkl'), 'wb'), protocol=4)
     return name
 
-def run_many(jobs):
+def run_many(jobs, only=None):
     """jobs: list of (name, sched, n, keep_from[, mute])"""
-    jobs = [j if len(j) == 5 else j + (0,) for j in jobs]
+    jobs = [j if len(j) == 5 else j + (0,) for j in jobs if only is None or j[0] in only]
     with mp.Pool(2, maxtasksperchild=1) as p:
         p.map(_run, jobs, chunksize=1)
 
