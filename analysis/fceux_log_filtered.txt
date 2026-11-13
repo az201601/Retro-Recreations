@@ -1,0 +1,48 @@
+FCEUX CHR log (filtered: STATE + CHR only, PRG summarized)
+Source: user local FCEUX run, 2026-11-13. User note: only ran to Stage 1 start.
+Full log had ~10000 lines, mostly PRG bank 2<->5 alternation every ~5 frames (music/level streaming).
+
+=== STATE + CHR changes (verbatim) ===
+[356] CHR switch: CHR0=31 CHR1=29
+[356] PRG switch: bank=5
+[356] STATE change: $40=1
+[864] STATE change: $40=2
+[886] PRG switch: bank=3
+[887] CHR switch: CHR0=30 CHR1=31
+[888] PRG switch: bank=5
+[1224] STATE change: $40=3
+[1246] PRG switch: bank=3
+[1247] CHR switch: CHR0=24 CHR1=25
+[1248] PRG switch: bank=2
+[1249] PRG switch: bank=3
+[1259] PRG switch: bank=2
+[1260] PRG switch: bank=4
+[1309] PRG switch: bank=5
+[2324] PRG switch: bank=3
+[2325] CHR switch: CHR0=24 CHR1=14
+[2332] CHR switch: CHR0=31 CHR1=14
+[2332] PRG switch: bank=5
+[7844] PRG switch: bank=4 (brief, then back to 5)
+[9921] PRG switch: bank=4
+[10810] STATE change: $40=4
+[10865] PRG switch: bank=3
+[10866] CHR switch: CHR0=15 CHR1=0
+[10868] PRG switch: bank=0
+[10869] PRG switch: bank=3
+[10873] PRG switch: bank=5
+
+=== PRG patterns (summarized) ===
+- State 1 (356-864): PRG 5 (title music/data)
+- State 2 (864-1224): PRG 3 -> 5 (state data + music)
+- State 3 early (1224-2324): PRG 3,2,4,5 mix (level load)
+- State 3 mid (2325-7844): PRG 2<->5 every ~5 frames (level data bank2 + music bank5 streaming)
+- State 3 late (9921-10810): PRG 2<->4 every ~5 frames (level data bank2 + bank4 data)
+- State 4 (10810+): PRG 3,0,5 (state data + bank0 + music)
+
+=== Interpretation (tentative, per user: only to Stage 1 start) ===
+- State 1 = Title (CHR 31 font + 29 title bg, PRG 5) — matches custom emulator
+- State 2 = Stage intro / select? (CHR 30 level bg + 31 font, PRG 3/5)
+- State 3 = Stage 1 loading / intro animation? (CHR 24/25 bg, then 24/14 & 31/14 sprites, PRG 2/4/5)
+- State 4 = Stage 1 gameplay start? (CHR 15/0, PRG 3/0/5) — needs screen confirmation
+  Note: states 3/4/6 share header $D8A0 in static table, so 3 and 4 are related gameplay states.
+- CHR1=14 CONFIRMED as sprite bank in State 3 (frames 2325, 2332). Bank 14 PNG renders as noise -> needs PPU viewer screenshot to resolve format (8x16? plane order?).
