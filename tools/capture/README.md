@@ -31,6 +31,9 @@ python3 build_audio.py   # OGGs  -> recreation/01_intro_title/assets/sounds
 python3 capture_menu.py  # ~1 min: menu runs -> work/menu_*.pkl (about 2 GB)
 python3 build_menu.py    # PNGs and OGGs -> recreation/02_title_menu/assets
 python3 sim.py           # checks the GML logic against the emulator, pixel for pixel
+python3 capture_prison.py  # ~5 min: night-scene runs -> work/prison_*.pkl (about 9 GB)
+python3 build_prison.py    # PNGs and OGG -> recreation/03_night_scene/assets
+python3 sim_prison.py      # ~2 min: checks the night scene, pixel for pixel
 ```
 
 ## Files
@@ -45,7 +48,10 @@ python3 sim.py           # checks the GML logic against the emulator, pixel for 
 | `scenario.py` | Runs one input schedule per process and stores frames, PPU state, RAM, sound-register writes and audio. |
 | `capture_menu.py` | The menu runs: every button, timing probes, and the separated sound channels. |
 | `build_menu.py` | Cuts the menu panels, the title fade-out and the menu sounds / music stems. |
-| `sim.py` | Python port of `obj_intro` Create/Step/Draw. Keep it in step with the `.gml` files. |
+| `sim.py` | Python port of `obj_intro` Create/Step/Draw (steps 01 and 02). Keep it in step with the `.gml` files. |
+| `capture_prison.py` | The night-scene runs: no input, other buttons, START on many frames. |
+| `build_prison.py` | Builds the two background bands, the beams, the blimp and the alarm sound. |
+| `sim_prison.py` | Python port of the night-scene parts of `obj_intro` Step/Draw, with the picture and sound checks. |
 
 `tools/dis/dis6502.py` is a small 6502 disassembler for the ROM's PRG banks
 (`dis6502.py 7 C5A2 C690`, or `dis6502.py find 85 49` to search for bytes).
