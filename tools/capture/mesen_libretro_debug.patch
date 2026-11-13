@@ -1,3 +1,19 @@
+diff --git a/Core/MemoryManager.cpp b/Core/MemoryManager.cpp
+index 80c9e43..0451be3 100644
+--- a/Core/MemoryManager.cpp
++++ b/Core/MemoryManager.cpp
+@@ -128,8 +128,11 @@ uint8_t MemoryManager::Read(uint16_t addr, MemoryOperationType operationType)
+ 	return value;
+ }
+ 
++uint8_t g_apuLog[4096];
+ void MemoryManager::Write(uint16_t addr, uint8_t value, MemoryOperationType operationType)
+ {
++	if(addr >= 0x4000 && addr <= 0x4017 && addr != 0x4014 && addr != 0x4016) { int n=g_apuLog[0]|(g_apuLog[1]<<8); if(n<2040){ g_apuLog[2+n*2]=addr&0xFF; g_apuLog[3+n*2]=value; n++; g_apuLog[0]=n&0xFF; g_apuLog[1]=n>>8; } }
++
+ 	_ramWriteHandlers[addr]->WriteRAM(addr, value);
+ 	_openBusHandler.SetOpenBus(value);
+ }
 diff --git a/Core/PPU.cpp b/Core/PPU.cpp
 index 3692210..7202c81 100644
 --- a/Core/PPU.cpp
@@ -27,7 +43,7 @@ index 3692210..7202c81 100644
  		} else if(_cycle == 1 && _scanline == _nmiScanline) {
  			if(!_preventVblFlag) {
 diff --git a/Libretro/libretro.cpp b/Libretro/libretro.cpp
-index 48fa641..70a2b81 100644
+index 48fa641..0943965 100644
 --- a/Libretro/libretro.cpp
 +++ b/Libretro/libretro.cpp
 @@ -18,6 +18,7 @@
@@ -38,12 +54,25 @@ index 48fa641..70a2b81 100644
  #include "../Utilities/FolderUtilities.h"
  #include "../Utilities/HexUtilities.h"
  
-@@ -1198,6 +1199,22 @@ extern "C" {
+@@ -127,6 +128,10 @@ extern "C" {
+ 		_console->GetSettings()->SetFlags(EmulationFlags::FdsAutoLoadDisk);
+ 		_console->GetSettings()->SetFlags(EmulationFlags::AutoConfigureInput);
+ 		_console->GetSettings()->SetSampleRate(_audioSampleRate);
++		if(const char* mute = getenv("MESEN_MUTE")) {
++			int mask = atoi(mute);
++			for(int ch = 0; ch < 5; ch++) if(mask & (1 << ch)) _console->GetSettings()->SetChannelVolume((AudioChannel)ch, 0.0);
++		}
+ 
+ 		if (env_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL))
+ 			_keyManager->SetSupportsInputBitmasks(true);
+@@ -1198,6 +1203,24 @@ extern "C" {
  		switch(id) {
  			case RETRO_MEMORY_SAVE_RAM: return mapper->GetSaveRam();
  			case RETRO_MEMORY_SYSTEM_RAM: return _console->GetMemoryManager()->GetInternalRAM();
 +			case 101: { extern uint8_t g_chrMid[0x2000]; return g_chrMid; }
 +			case 102: { extern uint8_t g_line[240*8]; return g_line; }
++			case 103: { extern uint8_t g_apuLog[4096]; return g_apuLog; }
++			case 104: { extern uint8_t g_apuLog[4096]; g_apuLog[0]=g_apuLog[1]=0; return g_apuLog; }
 +			case 100: {
 +				static uint8_t dump[0x3200];
 +				for(int i=0;i<0x3000;i++) dump[i]=mapper->DebugReadVRAM(i);

@@ -104,6 +104,13 @@ class Emu:
         p = self.lib.retro_get_memory_data(2)
         return np.frombuffer(C.string_at(p, 0x800), np.uint8)
 
+    def apu_writes(self):
+        """APU register writes ($4000-$4017) since the last call: list of (register, value)."""
+        p = self.lib.retro_get_memory_data(103)
+        d = C.string_at(p, 4096); n = d[0] | d[1] << 8
+        self.lib.retro_get_memory_data(104)
+        return [(0x4000 + d[2 + i * 2], d[3 + i * 2]) for i in range(n)]
+
     def ppu(self):
         p = self.lib.retro_get_memory_data(100)
         d = np.frombuffer(C.string_at(p, 0x3200), np.uint8)
