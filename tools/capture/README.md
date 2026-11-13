@@ -34,6 +34,12 @@ python3 sim.py           # checks the GML logic against the emulator, pixel for 
 python3 capture_prison.py  # ~5 min: night-scene runs -> work/prison_*.pkl (about 9 GB)
 python3 build_prison.py    # PNGs and OGG -> recreation/03_night_scene/assets
 python3 sim_prison.py      # ~2 min: checks the night scene, pixel for pixel
+python3 capture_news.py      # ~6 min: newscaster runs -> work/news_*.pkl (about 5 GB)
+python3 build_news_audio.py  # OGGs -> recreation/04_newscaster/assets/sounds
+python3 build_news.py        # PNGs -> recreation/04_newscaster/assets/sprites, and the cutscene model
+python3 news_data.py         # packs the model into the tables the GML uses
+python3 gen_news_gml.py      # writes those tables into 04_newscaster/gml/obj_intro_Create.gml
+python3 sim_news.py          # ~30 s: checks the newscaster cutscene, pixel for pixel
 ```
 
 ## Files
@@ -52,6 +58,13 @@ python3 sim_prison.py      # ~2 min: checks the night scene, pixel for pixel
 | `capture_prison.py` | The night-scene runs: no input, other buttons, START on many frames. |
 | `build_prison.py` | Builds the two background bands, the beams, the blimp and the alarm sound. |
 | `sim_prison.py` | Python port of the night-scene parts of `obj_intro` Step/Draw, with the picture and sound checks. |
+| `capture_news.py` | The newscaster runs: no input, B in several patterns, START on many frames, separated sound channels. |
+| `news_model.py` | Reads text, palette, sound writes and the game's object table out of the runs and derives the cutscene model (pages, actor tracks). |
+| `build_news_audio.py` | Builds the two music loops and the six typing sounds, and finds the note starts used for muting. |
+| `build_news.py` | Builds the studio background, the font tiles and the 8x8 sprite pieces in 7 brightness steps. |
+| `news_data.py` | Packs model, graphics index and sound data into flat tables. |
+| `gen_news_gml.py` | Writes those tables into the marked block of the step 04 Create event. |
+| `sim_news.py` | Python port of the newscaster parts of `obj_intro` Step/Draw, with the picture and typing-sound checks. |
 
 `tools/dis/dis6502.py` is a small 6502 disassembler for the ROM's PRG banks
 (`dis6502.py 7 C5A2 C690`, or `dis6502.py find 85 49` to search for bytes).
