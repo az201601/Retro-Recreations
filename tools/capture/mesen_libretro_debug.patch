@@ -1,0 +1,63 @@
+diff --git a/Core/PPU.cpp b/Core/PPU.cpp
+index 3692210..7202c81 100644
+--- a/Core/PPU.cpp
++++ b/Core/PPU.cpp
+@@ -1246,6 +1246,7 @@ void PPU::ProcessOamCorruption()
+ 	}
+ }
+ 
++uint8_t g_chrMid[0x2000]; uint8_t g_line[240*8];
+ void PPU::Exec()
+ {
+ 	if(_cycle < 340) {
+@@ -1253,6 +1254,15 @@ void PPU::Exec()
+ 		_cycle++;
+ 
+ 		if(_scanline < 240) {
++			if(_cycle == 1 && _scanline >= 0) {
++				extern uint8_t g_chrMid[0x2000]; extern uint8_t g_line[240*8];
++				BaseMapper* m = _console->GetMapper();
++				if(_scanline == 100) { for(int i=0;i<0x2000;i++) g_chrMid[i]=m->DebugReadVRAM(i); }
++				uint8_t* l = g_line + _scanline*8;
++				l[0]=_state.VideoRamAddr&0xFF; l[1]=_state.VideoRamAddr>>8; l[2]=_state.XScroll; l[3]=_state.Control; l[4]=_state.Mask;
++				uint32_t f=0; for(int i=0;i<0x2000;i+=0x101) f=f*31+m->DebugReadVRAM(i);
++				l[5]=f&0xFF; l[6]=(f>>8)&0xFF; l[7]=(f>>16)&0xFF;
++			}
+ 			ProcessScanline();
+ 		} else if(_cycle == 1 && _scanline == _nmiScanline) {
+ 			if(!_preventVblFlag) {
+diff --git a/Libretro/libretro.cpp b/Libretro/libretro.cpp
+index 48fa641..70a2b81 100644
+--- a/Libretro/libretro.cpp
++++ b/Libretro/libretro.cpp
+@@ -18,6 +18,7 @@
+ #include "../Core/DebuggerTypes.h"
+ #include "../Core/GameDatabase.h"
+ #include "../Core/SoundMixer.h"
++#include "../Core/PPU.h"
+ #include "../Utilities/FolderUtilities.h"
+ #include "../Utilities/HexUtilities.h"
+ 
+@@ -1198,6 +1199,22 @@ extern "C" {
+ 		switch(id) {
+ 			case RETRO_MEMORY_SAVE_RAM: return mapper->GetSaveRam();
+ 			case RETRO_MEMORY_SYSTEM_RAM: return _console->GetMemoryManager()->GetInternalRAM();
++			case 101: { extern uint8_t g_chrMid[0x2000]; return g_chrMid; }
++			case 102: { extern uint8_t g_line[240*8]; return g_line; }
++			case 100: {
++				static uint8_t dump[0x3200];
++				for(int i=0;i<0x3000;i++) dump[i]=mapper->DebugReadVRAM(i);
++				PPU* ppu=_console->GetPpu();
++				for(int i=0;i<0x20;i++) dump[0x3000+i]=ppu->ReadPaletteRAM(0x3F00+i);
++				memcpy(dump+0x3020, ppu->GetSpriteRam(), 0x100);
++				PPUDebugState st; ppu->GetState(st);
++				dump[0x3120]=st.ControlFlags.VerticalWrite; 
++				dump[0x3121]=st.State.Control; dump[0x3122]=st.State.Mask;
++				dump[0x3123]=st.State.XScroll;
++				dump[0x3124]=st.State.TmpVideoRamAddr&0xFF; dump[0x3125]=st.State.TmpVideoRamAddr>>8;
++				dump[0x3126]=st.State.VideoRamAddr&0xFF; dump[0x3127]=st.State.VideoRamAddr>>8;
++				return dump;
++			}
+ 		}
+ 		return nullptr;
+ 	}
