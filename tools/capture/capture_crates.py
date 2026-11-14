@@ -9,6 +9,8 @@
   pitcarry  falls into the first pit with a crate; the section starts again (all crates and boxes are back)
   rnd1..7   random buttons (LEFT / RIGHT / A / B / UP / DOWN): 1-3 after picking up the first crate, 4-5 after carrying
             it down to the floor, 6-7 from the bench without a crate
+  snd_*     short runs for the order of the sounds: a bonus box collected just before / after / during a landing,
+            a throw, a pick-up
   dl_cr_*   the same runs with Dale
   cr_power_sq2, cr_boxes_sq2, cr_power_noi   power and boxes again, sound only: the 2nd square channel alone, the
             noise channel alone (for the four new sounds)
@@ -54,6 +56,18 @@ RUNS['pitcarry'] = FLOOR + [([RIGHT, A], 20), (R, 20)] * 4 + [(N, 270), (R, 60),
 for s_ in (1, 2, 3): RUNS['rnd%d' % s_] = CARRY + rnd(s_)
 for s_ in (4, 5): RUNS['rnd%d' % s_] = FLOOR + rnd(s_)
 for s_ in (6, 7): RUNS['rnd%d' % s_] = BENCH + rnd(s_)
+
+# which sound wins on the shared channel: a bonus box next to a landing, a throw, a pick-up
+PRE = CARRY[:-2]                                                    # in front of the first crate (it has a bonus inside)
+BOX = PRE + [([RIGHT, B], 1), (N, 30), ([B], 2), (N, 100)]          # a 1-frame tap leaves the bonus box where the crate was
+RUNS['snd_land'] = PRE + [([RIGHT, B], 4), (N, 8), ([A], 2), (N, 70)]               # landing during the bonus sound
+RUNS['snd_land2'] = PRE + [([RIGHT, B], 4), (N, 36), ([A], 2), (N, 70)]             # ... in its last, silent frames
+RUNS['snd_throw'] = PRE + [([RIGHT, B], 4), (N, 6), ([B], 2), (N, 60)]              # throw during the bonus sound
+RUNS['snd_throw2'] = PRE + [([RIGHT, B], 1), (N, 30), ([B], 2), (N, 14), (R, 4), (N, 70)]   # bonus during the throw sound
+RUNS['snd_pick'] = BOX + [(R, 7), ([RIGHT, B], 3), (N, 70)]                         # pick-up during the bonus sound
+RUNS['snd_far'] = CARRY + [(L, 14), (R, 18), ([RIGHT, B], 2), (N, 5), ([A], 2), (N, 90)]         # landing during the far-throw sound
+for k_ in (10, 11, 13): RUNS['snd_after%d' % k_] = BOX + [([A], 2), (N, k_ - 2), (R, 3), (N, 70)]      # bonus 1, 2, 4 frames after a landing
+for k_ in (2, 4, 6): RUNS['snd_air%d' % k_] = BOX + [(L, k_), (N, 20), ([RIGHT, A], 2), (R, 12), (N, 70)]   # bonus in the air, landing 7, 5, 3 frames later
 
 def total(runs): return 1390 + sum(n for k, n in runs)
 JOBS = []

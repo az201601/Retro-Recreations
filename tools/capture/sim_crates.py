@@ -22,6 +22,7 @@ BL = pickle.load(open(os.path.join(WORK, 'lv1_blocks.pkl'), 'rb'))
 try: TABS = pickle.load(open(os.path.join(WORK, 'cr_tables.pkl'), 'rb'))
 except OSError: TABS = None
 PADBIT = {START: 1, SELECT: 2, A: 4, UP: 8, DOWN: 16, B: 32, LEFT: 64, RIGHT: 128}
+FX_LEN = {1: 14, 2: 25, 3: 53, 4: 73, 5: 6}     # frames a sound effect lasts
 DUCK_H = [16, 12, 8, 4, 0, 1, 2, 4, 2, 0]      # body height while crouching under a carried crate, per frame
 
 def character(c):
@@ -214,7 +215,7 @@ class Stage:                                    # obj_stage1
         s.lv_restart_t = -1; s.lv_lives = 3; s.lv_trig_on = True; s.lv_trig_wait = 0; s.lv_pad_keep = 0; s.lv_pressed_keep = 0
         s.lv_bonus = 0; s.lv_fc = 4
         s.reset_map()
-        s.lv_sq_k = 0; s.lv_sq_wait = 0; s.lv_sq_now = 0; s.lv_sq_end = -99; s.lv_far_wait = 0
+        s.lv_fx_k = 0; s.lv_fx_wait = 0; s.lv_fx_now = 0; s.lv_fx_end = -99
         s.pl = Player(s); s.ran = False; s.started = []
     def reset_map(s):
         s.lv_kind = [[int(v) for v in row] for row in BL['cls']]
@@ -236,19 +237,20 @@ class Stage:                                    # obj_stage1
         pressed = pad & (s.pad_prev ^ 255); s.pad_prev = pad
         pl = s.pl
         if not s.lv_done:
-            # sounds start 2 frames after their cause.  Kinds: 1 pick up, 2 throw, 3 bonus, 5 landing: they use the
-            # music's 2nd square channel (the music's part is silent meanwhile); 4 far throw (noise channel)
-            if s.lv_sq_wait > 0:
-                s.lv_sq_wait -= 1
-                if s.lv_sq_wait == 0:
-                    if s.lv_sq_k == 5 and (s.lv_sq_now == 1 or s.lv_sq_now == 2) and s.lt < s.lv_sq_end: pass   # no landing sound during those
+            # sound effects: 1 pick up, 2 throw, 3 bonus, 4 far throw, 5 landing.  Only one plays at a time.  A new one
+            # stops the one before it 1 frame after its cause and starts 2 frames after it.  The landing sound is the
+            # exception: it stops nothing, and is left out while another effect is playing.
+            # (1, 2, 3 and 5 use the music's 2nd square channel: the music's part is silent meanwhile.  4 is noise.)
+            if s.lv_fx_wait > 0:
+                s.lv_fx_wait -= 1
+                if s.lv_fx_wait == 1:
+                    if s.lv_fx_k != 5: s.lv_fx_now = 0
+                else:
+                    if s.lv_fx_k == 5 and s.lv_fx_now != 0 and s.lv_fx_now != 5 and s.lt < s.lv_fx_end: pass
                     else:
-                        s.started.append(s.lv_sq_k); s.lv_sq_now = s.lv_sq_k
-                        s.lv_sq_end = s.lt + {1: 14, 2: 25, 3: 53, 5: 6}[s.lv_sq_k]
-            if s.lv_sq_now != 0 and s.lt == s.lv_sq_end: s.lv_sq_now = 0
-            if s.lv_far_wait > 0:
-                s.lv_far_wait -= 1
-                if s.lv_far_wait == 0: s.started.append(4)
+                        s.started.append(s.lv_fx_k); s.lv_fx_now = s.lv_fx_k
+                        s.lv_fx_end = s.lt + FX_LEN[s.lv_fx_k]
+            if s.lv_fx_now != 0 and s.lt == s.lv_fx_end: s.lv_fx_now = 0
             s.lv_cam_show = s.lv_cam_x
             pl.s_x = pl.p_x; pl.s_y = pl.p_y; pl.s_pic = pl.p_pic; pl.s_face = pl.p_face; pl.s_vis = pl.p_state != 23 and not pl.p_hide
             for c in s.crates:                              # a crate that will fly / flies far flashes: 4 frames normal, 4 frames bright
@@ -274,16 +276,15 @@ class Stage:                                    # obj_stage1
                     if s.lv_trig_wait == 0:
                         if pl.p_state == 5: pl.p_state = 20; pl.p_auto = True; pl.p_face = 1; pl.p_xv = 2
                         else: s.lv_trig_on = True
-                if pl.p_landed: s.lv_sq_k = 5; s.lv_sq_wait = 2
-                if pl.p_snd == 4: s.lv_far_wait = 2
-                elif pl.p_snd != 0: s.lv_sq_k = pl.p_snd; s.lv_sq_wait = 2
+                if pl.p_landed and not (s.lv_fx_wait > 0 and s.lv_fx_k != 5): s.lv_fx_k = 5; s.lv_fx_wait = 2
+                if pl.p_snd != 0: s.lv_fx_k = pl.p_snd; s.lv_fx_wait = 2
                 if pl.p_out: s.lv_exit_t = s.lt
                 if pl.p_restart: s.lv_restart_t = s.lt
             if s.lv_exit_t >= 0 and s.lt == s.lv_exit_t + 22: s.lv_done = True
             if s.lv_restart_t >= 0 and s.lt == s.lv_restart_t + 21: s.lv_pad_keep = pad; s.lv_pressed_keep = pressed
             if s.lv_restart_t >= 0 and s.lt == s.lv_restart_t + 24:
                 s.lv_restart_t = -1; s.lt = -7; s.lv_cam_x = 0; s.lv_trig_on = True; s.lv_trig_wait = 0; pl.create(); s.reset_map()
-                s.lv_sq_now = 0; s.lv_sq_wait = 0; s.lv_far_wait = 0
+                s.lv_fx_now = 0; s.lv_fx_wait = 0
         s.lv_bright = -1
         if not s.lv_done:
             if s.lt >= 5: s.lv_bright = min((s.lt - 5) // 4, 3)
@@ -349,7 +350,7 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
         for f in range(1357, f0): g.end_step(pad(f))
         first = max(f0, 1357)
     else: from_ram(g, st[start_from - f0]['ram'], start_from); first = start_from + 1
-    n = bad_ram = bad_tiles = bad_pic = hits = 0; note = ''; examples = []; ev = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; drowned = {3: 0, 5: 0}
+    n = bad_ram = bad_tiles = bad_pic = hits = 0; note = ''; examples = []; ev = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; drowned = {3: 0, 5: 0}; sq2 = [0, 0]; notes = 0
     cels = [0, 1, 2, 3, 4, 5, 23, 22, 6, 7, 8, 11, 9, 10]
     for f in range(first, f0 + len(st)):
         g.end_step(pad(f)); S = st[f - f0]; r = S['ram']; p = g.pl
@@ -376,6 +377,20 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
         if nes_now:
             bad_ram += 1
             if len(examples) < verbose: examples.append((f, 'sounds on the NES only', nes_now))
+        # the long note of the bonus sound (frames 4..43 of the sound) must be going on exactly when the port says so
+        for q in w:
+            if q[0] == 0x4004: sq2[0] = q[1]
+            if q[0] == 0x4006: sq2[1] = q[1]
+        nes_note = sq2[1] == 0x36 and sq2[0] in (0x7F, 0x7C, 0x79, 0x76, 0x73)
+        port_note = g.lv_fx_now == 3 and 4 <= g.lt - (g.lv_fx_end - 53) < 44
+        nes_far = (0x400C, 0xBF) in w; port_far = g.lv_fx_now == 4 and g.lt - (g.lv_fx_end - 73) < 72
+        if nes_far != port_far and not ((0x4004, 0x3F) in near):
+            bad_ram += 1
+            if len(examples) < verbose: examples.append((f, 'far throw noise: NES %s, port %s' % (nes_far, port_far)))
+        if nes_note: notes += 1
+        if nes_note != port_note and not ((0x4004, 0x3F) in near):
+            bad_ram += 1
+            if len(examples) < verbose: examples.append((f, 'bonus note: NES %s, port %s' % (nes_note, port_note)))
         if g.ran:
             cam = int(r[0x10]) + 256 * int(r[0x13])
             x = int(r[0x314]) + 256 * int(r[0x320]); y = int(r[0x2FC]) + 256 * int(r[0x308]); y = y - 65536 if y > 32767 else y

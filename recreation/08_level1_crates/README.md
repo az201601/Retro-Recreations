@@ -41,11 +41,16 @@ screen.
 - **Draw order**: the original lists its sprites forwards on one frame and backwards on the
   next. The player is in front of the crate on one frame and behind it on the next. It shows in
   the one pixel row the head and the carried crate share.
-- **Sounds** start 2 frames after their cause. Pick-up (14 frames), throw (25), bonus (53) and
-  landing (6) use the same channel, the music's second square channel: a new one replaces the
-  one before, and the music's part is silent meanwhile. There is one exception: a landing during
-  a pick-up or throw sound makes no sound. The far-throw sound (73 frames) is noise only and
-  leaves the music alone.
+- **Sounds**: only one sound effect plays at a time. A new one stops the one before it 1 frame
+  after its cause and starts 2 frames after its cause. So a bonus box collected during a throw
+  or pick-up sound cuts that sound off, and a throw or pick-up during the bonus sound cuts the
+  bonus sound off.
+  - The **landing sound is the exception**: it never stops another effect, and it is left out
+    when a pick-up, throw, far-throw or bonus sound is playing or about to start. Landing on a
+    bonus box therefore gives the bonus sound only.
+  - Lengths in frames: pick-up 14, throw 25, bonus 53, landing 6, far throw 73.
+  - All but the far throw use the music's second square channel; the music's part is silent
+    while they play. The far-throw sound is noise only and leaves the music alone.
 - Dale: same behaviour on the same frames, own pictures.
 
 ## Buttons
@@ -116,8 +121,7 @@ The assets of step 05 and `snd_land` of step 06 are still needed.
 - **Patches**: for each of the 53 boxes the table in the Create event (`lv_bdc`, `lv_bdr`) names
   another block of the background picture that looks like what is behind the box. The Draw
   event copies that block over it.
-- **Sounds**: `lv_land_n` is replaced by `lv_sq_*` (one waiting sound, one playing sound for the
-  shared channel) and `lv_far_wait`.
+- **Sounds**: `lv_land_n` is replaced by `lv_fx_*` (one waiting sound effect, one playing).
 - New player variables are in the "crates" part of `obj_player_Create.gml`.
 
 `lv_bonus` is only counted. Where the game shows or uses it comes later.
@@ -125,11 +129,13 @@ The assets of step 05 and `snd_land` of step 06 are still needed.
 ## How it was checked
 
 `tools/capture/sim_crates.py` is a Python port of this step's GML. It was run with the same
-buttons as 19 new emulator recordings (13 with Chip, 6 with Dale): carrying and throwing the
+buttons as 31 new emulator recordings (25 with Chip, 6 with Dale): carrying and throwing the
 first crates in every direction, far throws, a run along the floor, the bonus boxes, falling
-into a pit with a crate, and seven runs of random buttons.
+into a pit with a crate, seven runs of random buttons, and twelve short runs for the order of
+the sounds (a bonus box just before, during and after a landing, a throw and a pick-up; a
+landing during the far-throw sound).
 
-On all 19,825 compared frames:
+On all 24,415 compared frames:
 
 - Memory: the player's state, position, speed, picture, direction, height, the camera, lives,
   whether a crate is carried, the position of every crate object, all 53 box blocks and the
@@ -138,6 +144,8 @@ On all 19,825 compared frames:
 - Picture: 0 differing pixels, outside the other sprites of the original (hearts, enemies).
 - Sounds: every pick-up, throw, far-throw, bonus and landing sound the port starts, starts on
   the same frame in the original, and the original starts no others (see the exception below).
+  The long note of the bonus sound and the noise of the far throw are on and off on the same
+  frames as in the original, so sounds that cut each other off are covered too.
 
 The 21 recordings of steps 06 and 07 were run through the new port as well: 10,120 frames, 0
 differences.
@@ -156,11 +164,7 @@ What that leaves out, and what was not checked:
   sounds: 14 of the 44 bonus sounds and 26 of the 200 landings in the new recordings. The port
   plays them every time. This belongs to the enemy step.
 - The repeating sound also cuts a bonus sound off after 2 or 4 frames when it starts just
-  after it. The first version of `snd_bonus` was taken from such a place and was only the
-  4-frame click; it is now taken from a bonus early in the level, where it plays in full.
-- No recording has a landing during a bonus sound. The port lets the landing sound replace it.
-- In one recording the far-throw sound ended early, after 49 frames, when another sound
-  started. Which sounds cut it off was not worked out; the port always plays it in full.
+  after it. In the port the bonus sound plays in full there.
 - The sounds were compared through the sound driver's register writes, not by ear. The lengths
   in frames come from those writes too.
 - One of Chip's pictures was only seen facing left; the right-facing one is its mirror image.
