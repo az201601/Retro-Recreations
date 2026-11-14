@@ -6,7 +6,7 @@
             zig-zag) and after less
   floor     carries a crate down to the floor, throws it there; walks into bonus boxes
   boxes     no crate: falls off the bench through two bonus boxes, jumps into the next two
-  pitcarry  falls into the first pit with a crate; the section starts again (all crates and boxes are back)
+  pitcarry, pitquiet   falls into the first pit with a crate; the section starts again (all crates and boxes are back)
   rnd1..7   random buttons (LEFT / RIGHT / A / B / UP / DOWN): 1-3 after picking up the first crate, 4-5 after carrying
             it down to the floor, 6-7 from the bench without a crate
   snd_*     short runs for the order of the sounds: a bonus box collected just before / after / during a landing,
@@ -53,6 +53,8 @@ def rnd(seed, chunks=70):
     return out
 FLOOR = CARRY + [(L, 70), (N, 10), (L, 40), (N, 10)]
 RUNS['pitcarry'] = FLOOR + [([RIGHT, A], 20), (R, 20)] * 4 + [(N, 270), (R, 60), ([RIGHT, A], 30), (N, 20)]
+# the same pit after a wait: the repeating sound of the level, which hides the throw sound in pitcarry, is over by then
+RUNS['pitquiet'] = FLOOR + [([RIGHT, A], 20), (R, 20)] * 3 + [(N, 458), (R, 25), (N, 150)]
 for s_ in (1, 2, 3): RUNS['rnd%d' % s_] = CARRY + rnd(s_)
 for s_ in (4, 5): RUNS['rnd%d' % s_] = FLOOR + rnd(s_)
 for s_ in (6, 7): RUNS['rnd%d' % s_] = BENCH + rnd(s_)
