@@ -101,9 +101,11 @@ def sounds():
     assert (0x4005, 0x93) in W(T + 2) and (0x4004, 0x30) in W(T + 26), 'throw sound not where expected'
     assert (0x400C, 0xBF) in W(TF + 2) and (0x400C, 0xBF) in W(TF + 73) and (0x400C, 0xB0) in W(TF + 74), 'far throw sound not where expected'
     sound('cr_power_sq2', P + 2, 14, 'snd_pick'); sound('cr_power_sq2', T + 2, 25, 'snd_throw'); sound('cr_power_noi', TF + 2, 73, 'snd_throw_far')
-    d = load('cr_boxes'); f0 = d['f0']; F = 1513
-    assert (0x4006, 0x6A) in W(F + 2) and (0x4004, 0xF0) in W(F + 5), 'bonus sound not where expected'
-    sound('cr_boxes_sq2', F + 2, 4, 'snd_bonus')
+    # bonus: a 3-frame click, then a high note that fades in 5 steps of 8 frames; the channel is the sound's for 53 frames.
+    # (Taken from a bonus early in the level.  Further right another sound of the level cuts it off after 4 frames.)
+    F = 1586
+    assert (0x4006, 0x6A) in W(F + 2) and (0x4006, 0x36) in W(F + 6) and (0x4004, 0x70) in W(F + 54) and (0x4004, 0xF0) in W(F + 55), 'bonus sound not where expected'
+    sound('cr_power_sq2', F + 2, 53, 'snd_bonus')
 
 if __name__ == '__main__':
     BL = pickle.load(open(os.path.join(WORK, 'lv1_blocks.pkl'), 'rb')); raw = BL['raw']
