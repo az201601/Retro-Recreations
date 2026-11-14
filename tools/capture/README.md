@@ -53,6 +53,9 @@ python3 capture_enemies.py   # ~1 min: enemy runs -> work/en_*.pkl, work/dl_en_*
 python3 build_enemies.py     # PNG, OGG -> recreation/09_level1_enemies/assets; tables -> work/en_tables.pkl, work/enemy_tables.gml
 python3 sim_enemies.py       # ~20 s: checks the enemies: memory, sprites, picture, sounds (--old, ~80 s: also the player and crate runs)
 python3 sim_enemies_route.py # checks the enemies of the whole section against the route recordings
+python3 capture_hurt.py      # ~6 min: hurt / status screen / game over runs -> work/hu_*.pkl, work/dl_hu_*.pkl
+python3 build_hurt.py        # PNG, OGG -> recreation/10_level1_hurt/assets; tables -> work/hu_tables.pkl, work/hurt_tables.gml
+python3 sim_hurt.py          # ~2.5 min: checks step 10: memory, sprites, picture, sounds (--old, ~1.5 min: also the runs of steps 06-09)
 ```
 
 ## Files
@@ -93,6 +96,9 @@ python3 sim_enemies_route.py # checks the enemies of the whole section against t
 | `build_enemies.py` | Builds the enemy tile strip and the picture tables from the ROM's picture lists (bank 5), and the three sounds. Adds files to the step 09 assets, deletes nothing else. |
 | `sim_enemies.py` | Python port of the step 09 GML (`obj_stage1`, `obj_player`, `obj_crate`, `obj_enemy`). Compares memory (every place of the object list), sounds, sprites with their order, and the picture. Keep it in step with the `.gml` files. |
 | `sim_enemies_route.py` | The same enemy code against the route recordings (all twelve objects of the section), with the player and camera taken from the NES memory. |
+| `capture_hurt.py` | The step 10 runs: the route without avoiding enemies, a death by enemies, random buttons near enemies, the status screen, three falls with GAME OVER, the continue screen (CONTINUE, END, until no credit is left); seven repeated with Dale; the hurt and stun sounds alone, asked for by writing the game's sound request byte. Recordings are stored in parts of 1200 frames with compressed pictures. |
+| `build_hurt.py`, `build_hurt_screens.py` | Build the step 10 assets: the two new player pictures from the ROM's picture lists, hearts, star, the status, GAME OVER and continue screens (cut from the recordings, with checks that the cut-out parts are all that changes), the character's movements on the continue screen, five sounds. |
+| `sim_hurt.py` | Python port of the step 10 GML. As `sim_enemies.py`, plus hearts, the status screen, GAME OVER and the continue screen; all sprites and the whole picture are compared. Keep it in step with the `.gml` files. |
 
 `tools/dis/script.py` lists the byte code that drives the game's objects (`script.py 4 82D9`; the
 scripts of the level 1 enemies are in bank 4). Opcodes above `$3F` are not decoded and are shown as `??`.
