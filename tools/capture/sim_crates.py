@@ -26,18 +26,20 @@ FX_LEN = {1: 14, 2: 25, 3: 53, 4: 73, 5: 6}     # frames a sound effect lasts
 DUCK_H = [16, 12, 8, 4, 0, 1, 2, 4, 2, 0]      # body height while crouching under a carried crate, per frame
 
 def character(c):
-    global T, CHIP, CRATE
+    global T, CHIP, CRATE, EYES
     if TABS is None: T = None; return
     T = TABS['dale'] if c else TABS['chip']
     st = Image.open('%s/sprites/spr_%s_strip%d.png' % (OUT, 'dale' if c else 'chip', T['n'])).convert('RGBA')
     CHIP = [np.array(st.crop((k * 8, 0, k * 8 + 8, 8))) for k in range(T['n'])]
     st = Image.open('%s/sprites/spr_crate_strip14.png' % OUT).convert('RGBA')
     CRATE = [np.array(st.crop((k * 16, 0, k * 16 + 16, 16))) for k in range(14)]
+    st = Image.open('%s/sprites/spr_crate_eyes_strip7.png' % OUT).convert('RGBA')
+    EYES = [np.array(st.crop((k * 8, 0, k * 8 + 8, 8))) for k in range(7)]
 
 class Crate:                                    # obj_crate
     def __init__(s, stage, wx, y):
-        s.stage = stage; s.c_wx = wx; s.c_y = y; s.c_mode = 0; s.c_dir = 1; s.c_t = 0; s.c_gone = False
-        s.s_x = wx - stage.lv_cam_x; s.s_y = y; s.s_flash = 0; s.s_vis = False
+        s.stage = stage; s.c_wx = wx; s.c_y = y; s.c_mode = 0; s.c_dir = 1; s.c_t = 0; s.c_gone = False; s.c_eyes = 0
+        s.s_x = wx - stage.lv_cam_x; s.s_y = y; s.s_flash = 0; s.s_vis = False; s.s_eyes = 0
     def user0(s):                               # one frame of a thrown crate
         if s.c_mode == 1: s.c_wx += 4 * s.c_dir
         elif s.c_mode == 2: s.c_y -= 6
@@ -93,7 +95,7 @@ class Player:                                   # obj_player
         s.p_carry = Crate(g, s.p_x + g.lv_cam_x, s.p_y - 23); g.crates.append(s.p_carry)
         s.p_snd = 1
     def throw(s, held):
-        c = s.p_carry; s.p_carry = None; s.p_throw = 1; s.p_snd = 2
+        c = s.p_carry; s.p_carry = None; s.p_throw = 1; s.p_snd = 2; c.c_eyes = 0
         c.c_wx = s.p_x + s.stage.lv_cam_x
         if s.p_h != 0: c.c_y = s.p_y - 16
         c.c_dir = 1 if s.p_face == 1 else -1; c.c_t = 0
@@ -105,6 +107,10 @@ class Player:                                   # obj_player
         if s.p_auto: held = 128; pressed = 0
         if (held & 24) == 24: held &= 231; pressed &= 231      # UP and DOWN together count as neither
         s.p_landed = False; s.p_snd = 0
+        # the player's eyes look out of the crate (2 = to the right, 1 = to the left) after 11 frames of hiding under
+        # it; they are open for 101 frames and shut for 16.  The crate follows what the player did one frame ago.
+        if s.p_carry is not None:
+            s.p_carry.c_eyes = 1 + s.p_face if s.p_state == 3 and 11 <= s.p_cnt <= 111 else 0
         if s.p_state != 23: s.stage.touch(s)
         st = s.p_state
         if st in (5, 20):
@@ -119,7 +125,9 @@ class Player:                                   # obj_player
                 s.p_pose = 4
                 if not held & 16: s.stand()
                 elif pressed & 4 and not s.row(s.p_y, 2): s.fall()
-                else: s.p_cnt = min(s.p_cnt + 1, 11)
+                else:
+                    s.p_cnt += 1
+                    if s.p_cnt == 128: s.p_cnt = 11
         elif st == 8:
             over = True; s.move_y()
             if s.p_h <= s.p_y <= 255 and s.row(s.p_y - s.p_h, 2): s.p_y = ((s.p_y - s.p_h) // 16 + 1) * 16 + s.p_h
@@ -254,7 +262,7 @@ class Stage:                                    # obj_stage1
             s.lv_cam_show = s.lv_cam_x
             pl.s_x = pl.p_x; pl.s_y = pl.p_y; pl.s_pic = pl.p_pic; pl.s_face = pl.p_face; pl.s_vis = pl.p_state != 23 and not pl.p_hide
             for c in s.crates:                              # a crate that will fly / flies far flashes: 4 frames normal, 4 frames bright
-                c.s_x = c.c_wx - s.lv_cam_x; c.s_y = c.c_y; c.s_vis = True
+                c.s_x = c.c_wx - s.lv_cam_x; c.s_y = c.c_y; c.s_vis = True; c.s_eyes = c.c_eyes
                 far = c.c_mode == 3 or (c.c_mode == 0 and pl.p_run >= 30)
                 c.s_flash = 1 if far and (s.lv_fc & 4) else 0
             s.crates = [c for c in s.crates if not c.c_gone]
@@ -312,12 +320,20 @@ class Stage:                                    # obj_stage1
             ct = []
             for c in s.crates:                              # each crate is four 8x8 NES sprites
                 if not c.s_vis: continue
+                one = []
                 for q, (dx, dy) in enumerate(((-8, -17), (-8, -9), (0, -17), (0, -9))):
                     tx = c.s_x + dx; ty = c.s_y + dy
-                    if ty >= 0 and 0 <= tx <= 255: ct.append((tx, ty, ('c', c.s_flash * 7 + s.lv_bright, q)))
+                    if ty >= 0 and 0 <= tx <= 255: one.append((tx, ty, ('c', c.s_flash * 7 + s.lv_bright, q)))
+                if c.s_eyes:                                # the eyes: a 5th sprite, in front of the crate on odd frames, behind it on even ones
+                    tx = c.s_x - (2 if c.s_eyes == 2 else 6); ty = c.s_y - 12
+                    if ty >= 0 and 0 <= tx <= 255:
+                        e = (tx, ty, ('e', s.lv_bright))
+                        one = one + [e] if (s.lv_fc & 1) else [e] + one
+                ct += one
             tl = s.pl.tiles() + ct if (s.lv_fc & 1) else ct + s.pl.tiles()[::-1]
         for tx, ty, k in tl:
-            if isinstance(k, tuple): im = CRATE[k[1]][(k[2] % 2) * 8:(k[2] % 2) * 8 + 8, (k[2] // 2) * 8:(k[2] // 2) * 8 + 8]
+            if isinstance(k, tuple) and k[0] == 'e': im = EYES[k[1]]
+            elif isinstance(k, tuple): im = CRATE[k[1]][(k[2] % 2) * 8:(k[2] % 2) * 8 + 8, (k[2] // 2) * 8:(k[2] // 2) * 8 + 8]
             else: im = CHIP[k]
             h = min(8, 240 - (ty + 1)); w = min(8, 256 - tx)
             if h > 0:
@@ -350,7 +366,7 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
         for f in range(1357, f0): g.end_step(pad(f))
         first = max(f0, 1357)
     else: from_ram(g, st[start_from - f0]['ram'], start_from); first = start_from + 1
-    n = bad_ram = bad_tiles = bad_pic = hits = 0; note = ''; examples = []; ev = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; drowned = {2: 0, 3: 0, 5: 0}; sq2 = [0, 0]; notes = 0
+    n = bad_ram = bad_tiles = bad_pic = hits = 0; note = ''; examples = []; ev = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; drowned = {2: 0, 3: 0, 5: 0}; sq2 = [0, 0]; notes = 0; eyed = 0
     cels = [0, 1, 2, 3, 4, 5, 23, 22, 6, 7, 8, 11, 9, 10]
     for f in range(first, f0 + len(st)):
         g.end_step(pad(f)); S = st[f - f0]; r = S['ram']; p = g.pl
@@ -410,6 +426,9 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
                     cx = int(r[0x314 + j]) + 256 * int(r[0x320 + j]); cx = cx - 65536 if cx > 32767 else cx
                     nc.append((cx + cam, cy))
             sc = [(c.c_wx, c.c_y) for c in g.crates if not c.c_gone]
+            ce = int(r[0x338 + (int(r[0x2E4]) & 7)])            # the carried crate: 0 plain, 1 / 2 with eyes (8: for one frame after the pick-up, looks plain)
+            if int(r[0x2E4]) & 0x40 and p.p_carry is not None and ce < 3:
+                nes.append(ce); sim.append(p.p_carry.c_eyes); eyed += ce > 0
             nes.append(sorted(nc)); sim.append(sorted(sc))
             # blocks: the columns the NES has in its buffer
             m = r[0x43A:0x43A + 240].reshape(15, 16).astype(int); lo = (cam >> 4) + 1; bb = []
@@ -428,6 +447,10 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
             if S['mask'] & 0x10 and not mine <= set(vis):
                 bad_tiles += 1
                 if len(examples) < verbose: examples.append((f, 'tiles missing on the NES', sorted(mine - set(vis))))
+            eyes = set((int(q[3]), int(q[0])) for q in o if q[0] < 0xEF and q[1] == 0x7E and q[2] == 1)     # every eye sprite must be drawn
+            if S['mask'] & 0x10 and not eyes <= mine:
+                bad_tiles += 1
+                if len(examples) < verbose: examples.append((f, 'eyes missing in the port', sorted(eyes - mine)))
             ok = np.ones((240, 256), bool)
             for x, y in vis:
                 if (x, y) not in mine: ok[y + 1:y + 9, x:x + 8] = False
@@ -437,7 +460,7 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
                 if len(examples) < verbose: ys, xs = np.nonzero(diff); examples.append((f, 'picture', int(diff.sum()), 'pixels, box', int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())))
                 global PICS; PICS = PICS or (name, f, scr, d['frames'][f - f0])
     print('%-14s frames %4d  memory+sound %d  tiles %d  picture %d   sounds: pick %d, throw %d (+%d drowned), far throw %d, bonus %d (+%d drowned), landing %d (+%d drowned)  %s%s' % (
-        name, n, bad_ram, bad_tiles, bad_pic, ev[1], ev[2] - drowned[2], drowned[2], ev[4], ev[3] - drowned[3], drowned[3], ev[5] - drowned[5], drowned[5], note, '  crates that hit an enemy: %d' % hits if hits else ''))
+        name, n, bad_ram, bad_tiles, bad_pic, ev[1], ev[2] - drowned[2], drowned[2], ev[4], ev[3] - drowned[3], drowned[3], ev[5] - drowned[5], drowned[5], note + ('  eyes on %d frames' % eyed if eyed else ''), '  crates that hit an enemy: %d' % hits if hits else ''))
     for e in examples: print('     ', e)
     return n, bad_ram + bad_tiles + bad_pic
 

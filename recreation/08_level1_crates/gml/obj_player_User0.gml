@@ -6,6 +6,14 @@ if ((held & 24) == 24) { held &= 231; pressed &= 231; }     // UP and DOWN toget
 p_landed = false;
 p_snd = 0;
 
+// the eyes in the crate: after 11 frames of hiding under it the player looks out, for 101 frames, then the
+// eyes are shut for 16 frames, and so on. The crate follows what the player did one frame ago.
+if (p_carry != noone)
+{
+    if (p_state == 3 && p_cnt >= 11 && p_cnt <= 111) p_carry.c_eyes = 1 + p_face;
+    else p_carry.c_eyes = 0;
+}
+
 // ---- 0) bonus boxes ------------------------------------------------------------------------
 if (p_state != 23) scr_pl_touch();
 
@@ -36,7 +44,11 @@ switch (p_state)
             {
                 p_pose = 2; p_yv = 0; p_state = 1;      // DOWN + A on a thin platform: drop through it
             }
-            else p_cnt = min(p_cnt + 1, 11);            // frames spent crouching (used with a crate, see 5)
+            else
+            {
+                p_cnt += 1;                             // frames spent crouching (used with a crate, see 5 and the eyes above)
+                if (p_cnt == 128) p_cnt = 11;
+            }
         }
         break;
 

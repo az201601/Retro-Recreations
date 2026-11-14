@@ -84,6 +84,7 @@ if (!lv_done)
         cr.s_x = cr.c_wx - lv_cam_x;
         cr.s_y = cr.c_y;
         cr.s_vis = true;
+        cr.s_eyes = cr.c_eyes;
         cr.s_flash = 0;
         if (cr.c_mode == 3 || (cr.c_mode == 0 && pl.p_run >= 30))
         {
