@@ -56,9 +56,11 @@ python3 sim_enemies_route.py # checks the enemies of the whole section against t
 python3 capture_hurt.py      # ~6 min: hurt / status screen / game over runs -> work/hu_*.pkl, work/dl_hu_*.pkl
 python3 build_hurt.py        # PNG, OGG -> recreation/10_level1_hurt/assets; tables -> work/hu_tables.pkl, work/hurt_tables.gml
 python3 sim_hurt.py          # ~2.5 min: checks step 10: memory, sprites, picture, sounds (--old, ~1.5 min: also the runs of steps 06-09)
-python3 capture_kitchen.py   # ~3 min: kitchen runs -> work/kt_*.pkl
+python3 capture_kitchen.py   # ~8 min: kitchen runs of steps 11 and 12 -> work/kt_*.pkl
 python3 build_kitchen.py     # ~15 s: PNG -> recreation/11_level1_kitchen/assets; block map -> work/kt_blocks.pkl, work/kt_tables.gml
 python3 sim_kitchen.py       # ~20 s: checks step 11: memory, landing sound, picture (--old, ~4.5 min: all runs of steps 06-10)
+python3 build_kitchen_boxes.py # PNG, OGG -> recreation/12_level1_kitchen_crates/assets; boxes -> work/kt_boxes.pkl, work/kt_box_tables.gml
+python3 sim_kitchen2.py      # ~50 s: checks step 12: memory, objects, sounds, picture (--old --nopic, ~1 min: all runs of steps 06-10)
 ```
 
 ## Files
@@ -106,6 +108,13 @@ python3 sim_kitchen.py       # ~20 s: checks step 11: memory, landing sound, pic
 | `capture_kitchen.py` | The step 11 runs: the kitchen from entry to exit, the exit reached in three ways, random buttons in the shaft, the top edge, the status screen, held buttons at the section change, a fall in the shaft, lost lives up to GAME OVER; three repeated with Dale. |
 | `build_kitchen.py` | Builds the kitchen's 9 background screens in 7 brightness steps from the route recording (the map is put together from the scroll position in the game's memory), the wall piece around the exit hole, and the block map. |
 | `sim_kitchen.py` | Python port of the step 11 GML: `sim_hurt.py` plus the second section, a camera that also goes up, and the shaft's row-by-row picture. Compares memory, landing sound and the whole picture, leaving out what the port does not have yet (mice, bonus boxes). Keep it in step with the `.gml` files. |
+| `kitchen_runs.json` | Buttons from power-on for the 10 step 12 runs (`cr_a0` … `cr_h3`): crates picked up, thrown in every way, bonus boxes, the acorn. Found by a savestate search that keeps away from the mice. |
+| `build_kitchen_boxes.py` | Step 12: finds the kitchen's crates, bonus boxes and item crates in the block map and, from the ROM's second copy of each screen, what is behind each; cuts the acorn, star and "1UP" sprites and the extra-life sound. |
+| `sim_kitchen2.py` | Python port of the step 12 GML: `sim_kitchen.py` plus the kitchen's boxes, the items and the corrected throw rules. Compares the step 11 runs, the `kitchen_runs.json` runs and `kt_star`. |
+
+`capture_kitchen.py` also records the step 12 runs (`kt_cr_*`), `kt_star` and `kt_fx_life_sq2`. `kt_star` is the only
+recording that is not pure button input: on frame 6545 the player's position is written into the game's memory
+(`$314` = 180, `$2FC` = 50) so that he lands on the shelf next to the star, which no found button sequence reaches yet.
 
 `tools/dis/script.py` lists the byte code that drives the game's objects (`script.py 4 82D9`; the
 scripts of the level 1 enemies are in bank 4). Opcodes above `$3F` are not decoded and are shown as `??`.
