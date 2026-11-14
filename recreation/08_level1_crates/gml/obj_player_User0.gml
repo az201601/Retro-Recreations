@@ -111,8 +111,7 @@ if (p_state < 20 && p_y >= 232)
     if (p_carry != noone)
     {
         p_run = 0;
-        scr_pl_throw(8);        // a carried crate flies straight up ...
-        p_snd = 0;              // ... without a sound
+        scr_pl_throw(8);        // a carried crate flies straight up (with the throw sound)
     }
 }
 

@@ -150,7 +150,7 @@ class Player:                                   # obj_player
             if s.p_cnt == 0: s.p_restart = True
         if s.p_state < 20 and s.p_y >= 232:
             s.p_state = 23; s.p_cnt = 60; s.stage.lv_lives -= 1
-            if s.p_carry is not None: s.p_run = 0; s.throw(8); s.p_snd = 0       # a carried crate is thrown straight up, without a sound
+            if s.p_carry is not None: s.p_run = 0; s.throw(8)       # a carried crate is thrown straight up (with the throw sound)
         # carrying: the run-up count, the throw
         if s.p_state == 5 and s.p_carry is not None and s.p_moved != 0 and held & 192: s.p_run = min(s.p_run + 1, 255)
         else: s.p_run = 0
@@ -350,7 +350,7 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
         for f in range(1357, f0): g.end_step(pad(f))
         first = max(f0, 1357)
     else: from_ram(g, st[start_from - f0]['ram'], start_from); first = start_from + 1
-    n = bad_ram = bad_tiles = bad_pic = hits = 0; note = ''; examples = []; ev = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; drowned = {3: 0, 5: 0}; sq2 = [0, 0]; notes = 0
+    n = bad_ram = bad_tiles = bad_pic = hits = 0; note = ''; examples = []; ev = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; drowned = {2: 0, 3: 0, 5: 0}; sq2 = [0, 0]; notes = 0
     cels = [0, 1, 2, 3, 4, 5, 23, 22, 6, 7, 8, 11, 9, 10]
     for f in range(first, f0 + len(st)):
         g.end_step(pad(f)); S = st[f - f0]; r = S['ram']; p = g.pl
@@ -370,7 +370,7 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
         for k in g.started:
             ev[k] += 1
             if k in nes_now: nes_now.discard(k)
-            elif k in (3, 5) and (0x4004, 0x3F) in near: drowned[k] += 1          # a repeating sound of the level (it starts with the first enemy, a later step) keeps the channel
+            elif k in (2, 3, 5) and (0x4004, 0x3F) in near: drowned[k] += 1          # a repeating sound of the level (it starts with the first enemy, a later step) keeps the channel
             else:
                 bad_ram += 1
                 if len(examples) < verbose: examples.append((f, 'sound %d expected' % k, w[:6]))
@@ -436,8 +436,8 @@ def compare(name, sched, start_from=None, pictures=True, verbose=1):
                 bad_pic += 1
                 if len(examples) < verbose: ys, xs = np.nonzero(diff); examples.append((f, 'picture', int(diff.sum()), 'pixels, box', int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())))
                 global PICS; PICS = PICS or (name, f, scr, d['frames'][f - f0])
-    print('%-14s frames %4d  memory+sound %d  tiles %d  picture %d   sounds: pick %d, throw %d, far throw %d, bonus %d (+%d drowned), landing %d (+%d drowned)  %s%s' % (
-        name, n, bad_ram, bad_tiles, bad_pic, ev[1], ev[2], ev[4], ev[3] - drowned[3], drowned[3], ev[5] - drowned[5], drowned[5], note, '  crates that hit an enemy: %d' % hits if hits else ''))
+    print('%-14s frames %4d  memory+sound %d  tiles %d  picture %d   sounds: pick %d, throw %d (+%d drowned), far throw %d, bonus %d (+%d drowned), landing %d (+%d drowned)  %s%s' % (
+        name, n, bad_ram, bad_tiles, bad_pic, ev[1], ev[2] - drowned[2], drowned[2], ev[4], ev[3] - drowned[3], drowned[3], ev[5] - drowned[5], drowned[5], note, '  crates that hit an enemy: %d' % hits if hits else ''))
     for e in examples: print('     ', e)
     return n, bad_ram + bad_tiles + bad_pic
 

@@ -34,7 +34,7 @@ screen.
   
   A crate is gone when its middle leaves the screen left or right, or when it is far above it.
 - **Bonus boxes**: touching one removes it and counts it (up to 99). One box per frame.
-- **Falling out while carrying**: the crate flies straight up, without a sound. When the section
+- **Falling out while carrying**: the crate flies straight up, with the throw sound. When the section
   restarts, all crates and boxes are back; the bonus count stays.
 - **UP and DOWN held together** count as neither. (Not possible on a real controller, but on a
   keyboard.)
@@ -129,13 +129,13 @@ The assets of step 05 and `snd_land` of step 06 are still needed.
 ## How it was checked
 
 `tools/capture/sim_crates.py` is a Python port of this step's GML. It was run with the same
-buttons as 31 new emulator recordings (25 with Chip, 6 with Dale): carrying and throwing the
+buttons as 32 new emulator recordings (26 with Chip, 6 with Dale): carrying and throwing the
 first crates in every direction, far throws, a run along the floor, the bonus boxes, falling
-into a pit with a crate, seven runs of random buttons, and twelve short runs for the order of
+into a pit with a crate (twice), seven runs of random buttons, and twelve short runs for the order of
 the sounds (a bonus box just before, during and after a landing, a throw and a pick-up; a
 landing during the far-throw sound).
 
-On all 24,415 compared frames:
+On all 25,536 compared frames:
 
 - Memory: the player's state, position, speed, picture, direction, height, the camera, lives,
   whether a crate is carried, the position of every crate object, all 53 box blocks and the
@@ -163,6 +163,9 @@ What that leaves out, and what was not checked:
 - The repeating sound that starts with the first enemy (see step 06) also silences bonus
   sounds: 14 of the 44 bonus sounds and 26 of the 200 landings in the new recordings. The port
   plays them every time. This belongs to the enemy step.
+- The repeating sound hid the throw sound of the crate at the pit in the first pit recording,
+  and the port had no sound there at first. A second recording (`cr_pitquiet`), made after the
+  repeating sound is over, has the throw sound; the port plays it every time.
 - The repeating sound also cuts a bonus sound off after 2 or 4 frames when it starts just
   after it. In the port the bonus sound plays in full there.
 - The sounds were compared through the sound driver's register writes, not by ear. The lengths
