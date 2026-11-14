@@ -3,6 +3,7 @@
 // held = the buttons (8 = UP, 64 / 128 = LEFT / RIGHT) that choose the direction.
 var cr = p_carry;
 p_carry = noone;
+cr.c_eyes = 0;
 p_throw = 1;
 p_snd = 2;
 cr.c_wx = p_x + stage.lv_cam_x;

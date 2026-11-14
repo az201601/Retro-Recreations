@@ -10,6 +10,7 @@ c_mode = 0;            // 0 carried, 1 thrown straight ahead, 2 straight up, 3 f
 c_dir  = 1;            // 1 flies right, -1 left
 c_t    = 0;            // frames since the throw
 c_gone = false;        // left the screen: obj_stage1 removes it after showing it once more
+c_eyes = 0;            // the player hides under it and looks out: 0 no eyes, 1 eyes to the left, 2 eyes to the right
 
 // ---- what is shown: the state after the PREVIOUS frame (set by obj_stage1) ----
-s_x = 0;  s_y = 0;  s_flash = 0;  s_vis = false;
+s_x = 0;  s_y = 0;  s_flash = 0;  s_vis = false;  s_eyes = 0;

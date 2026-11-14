@@ -149,6 +149,9 @@ if __name__ == '__main__':
                     for xx in range(8):
                         if m[yy, xx]: px[(fl * 7 + b) * 16 + dx + 8 + xx, dy + 17 + yy] = tuple(int(v) for v in ppu.RGB[pal[b][fl * 4 + m[yy, xx]] & 63]) + (255,)
     cs.save(OUT + '/sprites/spr_crate_strip14.png')
+    # the eyes that look out of a crate the player hides under: one tile (0x7E, sprite palette 1), sub-image = brightness
+    es = Image.new('RGBA', (7 * 8, 8), (0, 0, 0, 0)); paint(es.load(), 0, ppu.tile(chr_, 0x7E * 16), 1)
+    es.save(OUT + '/sprites/spr_crate_eyes_strip7.png')
     # crates and bonus boxes: where, and a place in the background picture that looks like what is behind them
     donors = {}
     for r in range(15):

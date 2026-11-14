@@ -23,7 +23,10 @@ screen.
 - **Carrying**: the player walks and jumps as before, with other pictures. The body height stays
   22; the crate sits above it.
 - **Hiding**: DOWN while carrying. The crate comes down over the player in 5 frames (the player
-  is not drawn from the 2nd frame on), then bobs a little and rests on the ground.
+  is not drawn from the 2nd frame on), then bobs a little and rests on the ground. From the
+  12th frame on the player's **eyes** look out of the crate, to the side the player faces
+  (LEFT / RIGHT turn them). They are open for 101 frames and shut for 16, again and again. The
+  eyes are a sprite that is in front of the crate only on every other frame, so they flicker.
 - **Throwing** (B while carrying; 15 frames, the player stands still during them):
   - straight ahead: 4 pixels per frame;
   - UP + B: straight up, 6 pixels per frame;
@@ -70,6 +73,7 @@ screen.
 | `spr_chip_strip728.png` | 8x8 | 52 tiles × 2 directions × 7 brightness steps: index = (tile × 2 + (0 right, 1 left)) × 7 + step |
 | `spr_dale_strip714.png` | 8x8 | 51 tiles, same layout |
 | `spr_crate_strip14.png` | 16x16 | (0 normal, 1 flash) × 7 + brightness step |
+| `spr_crate_eyes_strip7.png` | 8x8 | the eyes in the crate: brightness step |
 | `snd_pick.ogg` | 14 frames (0.23 s) | picking up a crate |
 | `snd_throw.ogg` | 25 frames (0.42 s) | throw |
 | `snd_throw_far.ogg` | 73 frames (1.22 s) | far throw |
@@ -86,7 +90,8 @@ The assets of step 05 and `snd_land` of step 06 are still needed.
 1. **Sprites `spr_chip`, `spr_dale`**: load the new strips into the existing sprites (728 and
    714 sub-images of 8x8, origin 0,0, **Remove Background** and **Smooth Edges** unticked).
 2. **Sprite `spr_crate`** (new): `spr_crate_strip14.png`, 14 sub-images of 16x16, origin 0,0,
-   same two boxes unticked.
+   same two boxes unticked. **Sprite `spr_crate_eyes`** (new): `spr_crate_eyes_strip7.png`, 7
+   sub-images of 8x8, same settings.
 3. **Sounds** (new) `snd_pick`, `snd_throw`, `snd_throw_far`, `snd_bonus`: mono, 48000 Hz, not
    streamed.
 4. **Scripts**:
@@ -129,19 +134,23 @@ The assets of step 05 and `snd_land` of step 06 are still needed.
 ## How it was checked
 
 `tools/capture/sim_crates.py` is a Python port of this step's GML. It was run with the same
-buttons as 32 new emulator recordings (26 with Chip, 6 with Dale): carrying and throwing the
+buttons as 33 new emulator recordings (27 with Chip, 6 with Dale): carrying and throwing the
 first crates in every direction, far throws, a run along the floor, the bonus boxes, falling
-into a pit with a crate (twice), seven runs of random buttons, and twelve short runs for the order of
+into a pit with a crate (twice), hiding under a crate for 4 seconds, seven runs of random buttons, and twelve short runs for the order of
 the sounds (a bonus box just before, during and after a landing, a throw and a pick-up; a
 landing during the far-throw sound).
 
-On all 25,536 compared frames:
+On all 26,114 compared frames:
 
 - Memory: the player's state, position, speed, picture, direction, height, the camera, lives,
   whether a crate is carried, the position of every crate object, all 53 box blocks and the
   bonus count are the same as in the NES memory. 0 differences.
-- Sprite tiles of the player and the crates, including their order: 0 differences.
+- Sprite tiles of the player and the crates, including their order: 0 differences. Every eye
+  sprite of the original is drawn by the port at the same place.
 - Picture: 0 differing pixels, outside the other sprites of the original (hearts, enemies).
+  (That rule is why the eyes in the crate were missed at first: a sprite the port does not
+  draw is skipped, not reported. The eye sprites are now checked by name; other sprites of the
+  original that this step should draw but does not would still go unnoticed.)
 - Sounds: every pick-up, throw, far-throw, bonus and landing sound the port starts, starts on
   the same frame in the original, and the original starts no others (see the exception below).
   The long note of the bonus sound and the noise of the far throw are on and off on the same
