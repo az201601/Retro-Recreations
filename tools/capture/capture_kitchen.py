@@ -6,6 +6,7 @@
               shaft, the top edge, the status screen, held buttons at the section change, a fall, lost lives up to
               GAME OVER and CONTINUE; three with Dale (dl_*).  Stored in parts of 1200 frames.
   CHECKS      what sim_kitchen.py compares: (name, recordings, buttons, first NES frame, start mode, last frame)
+  CHECKS2     the same for step 12 (sim_kitchen2.py): the crate runs of kitchen_runs.json and the star
 usage: capture_kitchen.py [job ...]     (everything: ~3 min)"""
 import json, os, sys
 from scenario import run_many
@@ -62,6 +63,17 @@ ROUTE2D = {**ROUTE2, 1150: [SELECT]}                                            
 RUNS['dl_enter'] = after(3690, [(N, 42), (R, 60), ([RIGHT, A], 20), (N, 30)], ROUTE2D) + (3680,)
 RUNS['dl_shaft2'] = after(5300, rnd(2) + [(N, 20)], ROUTE2D) + (5290,)
 RUNS['dl_exit2'] = after(6560, [(R, 16), (N, 3), ([DOWN], 20), (R, 80)], ROUTE2D) + (6550,)
+# step 12: runs with crates, bonus boxes and the hidden item, found by a search that avoids the mice
+# (kitchen_runs.json: name -> buttons from power-on, run-length coded).  Kept from the dining room's exit on.
+CRATE_RUNS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kitchen_runs.json')))
+for name_, rl_ in CRATE_RUNS.items():
+    sc_ = {}; f_ = 0
+    for keys_, n_ in rl_:
+        for i_ in range(n_):
+            if keys_: sc_[f_] = keys_
+            f_ += 1
+    if name_.startswith('dl_'): sc_[1150] = [SELECT]
+    RUNS[name_] = (sc_, f_ + 40, 3680)
 PART = 1200
 JOBS2 = []
 for name_, (sc_, n_, k_) in RUNS.items():
@@ -71,6 +83,7 @@ for name_, (sc_, n_, k_) in RUNS.items():
 def files(name): return [j[0] for j in JOBS2 if j[0] == 'kt_' + name or j[0][:-2] == 'kt_' + name]
 
 # what sim_kitchen.py compares: (name, recordings, schedule, first NES frame, how the port starts, last frame or None)
+CHECKS2 = []       # step 12 (sim_kitchen2.py compares CHECKS + CHECKS2)
 CHECKS = [('kt_enter', ROUTE_FILES, ROUTE2, 3695, 'dining', 3800),
           ('kt_route', ROUTE_FILES, ROUTE2, 3723, 'start', None),
           ('kt_hold', files('hold'), RUNS['hold'][0], 3695, 'dining', None),
@@ -79,8 +92,28 @@ CHECKS = [('kt_enter', ROUTE_FILES, ROUTE2, 3695, 'dining', 3800),
           ('kt_over', files('over'), RUNS['over'][0], 7002, 'middle', None)]
 # (the others start in the middle of the kitchen: the port takes the place of the player and the camera from the NES)
 for name_ in RUNS:
-    if name_ == 'dl_enter': CHECKS.append(('kt_dl_enter', files(name_), RUNS[name_][0], 3695, 'dining', None))
+    if name_ in CRATE_RUNS: CHECKS2.append(('kt_' + name_, files(name_), RUNS[name_][0], 3695, 'dining', None))
+    elif name_ == 'dl_enter': CHECKS.append(('kt_' + name_, files(name_), RUNS[name_][0], 3695, 'dining', None))
     elif name_ not in ('hold', 'hold2', 'fall', 'over'): CHECKS.append(('kt_' + name_, files(name_), RUNS[name_][0], RUNS[name_][2] + 2, 'middle', None))
+
+# the star (an extra life) on the shelf above the exit: the way up to it needs things that are not in the port yet, so
+# for this one recording the player is put on the shelf (two bytes of memory written on frame 6545), then walks into it
+STAR = ({**{f_: v_ for f_, v_ in ROUTE2.items() if f_ < 6545}, **{f_: R for f_ in range(6615, 6630)}}, 6840, 6540, {6545: [(0x314, 180), (0x2FC, 50)]})
+CHECKS2.append(('kt_star', ['kt_star'], STAR[0], 6606, 'middle', None))
+
+def _star(args):
+    import ctypes, pickle, zlib
+    import numpy as np
+    from emu import Emu, WORK
+    sc, n, keep_from, pokes = STAR
+    e = Emu(); fr = []; st = []; apu = []; cnt = []; fc = []
+    for i in range(n):
+        for a, v in pokes.get(i, []): ctypes.memmove(e.lib.retro_get_memory_data(2) + a, bytes([v]), 1)
+        f = e.step(sc.get(i, [])); w = e.apu_writes(); cnt.append(sum(len(a) for a in e.audio)); r = e.ram(); fc.append(int(r[0x2D]))
+        if i >= keep_from - 1:
+            p = e.ppu(); apu.append(w); fr.append(zlib.compress(f.tobytes(), 1))
+            st.append(dict(ram=r.copy(), oam=p['oam'].copy(), pal=p['pal'].copy(), mask=p['mask'], vram=p['vram'].copy() if i % 16 == 0 else None))
+    pickle.dump(dict(apu=apu, aud=np.concatenate(e.audio)[:, 0], cnt=np.array(cnt), f0=keep_from - 1, fc=fc, zframes=fr, st=st), open(os.path.join(WORK, 'kt_star.pkl'), 'wb'), protocol=4)
 
 if __name__ == '__main__':
     import multiprocessing as mp
@@ -89,4 +122,8 @@ if __name__ == '__main__':
     run_many(JOBS, only=only)
     with mp.Pool(2, maxtasksperchild=1) as p:
         p.map(_run, [j for j in JOBS2 if only is None or j[0] in only], chunksize=1)
+    if only is None or 'kt_star' in only: _star(None)
+    # the extra-life sound alone (2nd square channel only), asked for by a write to $F0 like the sounds of step 10
+    from capture_hurt import _fx
+    if only is None or 'kt_fx_life_sq2' in only: _fx(('kt_fx_life_sq2', 0x37, 0x1D))
     print('done')
