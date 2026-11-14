@@ -46,7 +46,7 @@ python3 sim_level1.py        # checks the level background, fades and exit, pixe
 python3 capture_player.py    # ~2 min: player runs, Chip and Dale -> work/pl_*.pkl, work/dl_*.pkl (about 3 GB); needs level1_route.json
 python3 build_player.py      # PNG, OGG -> recreation/06_level1_player/assets and 07_level1_dale/assets; tables -> work/player_tables.gml
 python3 sim_player.py        # checks the player: positions, sprite tiles, picture, landing sound
-python3 capture_crates.py    # ~3 min: crate runs, Chip and Dale -> work/cr_*.pkl, work/dl_cr_*.pkl (about 4 GB)
+python3 capture_crates.py    # ~4 min: crate runs, Chip and Dale -> work/cr_*.pkl, work/dl_cr_*.pkl (about 4 GB)
 python3 build_crates.py      # PNG, OGG -> recreation/08_level1_crates/assets; tables -> work/cr_tables.pkl, work/crate_tables.gml
 python3 sim_crates.py        # checks crates and bonus boxes: memory, sprite tiles, picture, sounds (--old: also the player runs)
 ```
@@ -82,7 +82,7 @@ python3 sim_crates.py        # checks crates and bonus boxes: memory, sprite til
 | `build_player.py` | Builds Chip's and Dale's 8x8 tiles in 7 brightness steps, the landing sound, the block map of the section and the sprite tables (as GML text in `work/player_tables.gml`, pasted into the step 06 Create events). Needs `lv1_route0..2` from `capture_level1.py`. |
 | `sim_player.py` | Python port of `obj_player` (steps 06 and 07) and the step 06 `obj_stage1`. Compares player memory, sprite tiles, the picture and the landing sound with the runs. Keep it in step with the `.gml` files. |
 | `explore.py` | Helper for trying things out by hand in Python: one emulator, named savestates, runs of buttons from a savestate. Not needed for the builds. |
-| `capture_crates.py` | The crate runs: carrying, the throws, far throws, the bonus boxes, a pit with a crate, random buttons; some repeated with Dale; three sound-only runs with single channels. |
+| `capture_crates.py` | The crate runs: carrying, the throws, far throws, the bonus boxes, a pit with a crate, random buttons, short runs for the order of the sounds; some repeated with Dale; three sound-only runs with single channels. |
 | `build_crates.py` | Builds the player tiles with the carrying and throwing pictures (they replace the step 06 / 07 strips), the crate sprite, the four sounds, the list of crates and bonus boxes with their background patches, and the tables (as GML text in `work/crate_tables.gml`, pasted into the step 08 Create events). Run it before `sim_crates.py`: without `work/cr_tables.pkl` the tile and picture checks are skipped. |
 | `sim_crates.py` | Python port of the step 08 `obj_player`, `obj_crate` and `obj_stage1`. Compares memory, sprite tiles, the picture and the sound starts with the crate runs, and with `--old` with the player runs. Keep it in step with the `.gml` files. |
 

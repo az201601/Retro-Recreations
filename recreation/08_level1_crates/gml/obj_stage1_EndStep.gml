@@ -32,40 +32,42 @@ if (!lv_done)
         // (it keeps playing when the section restarts after a fall)
     }
 
-    // 1b) sounds start 2 frames after their cause.
-    //     Pick up, throw, bonus and landing play on the music's 2nd square channel: the newest one replaces
-    //     the one before it, and the music's part is silent until it is over.
-    if (lv_sq_wait > 0)
+    // 1b) sound effects: 1 pick up, 2 throw, 3 bonus, 4 far throw, 5 landing. Only one plays at a time.
+    //     A new one stops the one before it 1 frame after its cause and starts 2 frames after its cause.
+    //     The landing sound is the exception: it stops nothing, and is left out while another effect is playing.
+    //     1, 2, 3 and 5 use the music's 2nd square channel: the music's part is silent meanwhile. 4 is noise only.
+    if (lv_fx_wait > 0)
     {
-        lv_sq_wait -= 1;
-        if (lv_sq_wait == 0)
+        lv_fx_wait -= 1;
+        if (lv_fx_wait == 1)
         {
-            // (no landing sound while a pick-up, throw or bonus sound is playing)
-            if (!(lv_sq_k == 5 && lv_sq_now != 0 && lv_sq_now != 5 && lt < lv_sq_end))
+            if (lv_fx_k != 5 && lv_fx_now != 0)
             {
-                if (lv_sq_now != 0) audio_stop_sound(lv_sq_inst);
-                switch (lv_sq_k)
-                {
-                    case 1: lv_sq_inst = audio_play_sound(snd_pick, 20, false);  lv_sq_end = lt + 14; break;
-                    case 2: lv_sq_inst = audio_play_sound(snd_throw, 20, false); lv_sq_end = lt + 25; break;
-                    case 3: lv_sq_inst = audio_play_sound(snd_bonus, 20, false); lv_sq_end = lt + 53; break;
-                    case 5: lv_sq_inst = audio_play_sound(snd_land, 20, false);  lv_sq_end = lt + 6;  break;
-                }
-                lv_sq_now = lv_sq_k;
-                audio_sound_gain(lv_music_b, 0, 0);
+                audio_stop_sound(lv_fx_inst);
+                audio_sound_gain(lv_music_b, 1, 0);
+                lv_fx_now = 0;
             }
         }
+        else if (!(lv_fx_k == 5 && lv_fx_now != 0 && lv_fx_now != 5 && lt < lv_fx_end))
+        {
+            if (lv_fx_now != 0) audio_stop_sound(lv_fx_inst);       // (only a landing sound can still be playing here)
+            switch (lv_fx_k)
+            {
+                case 1: lv_fx_inst = audio_play_sound(snd_pick, 20, false);      lv_fx_end = lt + 14; break;
+                case 2: lv_fx_inst = audio_play_sound(snd_throw, 20, false);     lv_fx_end = lt + 25; break;
+                case 3: lv_fx_inst = audio_play_sound(snd_bonus, 20, false);     lv_fx_end = lt + 53; break;
+                case 4: lv_fx_inst = audio_play_sound(snd_throw_far, 20, false); lv_fx_end = lt + 73; break;
+                case 5: lv_fx_inst = audio_play_sound(snd_land, 20, false);      lv_fx_end = lt + 6;  break;
+            }
+            lv_fx_now = lv_fx_k;
+            if (lv_fx_k == 4) audio_sound_gain(lv_music_b, 1, 0);
+            else audio_sound_gain(lv_music_b, 0, 0);
+        }
     }
-    if (lv_sq_now != 0 && lt == lv_sq_end)
+    if (lv_fx_now != 0 && lt == lv_fx_end)
     {
-        lv_sq_now = 0;
+        lv_fx_now = 0;
         audio_sound_gain(lv_music_b, 1, 0);
-    }
-    //     The far throw is on the noise channel and leaves the music alone.
-    if (lv_far_wait > 0)
-    {
-        lv_far_wait -= 1;
-        if (lv_far_wait == 0) audio_play_sound(snd_throw_far, 20, false);
     }
 
     // 1c) the Draw events show what the previous frame left behind (the NES picture is one frame behind its game)
@@ -165,9 +167,8 @@ if (!lv_done)
 
         // sounds caused on this frame
         // (a landing does not take the place of a pick-up, throw or bonus sound that is about to start)
-        if (pl.p_landed && !(lv_sq_wait > 0 && lv_sq_k != 5)) { lv_sq_k = 5; lv_sq_wait = 2; }
-        if (pl.p_snd == 4) lv_far_wait = 2;
-        else if (pl.p_snd != 0) { lv_sq_k = pl.p_snd; lv_sq_wait = 2; }
+        if (pl.p_landed && !(lv_fx_wait > 0 && lv_fx_k != 5)) { lv_fx_k = 5; lv_fx_wait = 2; }
+        if (pl.p_snd != 0) { lv_fx_k = pl.p_snd; lv_fx_wait = 2; }
         if (pl.p_out)     lv_exit_t = lt;       // walked off the right edge
         if (pl.p_restart) lv_restart_t = lt;    // fell out of the picture 60 frames ago
     }
@@ -179,9 +180,8 @@ if (!lv_done)
         with (pl) instance_destroy();
         with (obj_crate) instance_destroy();
         lv_cr_n = 0;
-        if (lv_sq_now != 0) { lv_sq_now = 0; audio_sound_gain(lv_music_b, 1, 0); }
-        lv_sq_wait = 0;
-        lv_far_wait = 0;
+        if (lv_fx_now != 0) { lv_fx_now = 0; audio_sound_gain(lv_music_b, 1, 0); }      // (a sound that is playing plays on)
+        lv_fx_wait = 0;
         // TODO (later step): the next section (the kitchen) appears on level frame lv_exit_t + 31.
         //                    No new music is started there, the level music should keep playing.
     }
@@ -202,9 +202,8 @@ if (!lv_done)
         lv_trig_wait = 0;
         with (pl) event_perform(ev_create, 0);
         event_user(0);          // all crates and bonus boxes are back
-        if (lv_sq_now != 0) { lv_sq_now = 0; audio_sound_gain(lv_music_b, 1, 0); }
-        lv_sq_wait = 0;
-        lv_far_wait = 0;
+        if (lv_fx_now != 0) { lv_fx_now = 0; audio_sound_gain(lv_music_b, 1, 0); }      // (a sound that is playing plays on)
+        lv_fx_wait = 0;
     }
 }
 

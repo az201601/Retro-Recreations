@@ -37,13 +37,12 @@ lv_bonus     = 0;      // bonus boxes collected (0..99)  (TODO later step: where
 lv_fc        = 4;      // frame counter 0..7, +1 per frame, never set back: which sprites are in front (odd / even
                        // frames) and the flashing of a crate before and during a far throw
 
-// sounds that use the music's 2nd square channel: 1 pick up, 2 throw, 3 bonus, 5 landing
-lv_sq_k      = 0;      // the sound that is waiting to start
-lv_sq_wait   = 0;      // frames until it starts (a sound starts 2 frames after its cause)
-lv_sq_now    = 0;      // the sound that has the channel (0 = the music)
-lv_sq_end    = -99;    // lt on which the music gets the channel back
-lv_sq_inst   = -1;     // its playing instance
-lv_far_wait  = 0;      // frames until the far-throw sound starts (noise channel)
+// sound effects (only one plays at a time): 1 pick up, 2 throw, 3 bonus, 4 far throw, 5 landing
+lv_fx_k      = 0;      // the effect that is waiting to start
+lv_fx_wait   = 0;      // frames until it starts (an effect starts 2 frames after its cause)
+lv_fx_now    = 0;      // the effect that is playing (0 = none)
+lv_fx_end    = -99;    // lt on which it is over
+lv_fx_inst   = -1;     // its playing instance
 
 // the invisible exit at the right end of the last table (in the original an object like the enemies)
 lv_trig_on   = true;   // it is waiting for the player
