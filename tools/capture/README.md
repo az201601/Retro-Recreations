@@ -40,6 +40,9 @@ python3 build_news.py        # PNGs -> recreation/04_newscaster/assets/sprites, 
 python3 news_data.py         # packs the model into the tables the GML uses
 python3 gen_news_gml.py      # writes those tables into 04_newscaster/gml/obj_intro_Create.gml
 python3 sim_news.py          # ~30 s: checks the newscaster cutscene, pixel for pixel
+python3 capture_level1.py    # ~2 min: level 1 runs -> work/lv1_*.pkl (about 1 GB)
+python3 build_level1.py      # PNGs and OGGs -> recreation/05_level1_map/assets
+python3 sim_level1.py        # checks the level background, fades and exit, pixel for pixel
 ```
 
 ## Files
@@ -65,6 +68,10 @@ python3 sim_news.py          # ~30 s: checks the newscaster cutscene, pixel for 
 | `news_data.py` | Packs model, graphics index and sound data into flat tables. |
 | `gen_news_gml.py` | Writes those tables into the marked block of the step 04 Create event. |
 | `sim_news.py` | Python port of the newscaster parts of `obj_intro` Step/Draw, with the picture and typing-sound checks. |
+| `level1_route.json` | Input recording: level 1, section 1 played from start to exit without taking a hit. |
+| `capture_level1.py` | The level runs: both ways into the level, the recorded playthrough, and long sound-only runs for the music. |
+| `build_level1.py` | Builds the section's background from the playthrough (8 screens, 7 brightness steps) and the two music loops. |
+| `sim_level1.py` | Python port of the level parts of `obj_intro` Step/Draw (so far: background, fades, camera position, exit). |
 
 `tools/dis/dis6502.py` is a small 6502 disassembler for the ROM's PRG banks
 (`dis6502.py 7 C5A2 C690`, or `dis6502.py find 85 49` to search for bytes).
