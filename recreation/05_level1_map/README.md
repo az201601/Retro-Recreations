@@ -14,7 +14,7 @@ Because there is no player, the camera is moved with the arrow keys for now. Tha
 temporary and marked as such in the code.
 
 All frame numbers below are level frames `lt`. `lt = 0` is 7 frames after the screen before the
-level ended (`lt = frame - (lv_d + 7)` in the code).
+level ended (the variable `lt` of `obj_stage1`).
 
 ## What was confirmed in the original
 
@@ -84,20 +84,34 @@ use the 2nd square channel and silence the music's part on it. Nothing mutes it 
    **Smooth Edges**, origin 0,0. Check that it has 56 sub-images of 256x240; if not, use *Edit
    Sprite → File → Create from Strip* (56 images, 256 wide, 240 high, 56 per row).
 2. **Sounds**: create `snd_lv1_music_a` and `snd_lv1_music_b`, mono, 48000 Hz, not streamed.
-3. **Code**: replace the three events of `obj_intro` with `gml/obj_intro_Create.gml`,
-   `gml/obj_intro_Step.gml` and `gml/obj_intro_Draw.gml`. They are complete replacements for
-   the step 04 versions; the new parts are the `lv_` variables in Create, section 7 of Step and
-   the last block of Draw. LEFT and RIGHT were added to the controller section.
+3. **Object `obj_stage1`** (new): create it, no sprite, and add three events with the code from
+   `gml/obj_stage1_Create.gml`, `gml/obj_stage1_EndStep.gml` (event **Step → End Step**, not the
+   normal Step) and `gml/obj_stage1_Draw.gml`. Do not place it in the room; `obj_intro` creates it.
+4. **Object `obj_intro`**: replace its three events with `gml/obj_intro_Create.gml`,
+   `gml/obj_intro_Step.gml` and `gml/obj_intro_Draw.gml`. Compared with step 04 only the Step
+   event changed: at the two places where the level begins it now creates `obj_stage1` and
+   destroys itself.
+
+### Two objects
+
+The level is not part of `obj_intro`. `obj_intro` plays the screens up to the cutscene and then
+hands over to `obj_stage1`, which will hold all of level 1. The hand-over happens on the frame
+the last intro screen ends, in both ways into the level (START in the night scene, or the end of
+the cutscene).
+
+`obj_stage1` does its work in the End Step event. GameMaker runs every End Step after every
+Step, so the stage's first frame is the same frame on which `obj_intro` creates it, whatever
+the order of the instances. That keeps the timing the same as when it was all one object.
 
 The background is drawn as two neighbouring screens, and the right one sticks out past x = 256.
 This relies on the room being 256 pixels wide, as in the earlier steps.
 
-The `TODO` for the kitchen is in section 7c of the Step event. Section 7b is the temporary
+The `TODO` for the kitchen is in section 1c of the End Step event. Section 1b is the temporary
 camera control that the player will replace.
 
 ## How it was checked
 
-`tools/capture/sim_level1.py` is a Python port of section 7 of Step and the level block of Draw.
+`tools/capture/sim_level1.py` is a Python port of the End Step and Draw events of `obj_stage1`.
 It was run against four emulator recordings: the level reached by START in the night scene on
 two different frames, the level reached through the whole cutscene, and the recorded
 playthrough from start to exit.
@@ -109,6 +123,10 @@ What that comparison leaves out, and what was not checked:
 
 - The GML itself has not been run in GameMaker; only the Python port has been run, and it was
   not chained after the earlier steps.
+- The hand-over between the two objects relies on GameMaker running the End Step event of an
+  instance on the same frame it was created in a Step event. That is how GameMaker is documented
+  to order its events, but it was not tried in 1.4.1760. If it did not hold, the level's music
+  and picture would come one frame late.
 - In the playthrough check, the camera position of each frame and the exit frame are taken from
   the recording, because the player who drives them does not exist yet. The temporary arrow-key
   control is not part of the port.

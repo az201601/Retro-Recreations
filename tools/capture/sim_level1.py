@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Python port of the level-1 part of obj_intro (section 7 of Step, last block of Draw) as of deliverable 5: the
+"""Python port of obj_stage1 (End Step and Draw events) as of deliverable 5: the
 background of section 1, its fade-in, the camera position and the fade-out at the exit.  Compared with the
-capture_level1.py recordings.  Keep in sync with recreation/05_level1_map/gml/obj_intro_*.gml
+capture_level1.py recordings.  Keep in sync with recreation/05_level1_map/gml/obj_stage1_*.gml
 
 The player does not exist yet in the GML, so two things are taken from the recording instead of being computed: the
 camera position of every frame and the frame on which the player leaves the section.  Everything the original draws
