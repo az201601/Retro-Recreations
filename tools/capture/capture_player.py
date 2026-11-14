@@ -9,10 +9,11 @@
   stale0..3    like pit, with buttons held on the one frame of the restart whose buttons the game keeps (NES frame 1948),
                or one frame earlier
   land_sq2     like basic, sound only, 2nd square channel only (for the landing sound)
+  dl_*         the same runs with Dale chosen in the menu
 No run presses B."""
 import json, os, random, sys
 from scenario import run_many
-from emu import START, A, DOWN, LEFT, RIGHT
+from emu import START, SELECT, A, DOWN, LEFT, RIGHT
 SKIP = {1000: [START], 1100: [START], 1200: [START], 1300: [START]}
 R = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'level1_route.json')))
 
@@ -59,7 +60,16 @@ for i, keys in enumerate(([LEFT, A], [RIGHT, A], [DOWN], [RIGHT])):
     JOBS.append(('pl_stale%d' % i, sched(1700, PIT[:10] + [([], 48 - i % 2), (keys, 1 + 30 * (i > 1)), ([RIGHT], 150)])[0], 2090, 1900))
 for seed in (9, 19, 23):
     JOBS.append(('pl_exit%d' % seed, sched(1700, route_until(3632) + rnd(seed))[0], 3800, 3600))
-SOUND = [('pl_land_sq2', sched(1360, BASIC)[0], 2100, 0x1D)]
+# the same runs with Dale: SELECT moves the cursor to Dale in the character menu
+DALE = {**SKIP, 1150: [SELECT]}
+JOBS += [('dl_basic', sched(1360, BASIC, DALE)[0], 2100, 1340),
+         ('dl_pit', sched(1700, PIT, DALE)[0], 2260, 1700),
+         ('dl_rnd7a', sched(1700, rnd(7), DALE)[0], 2620, 1700), ('dl_rnd7b', sched(1700, rnd(7), DALE)[0], 3520, 2600),
+         ('dl_rnd0', sched(1700, rnd(0), DALE)[0], 2800, 1700),
+         ('dl_stale2', sched(1700, PIT[:10] + [([], 48), ([DOWN], 31), ([RIGHT], 150)], DALE)[0], 2090, 1900)]
+for seed in (9, 19, 23):
+    JOBS.append(('dl_exit%d' % seed, sched(1700, route_until(3632) + rnd(seed), DALE)[0], 3800, 3600))
+SOUND = [('pl_land_sq2', sched(1360, BASIC)[0], 2100, 0x1D), ('dl_land_sq2', sched(1360, BASIC, DALE)[0], 2100, 0x1D)]
 
 if __name__ == '__main__':
     import multiprocessing as mp

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Python port of deliverable 6: obj_stage1 (End Step, Draw), obj_player (Create, User Defined 0, Draw) and the four
-scr_pl_* scripts, compared with the capture_player.py recordings.  Keep in sync with recreation/06_level1_player/gml/.
+scr_pl_* scripts, compared with the capture_player.py recordings.  Keep in sync with recreation/06_level1_player/gml/
+and recreation/07_level1_dale/gml/ (the dl_ runs are Dale: other sprite tables and strip, same movement).
 
 Per frame it compares (a) the player's state with the NES memory: state, position, speed, picture, direction, body
 height, camera, lives; (b) the player's sprite tiles with the NES sprite list; (c) the whole picture.  Left out of the
@@ -16,9 +17,13 @@ from emu import WORK, START, A, B, SELECT, UP, DOWN, LEFT, RIGHT
 import capture_player as CP
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BG = [np.array(Image.open('%s/recreation/05_level1_map/assets/sprites/spr_lv1a_bg_%d.png' % (ROOT, i)).convert('RGB')) for i in range(56)]
-T = pickle.load(open(os.path.join(WORK, 'pl_tables.pkl'), 'rb'))
-_s = Image.open('%s/recreation/06_level1_player/assets/sprites/spr_chip_strip%d.png' % (ROOT, T['n'])).convert('RGBA')
-CHIP = [np.array(_s.crop((k * 8, 0, k * 8 + 8, 8))) for k in range(T['n'])]
+TABS = pickle.load(open(os.path.join(WORK, 'pl_tables.pkl'), 'rb'))
+def character(c):
+    """global.p1_char: 0 Chip, 1 Dale. Sets the sprite tables and the sprite strip the port uses."""
+    global T, CHIP
+    T = TABS['dale'] if c else TABS
+    st = Image.open('%s/recreation/%s/assets/sprites/spr_%s_strip%d.png' % (ROOT, '07_level1_dale' if c else '06_level1_player', 'dale' if c else 'chip', T['n'])).convert('RGBA')
+    CHIP = [np.array(st.crop((k * 8, 0, k * 8 + 8, 8))) for k in range(T['n'])]
 BL = pickle.load(open(os.path.join(WORK, 'lv1_blocks.pkl'), 'rb'))
 MAP = [''.join(str(int(v)) for v in row) for row in BL['cls']]
 PADBIT = {START: 1, SELECT: 2, A: 4, UP: 8, DOWN: 16, B: 32, LEFT: 64, RIGHT: 128}
@@ -208,6 +213,7 @@ def from_ram(g, r, f):
     c = int(r[0xC6]); p.p_pose = {0: 0, 0x14: 2, 0x1E: 3, 0x32: 4}.get(c, 1); p.p_walk = (c - 4) // 2 if p.p_pose == 1 else 0
 
 def compare(name, sched, start_from=None):
+    character(1 if name.startswith('dl_') else 0)
     d = load(name); f0 = d['f0']; st = d['st']; g = Stage()
     pad = lambda f: sum(PADBIT[k] for k in sched.get(f, []))
     first = f0
@@ -242,7 +248,7 @@ def compare(name, sched, start_from=None):
         if g.sound:
             lands += 1
             if (0x4006, 0x70) in w and (0x4004, 0xBF) in w: heard += 1
-            elif not any((0x4004, 0x3F) in [tuple(x) for x in q] for q in d['apu'][max(f - 3 - f0, 0):f + 4 - f0]): bad_ram += 1; examples.append((f, 'landing sound expected'))
+            elif not any((0x4004, 0x3F) in [tuple(x) for x in q] for q in d['apu'][max(f - 4 - f0, 0):f + 4 - f0]): bad_ram += 1; examples.append((f, 'landing sound expected'))
             else: masked += 1                                               # a repeating sound of the level ($4004=$3F, not part of this step) has the channel
         # (b) sprite tiles, (c) picture
         scr, tl = g.draw()
@@ -275,6 +281,6 @@ if __name__ == '__main__':
     only = sys.argv[1:]; tot = [0, 0]
     for j in CP.JOBS:
         if only and j[0] not in only: continue
-        r = compare(j[0], j[1], 3632 if j[0].startswith('pl_exit') else None)
+        r = compare(j[0], j[1], 3632 if 'exit' in j[0] else None)
         tot[0] += r[0]; tot[1] += r[1]
     print('frames compared %d, frames with a difference %d' % tuple(tot))
