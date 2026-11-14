@@ -49,7 +49,9 @@ if (!lv_done)
         {
             if (lv_fx_k != 5 && lv_fx_now != 0)
             {
-                audio_stop_sound(lv_fx_inst);
+                // A buzz is only stopped during its 2 sounding frames. After those the file is silent, and
+                // stopping it would only risk cutting the buzz short if the sound card started it late.
+                if (lv_fx_now != 6 || lt < lv_fx_end - 2) audio_stop_sound(lv_fx_inst);
                 audio_sound_gain(lv_music_b, 1, 0);
                 lv_fx_now = 0;
             }
