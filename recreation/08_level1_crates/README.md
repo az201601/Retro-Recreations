@@ -41,7 +41,7 @@ screen.
 - **Draw order**: the original lists its sprites forwards on one frame and backwards on the
   next. The player is in front of the crate on one frame and behind it on the next. It shows in
   the one pixel row the head and the carried crate share.
-- **Sounds** start 2 frames after their cause. Pick-up (14 frames), throw (25), bonus (4) and
+- **Sounds** start 2 frames after their cause. Pick-up (14 frames), throw (25), bonus (53) and
   landing (6) use the same channel, the music's second square channel: a new one replaces the
   one before, and the music's part is silent meanwhile. There is one exception: a landing during
   a pick-up or throw sound makes no sound. The far-throw sound (73 frames) is noise only and
@@ -68,7 +68,7 @@ screen.
 | `snd_pick.ogg` | 14 frames (0.23 s) | picking up a crate |
 | `snd_throw.ogg` | 25 frames (0.42 s) | throw |
 | `snd_throw_far.ogg` | 73 frames (1.22 s) | far throw |
-| `snd_bonus.ogg` | 4 frames (0.07 s) | bonus box |
+| `snd_bonus.ogg` | 53 frames (0.88 s) | bonus box: a short click, then a high note that fades out |
 
 The two player strips **replace** the ones of steps 06 and 07; the tile numbers changed. The
 player now has 14 pictures: the 7 old ones, 5 with a crate (standing, 3 walking, in the air) and
@@ -155,6 +155,10 @@ What that leaves out, and what was not checked:
 - The repeating sound that starts with the first enemy (see step 06) also silences bonus
   sounds: 14 of the 44 bonus sounds and 26 of the 200 landings in the new recordings. The port
   plays them every time. This belongs to the enemy step.
+- The repeating sound also cuts a bonus sound off after 2 or 4 frames when it starts just
+  after it. The first version of `snd_bonus` was taken from such a place and was only the
+  4-frame click; it is now taken from a bonus early in the level, where it plays in full.
+- No recording has a landing during a bonus sound. The port lets the landing sound replace it.
 - In one recording the far-throw sound ended early, after 49 frames, when another sound
   started. Which sounds cut it off was not worked out; the port always plays it in full.
 - The sounds were compared through the sound driver's register writes, not by ear. The lengths

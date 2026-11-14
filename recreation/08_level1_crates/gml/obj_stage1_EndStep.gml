@@ -48,7 +48,7 @@ if (!lv_done)
                 {
                     case 1: lv_sq_inst = audio_play_sound(snd_pick, 20, false);  lv_sq_end = lt + 14; break;
                     case 2: lv_sq_inst = audio_play_sound(snd_throw, 20, false); lv_sq_end = lt + 25; break;
-                    case 3: lv_sq_inst = audio_play_sound(snd_bonus, 20, false); lv_sq_end = lt + 4;  break;
+                    case 3: lv_sq_inst = audio_play_sound(snd_bonus, 20, false); lv_sq_end = lt + 53; break;
                     case 5: lv_sq_inst = audio_play_sound(snd_land, 20, false);  lv_sq_end = lt + 6;  break;
                 }
                 lv_sq_now = lv_sq_k;

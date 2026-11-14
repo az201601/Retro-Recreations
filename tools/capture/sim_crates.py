@@ -244,7 +244,7 @@ class Stage:                                    # obj_stage1
                     if s.lv_sq_k == 5 and (s.lv_sq_now == 1 or s.lv_sq_now == 2) and s.lt < s.lv_sq_end: pass   # no landing sound during those
                     else:
                         s.started.append(s.lv_sq_k); s.lv_sq_now = s.lv_sq_k
-                        s.lv_sq_end = s.lt + {1: 14, 2: 25, 3: 4, 5: 6}[s.lv_sq_k]
+                        s.lv_sq_end = s.lt + {1: 14, 2: 25, 3: 53, 5: 6}[s.lv_sq_k]
             if s.lv_sq_now != 0 and s.lt == s.lv_sq_end: s.lv_sq_now = 0
             if s.lv_far_wait > 0:
                 s.lv_far_wait -= 1
