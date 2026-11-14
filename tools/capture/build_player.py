@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Deliverable 6 (level 1, section 1: the player): builds, from the capture_level1.py and capture_player.py recordings,
   recreation/06_level1_player/assets/sprites/spr_chip_strip<N>.png   Chip's 8x8 sprite tiles
+  recreation/07_level1_dale/assets/sprites/spr_dale_strip<N>.png     Dale's
   recreation/06_level1_player/assets/sounds/snd_land.ogg             the landing sound
   work/lv1_blocks.pkl     the section's 16x16 blocks (NES RAM $043A.. as seen during the route) and their class
   work/pl_tables.pkl      the sprite tables (used by sim_player.py)
@@ -15,7 +16,8 @@ import ppu
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(ROOT, 'recreation', '06_level1_player', 'assets')
 FRAMES = [0, 1, 2, 3, 4, 5, 23]          # NES frame numbers ($0338) in table order: stand, walk 1-3, crouch, jump, blink
-HUD = (0x87, 0x88)                        # sprite tiles of the heart display
+HUD = (0x87, 0x88, 0x89)                  # sprite tiles of the heart display (Chip's, the hearts, Dale's)
+OUT7 = os.path.join(ROOT, 'recreation', '07_level1_dale', 'assets')
 
 def blocks():
     W = 128; bm = np.full((15, W), -1, int)
@@ -31,9 +33,9 @@ def blocks():
     cls = np.where((bm >= 0xD0) & (bm != 0xF9), 2, np.where((bm >= 0xA0) & (bm != 0xF9), 1, 0))
     return bm, cls
 
-def layouts():
+def layouts(run='pl_basic'):
     seen = collections.defaultdict(collections.Counter); chr_ = None
-    d = load('pl_basic'); st = d['st']
+    d = load(run); st = d['st']
     for i in range(1384 - d['f0'], len(st)):          # from the second frame the game runs on
         r = st[i - 1]['ram']
         if st[i]['mask'] == 0 or r[0x308] or r[0x320]: continue
@@ -81,41 +83,45 @@ def land_sound():
 if __name__ == '__main__':
     bm, cls = blocks()
     pickle.dump(dict(raw=bm, cls=cls), open(os.path.join(WORK, 'lv1_blocks.pkl'), 'wb'))
-    lay, chr_ = layouts(); pal = palettes()
-    uniq = []
-    for f in FRAMES:
-        for dx, dy, t, a in lay[f]:
-            if (t, a) not in uniq: uniq.append((t, a))
-    n = len(uniq) * 14; strip = Image.new('RGBA', (n * 8, 8), (0, 0, 0, 0)); px = strip.load()
-    for u, (t, a) in enumerate(uniq):
-        im = ppu.tile(chr_, t * 16)
-        for left in (0, 1):
-            m = im if left else im[:, ::-1]
-            for b in range(7):
-                k = (u * 2 + left) * 7 + b
-                for yy in range(8):
-                    for xx in range(8):
-                        if m[yy, xx]: px[k * 8 + xx, yy] = tuple(int(v) for v in ppu.RGB[pal[b][a * 4 + m[yy, xx]] & 63]) + (255,)
-    os.makedirs(OUT + '/sprites', exist_ok=True)
-    for old in os.listdir(OUT + '/sprites'): os.remove(os.path.join(OUT, 'sprites', old))
-    strip.save('%s/sprites/spr_chip_strip%d.png' % (OUT, n))
-    tab = {f: [(dx, dy, uniq.index((t, a))) for dx, dy, t, a in lay[f]] for f in FRAMES}
-    pickle.dump(dict(frames=FRAMES, tab=tab, n=n), open(os.path.join(WORK, 'pl_tables.pkl'), 'wb'))
-    g = ['// sprite tables: tile i of picture f is drawn at (x + p_tdx, y + p_tdy + 1) facing right, (x - p_tdx - 8, ...) facing left']
-    for i, f in enumerate(FRAMES):
-        g.append('p_tn[%d] = %d;' % (i, len(tab[f])))
-        g.append(' '.join('p_tdx[%d,%d] = %d; p_tdy[%d,%d] = %d; p_tim[%d,%d] = %d;' % (i, j, dx, i, j, dy, i, j, u) for j, (dx, dy, u) in enumerate(tab[f])))
-    g.append('')
+    pal = palettes(); g = []; tabs = {}; strips = {}
+    for who, run, out in (('chip', 'pl_basic', OUT), ('dale', 'dl_basic', OUT7)):
+        lay, chr_ = layouts(run)
+        uniq = []
+        for f in FRAMES:
+            for dx, dy, t, a in lay[f]:
+                if (t, a) not in uniq: uniq.append((t, a))
+        n = len(uniq) * 14; strip = Image.new('RGBA', (n * 8, 8), (0, 0, 0, 0)); px = strip.load()
+        for u, (t, a) in enumerate(uniq):
+            im = ppu.tile(chr_, t * 16)
+            for left in (0, 1):
+                m = im if left else im[:, ::-1]
+                for b in range(7):
+                    k = (u * 2 + left) * 7 + b
+                    for yy in range(8):
+                        for xx in range(8):
+                            if m[yy, xx]: px[k * 8 + xx, yy] = tuple(int(v) for v in ppu.RGB[pal[b][a * 4 + m[yy, xx]] & 63]) + (255,)
+        os.makedirs(out + '/sprites', exist_ok=True)
+        for old in os.listdir(out + '/sprites'): os.remove(os.path.join(out, 'sprites', old))
+        strip.save('%s/sprites/spr_%s_strip%d.png' % (out, who, n))
+        tab = {f: [(dx, dy, uniq.index((t, a))) for dx, dy, t, a in lay[f]] for f in FRAMES}
+        tabs[who] = dict(frames=FRAMES, tab=tab, n=n); strips[who] = strip
+        g.append('// %s: tile i of picture f is drawn at (x + p_tdx, y + p_tdy + 1) facing right, (x - p_tdx - 8, ...) facing left' % who)
+        for i, f in enumerate(FRAMES):
+            g.append('p_tn[%d] = %d;' % (i, len(tab[f])))
+            g.append(' '.join('p_tdx[%d,%d] = %d; p_tdy[%d,%d] = %d; p_tim[%d,%d] = %d;' % (i, j, dx, i, j, dy, i, j, u) for j, (dx, dy, u) in enumerate(tab[f])))
+        g.append('')
+        print('%s: %d different tiles, strip of %d sub-images' % (who, len(uniq), n))
+    pickle.dump(dict(tabs['chip'], dale=tabs['dale']), open(os.path.join(WORK, 'pl_tables.pkl'), 'wb'))
     g.append('// the 16x16 blocks of the section, 128 columns x 15 rows: 0 = nothing, 1 = can be stood on, 2 = solid')
     for r in range(15): g.append('lv_map[%d] = "%s";' % (r, ''.join(str(int(v)) for v in cls[r])))
     open(os.path.join(WORK, 'player_tables.gml'), 'w').write('\n'.join(g) + '\n')
-    print('%d different tiles, strip of %d sub-images; tables in work/player_tables.gml' % (len(uniq), n))
-    # preview of the 7 pictures, both directions (not an asset)
-    pv = Image.new('RGBA', (7 * 40, 80), (90, 90, 90, 255))
-    for i, f in enumerate(FRAMES):
-        for left in (0, 1):
-            for dx, dy, u in tab[f]:
-                k = (u * 2 + left) * 7 + 3; t = strip.crop((k * 8, 0, k * 8 + 8, 8))
-                pv.alpha_composite(t, (i * 40 + 20 + (-dx - 8 if left else dx), left * 40 + 30 + dy + 1))
-    os.makedirs(os.path.join(ROOT, '_scratch'), exist_ok=True); pv.resize((7 * 160, 320), Image.NEAREST).save(os.path.join(ROOT, '_scratch', 'chip_preview.png'))
+    # preview of the 7 pictures, both directions, both characters (not an asset)
+    pv = Image.new('RGBA', (7 * 40, 160), (90, 90, 90, 255))
+    for w, who in enumerate(('chip', 'dale')):
+        for i, f in enumerate(FRAMES):
+            for left in (0, 1):
+                for dx, dy, u in tabs[who]['tab'][f]:
+                    k = (u * 2 + left) * 7 + 3; t = strips[who].crop((k * 8, 0, k * 8 + 8, 8))
+                    pv.alpha_composite(t, (i * 40 + 20 + (-dx - 8 if left else dx), w * 80 + left * 40 + 30 + dy + 1))
+    os.makedirs(os.path.join(ROOT, '_scratch'), exist_ok=True); pv.resize((7 * 160, 640), Image.NEAREST).save(os.path.join(ROOT, '_scratch', 'preview.png'))
     land_sound()
