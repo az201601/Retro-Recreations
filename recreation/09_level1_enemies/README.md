@@ -154,6 +154,10 @@ cook, 189 with a fork; 11 enemies knocked out):
   throws, 32 bonus, 104 landings) start on the same frame in the original, and the original
   starts no others. On every frame the same side (music or effect) has the second square
   channel. The "drowned sound" allowance of step 08 is gone.
+  This check compares when sounds start and who has the channel, not the sound files
+  themselves. That is how a fault in `snd_buzz.ogg` got through: its 4th frame held a note
+  of the music instead of silence. The file is now cut from the last buzz of a row (frame
+  1990 of the recording `en_hide`), where the original is silent on frames 3 and 4.
 
 The 48 recordings of steps 06 to 08 that do not start at the end of the section were run
 through the new port as well, now up to the first time the player is hurt: 35,550 frames, 0

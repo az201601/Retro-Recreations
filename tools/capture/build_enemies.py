@@ -38,12 +38,14 @@ def cel(typ, n):
 def sounds():
     def W(d, f): return [tuple(q) for q in d['apu'][f - d['f0']]]
     def first(d, test, lo, hi): return next(f for f in range(lo, hi) if test(W(d, f)))
-    # the flyer's buzz: 2 frames of a low note, 2 silent frames (taken while the flyer hovers; while it flies the next
-    # buzz cuts it short)
+    # the flyer's buzz: 2 frames of a low note, 2 silent frames.  Taken from the last buzz of a row: after every other
+    # one the next buzz gives the channel back to the music for a frame, so the 3rd or 4th frame holds a note of the music.
     d = load('en_hide')
-    S = first(d, lambda w: (0x4006, 0x3A) in w and (0x4007, 0xFA) in w and (0x4004, 0x3F) in w, 1845, 1880)
-    assert (0x4004, 0x3F) in W(d, S + 1) and (0x4004, 0x30) in W(d, S + 2) and (0x4006, 0x3A) in W(d, S + 4), 'buzz not where expected'
-    BC.sound('en_hide_sq2', S, 4, 'snd_buzz')
+    def last(w0, w1, w2, w3, w4):
+        return ((0x4006, 0x3A) in w0 and (0x4007, 0xFA) in w0 and (0x4004, 0x3F) in w0 and (0x4004, 0x3F) in w1
+                and (0x4004, 0x30) in w2 and (0x4004, 0x30) in w3 and any(a == 0x4004 and v >> 4 == 15 for a, v in w4))
+    S = next(f for f in range(1845, 2000) if last(*[W(d, f + i) for i in range(5)]))
+    BC.sound('en_hide_sq2', S, 4, 'snd_buzz'); print('buzz taken from frame', S)
     # the cook's throw: two notes of 4 frames, 2 silent frames
     d = load('en_cook')
     S = first(d, lambda w: (0x4006, 0xFD) in w and (0x4004, 0xBF) in w, 2100, 2140)
