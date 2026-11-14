@@ -40,8 +40,8 @@ if (!lv_done)
         lv_sq_wait -= 1;
         if (lv_sq_wait == 0)
         {
-            // (no landing sound while a pick-up or throw sound is playing)
-            if (!(lv_sq_k == 5 && (lv_sq_now == 1 || lv_sq_now == 2) && lt < lv_sq_end))
+            // (no landing sound while a pick-up, throw or bonus sound is playing)
+            if (!(lv_sq_k == 5 && lv_sq_now != 0 && lv_sq_now != 5 && lt < lv_sq_end))
             {
                 if (lv_sq_now != 0) audio_stop_sound(lv_sq_inst);
                 switch (lv_sq_k)
@@ -164,7 +164,8 @@ if (!lv_done)
         }
 
         // sounds caused on this frame
-        if (pl.p_landed) { lv_sq_k = 5; lv_sq_wait = 2; }
+        // (a landing does not take the place of a pick-up, throw or bonus sound that is about to start)
+        if (pl.p_landed && !(lv_sq_wait > 0 && lv_sq_k != 5)) { lv_sq_k = 5; lv_sq_wait = 2; }
         if (pl.p_snd == 4) lv_far_wait = 2;
         else if (pl.p_snd != 0) { lv_sq_k = pl.p_snd; lv_sq_wait = 2; }
         if (pl.p_out)     lv_exit_t = lt;       // walked off the right edge

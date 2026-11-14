@@ -44,8 +44,8 @@ screen.
 - **Sounds** start 2 frames after their cause. Pick-up (14 frames), throw (25), bonus (53) and
   landing (6) use the same channel, the music's second square channel: a new one replaces the
   one before, and the music's part is silent meanwhile. There is one exception: a landing during
-  a pick-up or throw sound makes no sound. The far-throw sound (73 frames) is noise only and
-  leaves the music alone.
+  a pick-up, throw or bonus sound makes no sound (for the bonus sound see "not checked"). The
+  far-throw sound (73 frames) is noise only and leaves the music alone.
 - Dale: same behaviour on the same frames, own pictures.
 
 ## Buttons
@@ -158,7 +158,9 @@ What that leaves out, and what was not checked:
 - The repeating sound also cuts a bonus sound off after 2 or 4 frames when it starts just
   after it. The first version of `snd_bonus` was taken from such a place and was only the
   4-frame click; it is now taken from a bonus early in the level, where it plays in full.
-- No recording has a landing during a bonus sound. The port lets the landing sound replace it.
+- No recording has a landing during a bonus sound. The port treats it like the pick-up and
+  throw sounds: the bonus sound plays on and the landing makes no sound. This rule was not measured
+  in the original.
 - In one recording the far-throw sound ended early, after 49 frames, when another sound
   started. Which sounds cut it off was not worked out; the port always plays it in full.
 - The sounds were compared through the sound driver's register writes, not by ear. The lengths

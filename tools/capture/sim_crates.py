@@ -241,7 +241,7 @@ class Stage:                                    # obj_stage1
             if s.lv_sq_wait > 0:
                 s.lv_sq_wait -= 1
                 if s.lv_sq_wait == 0:
-                    if s.lv_sq_k == 5 and (s.lv_sq_now == 1 or s.lv_sq_now == 2) and s.lt < s.lv_sq_end: pass   # no landing sound during those
+                    if s.lv_sq_k == 5 and s.lv_sq_now != 0 and s.lv_sq_now != 5 and s.lt < s.lv_sq_end: pass   # no landing sound during those
                     else:
                         s.started.append(s.lv_sq_k); s.lv_sq_now = s.lv_sq_k
                         s.lv_sq_end = s.lt + {1: 14, 2: 25, 3: 53, 5: 6}[s.lv_sq_k]
@@ -274,7 +274,7 @@ class Stage:                                    # obj_stage1
                     if s.lv_trig_wait == 0:
                         if pl.p_state == 5: pl.p_state = 20; pl.p_auto = True; pl.p_face = 1; pl.p_xv = 2
                         else: s.lv_trig_on = True
-                if pl.p_landed: s.lv_sq_k = 5; s.lv_sq_wait = 2
+                if pl.p_landed and not (s.lv_sq_wait > 0 and s.lv_sq_k != 5): s.lv_sq_k = 5; s.lv_sq_wait = 2
                 if pl.p_snd == 4: s.lv_far_wait = 2
                 elif pl.p_snd != 0: s.lv_sq_k = pl.p_snd; s.lv_sq_wait = 2
                 if pl.p_out: s.lv_exit_t = s.lt
