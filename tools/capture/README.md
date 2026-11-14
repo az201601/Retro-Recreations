@@ -28,7 +28,7 @@ cd tools/capture
 python3 capture.py       # ~30 s: all emulator runs -> work/
 python3 build_gfx.py     # PNGs  -> recreation/01_intro_title/assets
 python3 build_audio.py   # OGGs  -> recreation/01_intro_title/assets/sounds
-python3 capture_menu.py  # ~1 min: menu runs -> work/menu_*.pkl (about 2 GB)
+python3 capture_menu.py  # ~1 min: menu runs -> work/menu_*.pkl (about 3 GB)
 python3 build_menu.py    # PNGs and OGGs -> recreation/02_title_menu/assets
 python3 sim.py           # checks the GML logic against the emulator, pixel for pixel
 python3 capture_prison.py  # ~5 min: night-scene runs -> work/prison_*.pkl (about 9 GB)
@@ -49,6 +49,10 @@ python3 sim_player.py        # checks the player: positions, sprite tiles, pictu
 python3 capture_crates.py    # ~4 min: crate runs, Chip and Dale -> work/cr_*.pkl, work/dl_cr_*.pkl (about 4 GB)
 python3 build_crates.py      # PNG, OGG -> recreation/08_level1_crates/assets; tables -> work/cr_tables.pkl, work/crate_tables.gml
 python3 sim_crates.py        # checks crates and bonus boxes: memory, sprite tiles, picture, sounds (--old: also the player runs)
+python3 capture_enemies.py   # ~1 min: enemy runs -> work/en_*.pkl, work/dl_en_*.pkl (about 3 GB)
+python3 build_enemies.py     # PNG, OGG -> recreation/09_level1_enemies/assets; tables -> work/en_tables.pkl, work/enemy_tables.gml
+python3 sim_enemies.py       # ~20 s: checks the enemies: memory, sprites, picture, sounds (--old, ~80 s: also the player and crate runs)
+python3 sim_enemies_route.py # checks the enemies of the whole section against the route recordings
 ```
 
 ## Files
@@ -85,6 +89,13 @@ python3 sim_crates.py        # checks crates and bonus boxes: memory, sprite til
 | `capture_crates.py` | The crate runs: carrying, the throws, far throws, the bonus boxes, a pit with a crate, random buttons, short runs for the order of the sounds; some repeated with Dale; three sound-only runs with single channels. |
 | `build_crates.py` | Builds the player tiles with the carrying and throwing pictures (they replace the step 06 / 07 strips), the crate sprite and the eyes, the four sounds, the list of crates and bonus boxes with their background patches, and the tables (as GML text in `work/crate_tables.gml`, pasted into the step 08 Create events). Run it before `sim_crates.py`: without `work/cr_tables.pkl` the tile and picture checks are skipped. |
 | `sim_crates.py` | Python port of the step 08 `obj_player`, `obj_crate` and `obj_stage1`. Compares memory, sprite tiles, the picture and the sound starts with the crate runs, and with `--old` with the player runs. Keep it in step with the `.gml` files. |
+| `capture_enemies.py` | The enemy runs: a crate thrown into the first flyer (two ways), hiding under a crate below it, the first cook knocked out by the crate the player hides under and by a thrown one, the fork knocked down, a pit, six runs of random buttons; two repeated with Dale; four sound-only runs with single channels. |
+| `build_enemies.py` | Builds the enemy tile strip and the picture tables from the ROM's picture lists (bank 5), and the three sounds. Adds files to the step 09 assets, deletes nothing else. |
+| `sim_enemies.py` | Python port of the step 09 GML (`obj_stage1`, `obj_player`, `obj_crate`, `obj_enemy`). Compares memory (every place of the object list), sounds, sprites with their order, and the picture. Keep it in step with the `.gml` files. |
+| `sim_enemies_route.py` | The same enemy code against the route recordings (all twelve objects of the section), with the player and camera taken from the NES memory. |
+
+`tools/dis/script.py` lists the byte code that drives the game's objects (`script.py 4 82D9`; the
+scripts of the level 1 enemies are in bank 4). Opcodes above `$3F` are not decoded and are shown as `??`.
 
 `tools/dis/dis6502.py` is a small 6502 disassembler for the ROM's PRG banks
 (`dis6502.py 7 C5A2 C690`, or `dis6502.py find 85 49` to search for bytes).
