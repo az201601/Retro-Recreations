@@ -71,7 +71,7 @@ python3 sim_level1.py        # checks the level background, fades and exit, pixe
 | `level1_route.json` | Input recording: level 1, section 1 played from start to exit without taking a hit. |
 | `capture_level1.py` | The level runs: both ways into the level, the recorded playthrough, and long sound-only runs for the music. |
 | `build_level1.py` | Builds the section's background from the playthrough (8 screens, 7 brightness steps) and the two music loops. |
-| `sim_level1.py` | Python port of the level parts of `obj_intro` Step/Draw (so far: background, fades, camera position, exit). |
+| `sim_level1.py` | Python port of `obj_stage1` End Step/Draw (so far: background, fades, camera position, exit). |
 
 `tools/dis/dis6502.py` is a small 6502 disassembler for the ROM's PRG banks
 (`dis6502.py 7 C5A2 C690`, or `dis6502.py find 85 49` to search for bytes).
