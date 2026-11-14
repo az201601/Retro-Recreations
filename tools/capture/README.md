@@ -56,6 +56,9 @@ python3 sim_enemies_route.py # checks the enemies of the whole section against t
 python3 capture_hurt.py      # ~6 min: hurt / status screen / game over runs -> work/hu_*.pkl, work/dl_hu_*.pkl
 python3 build_hurt.py        # PNG, OGG -> recreation/10_level1_hurt/assets; tables -> work/hu_tables.pkl, work/hurt_tables.gml
 python3 sim_hurt.py          # ~2.5 min: checks step 10: memory, sprites, picture, sounds (--old, ~1.5 min: also the runs of steps 06-09)
+python3 capture_kitchen.py   # ~3 min: kitchen runs -> work/kt_*.pkl
+python3 build_kitchen.py     # ~15 s: PNG -> recreation/11_level1_kitchen/assets; block map -> work/kt_blocks.pkl, work/kt_tables.gml
+python3 sim_kitchen.py       # ~20 s: checks step 11: memory, landing sound, picture (--old, ~4.5 min: all runs of steps 06-10)
 ```
 
 ## Files
@@ -99,6 +102,10 @@ python3 sim_hurt.py          # ~2.5 min: checks step 10: memory, sprites, pictur
 | `capture_hurt.py` | The step 10 runs: the route without avoiding enemies, a death by enemies, random buttons near enemies, the status screen, three falls with GAME OVER, the continue screen (CONTINUE, END, until no credit is left); seven repeated with Dale; the hurt and stun sounds alone, asked for by writing the game's sound request byte. Recordings are stored in parts of 1200 frames with compressed pictures. |
 | `build_hurt.py`, `build_hurt_screens.py` | Build the step 10 assets: the two new player pictures from the ROM's picture lists, hearts, star, the status, GAME OVER and continue screens (cut from the recordings, with checks that the cut-out parts are all that changes), the character's movements on the continue screen, five sounds. |
 | `sim_hurt.py` | Python port of the step 10 GML. As `sim_enemies.py`, plus hearts, the status screen, GAME OVER and the continue screen; all sprites and the whole picture are compared. Keep it in step with the `.gml` files. |
+| `level1_route2.json` | Buttons for the kitchen, continuing `level1_route.json` from frame 3760 to the kitchen's exit, without being hurt. Found by a savestate search. |
+| `capture_kitchen.py` | The step 11 runs: the kitchen from entry to exit, the exit reached in three ways, random buttons in the shaft, the top edge, the status screen, held buttons at the section change, a fall in the shaft, lost lives up to GAME OVER; three repeated with Dale. |
+| `build_kitchen.py` | Builds the kitchen's 9 background screens in 7 brightness steps from the route recording (the map is put together from the scroll position in the game's memory), the wall piece around the exit hole, and the block map. |
+| `sim_kitchen.py` | Python port of the step 11 GML: `sim_hurt.py` plus the second section, a camera that also goes up, and the shaft's row-by-row picture. Compares memory, landing sound and the whole picture, leaving out what the port does not have yet (mice, bonus boxes). Keep it in step with the `.gml` files. |
 
 `tools/dis/script.py` lists the byte code that drives the game's objects (`script.py 4 82D9`; the
 scripts of the level 1 enemies are in bank 4). Opcodes above `$3F` are not decoded and are shown as `??`.
