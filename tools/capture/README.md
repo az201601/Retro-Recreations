@@ -19,7 +19,7 @@ The patch adds read-only debug outputs to the core (pattern tables, nametables, 
 scroll registers, a per-scanline record used to find mid-frame bank switches, and a log of the
 CPU writes to the sound registers $4000-$4017). It does not change emulation. It also adds the
 environment variable `MESEN_MUTE`, a bit mask that silences sound channels in the output
-(1 square 1, 2 square 2, 4 triangle, 8 noise, 16 DMC), used to record channels separately. `work/` is git-ignored. Set `MESEN_CORE` to use a core stored elsewhere.
+(1 square 1, 2 square 2, 4 triangle, 8 noise, 16 DMC), used to record channels separately. For finding code it has a write watch (`MESEN_WATCH=lo,hi` logs CPU writes to that address range with the program counter), a dump of the mapped program ROM and a bitmap of executed addresses. `work/` is git-ignored. Set `MESEN_CORE` to use a core stored elsewhere.
 
 ## Run
 
@@ -43,6 +43,9 @@ python3 sim_news.py          # ~30 s: checks the newscaster cutscene, pixel for 
 python3 capture_level1.py    # ~2 min: level 1 runs -> work/lv1_*.pkl (about 1 GB)
 python3 build_level1.py      # PNGs and OGGs -> recreation/05_level1_map/assets
 python3 sim_level1.py        # checks the level background, fades and exit, pixel for pixel
+python3 capture_player.py    # ~1 min: player runs -> work/pl_*.pkl (about 2 GB); needs level1_route.json
+python3 build_player.py      # PNG, OGG -> recreation/06_level1_player/assets; tables -> work/player_tables.gml
+python3 sim_player.py        # checks the player: positions, sprite tiles, picture, landing sound
 ```
 
 ## Files
@@ -71,7 +74,10 @@ python3 sim_level1.py        # checks the level background, fades and exit, pixe
 | `level1_route.json` | Input recording: level 1, section 1 played from start to exit without taking a hit. |
 | `capture_level1.py` | The level runs: both ways into the level, the recorded playthrough, and long sound-only runs for the music. |
 | `build_level1.py` | Builds the section's background from the playthrough (8 screens, 7 brightness steps) and the two music loops. |
-| `sim_level1.py` | Python port of `obj_stage1` End Step/Draw (so far: background, fades, camera position, exit). |
+| `sim_level1.py` | Python port of the step 05 `obj_stage1` End Step/Draw (background, fades, camera position, exit). |
+| `capture_player.py` | The player runs (Chip): scripted moves at the start, falls into the first pit, random buttons, three ways out of the last screen. |
+| `build_player.py` | Builds Chip's 8x8 tiles in 7 brightness steps, the landing sound, the block map of the section and the sprite tables (as GML text in `work/player_tables.gml`, pasted into the step 06 Create events). Needs `lv1_route0..2` from `capture_level1.py`. |
+| `sim_player.py` | Python port of `obj_player` and the step 06 `obj_stage1`. Compares player memory, sprite tiles, the picture and the landing sound with the runs. Keep it in step with the `.gml` files. |
 
 `tools/dis/dis6502.py` is a small 6502 disassembler for the ROM's PRG banks
 (`dis6502.py 7 C5A2 C690`, or `dis6502.py find 85 49` to search for bytes).
