@@ -19,13 +19,13 @@ if (e_kind != 2 && e_hp != 0 && e_state != 12 && e_state != 13 && sx >= 0 && sx 
         if (!scr_en_hit_by(c)) continue;
         d = 1;                                                  // it is flung the way the crate flew (right if it did not fly sideways)
         if ((c.c_mode == 1 || c.c_mode == 3 || c.c_mode == 4) && c.c_dir < 0) d = -1;
-        // the crate stops and breaks. (NOT MEASURED: a crate of a far throw is assumed to fly on; and the fling
-        // to the left was not seen, no crate flying left hit anything in the recordings.)
+        // the crate stops and breaks; a crate of a far throw flies on. (The fling to the left was not seen, no
+        // crate flying left hit anything in the recordings.)
         if (c.c_mode != 3) { c.c_mode = 5; c.c_t = 0; c.c_hot = false; }
         e_t = 0;
-        if (e_kind == 5 && e_hp == 2)
+        if (e_kind == 5 && e_hp == 2 && c.c_mode != 3)
         {
-            // the mouse with the spoon: the first crate only stuns it. It is thrown back a little, lands on its
+            // the mouse with the spoon: the first crate only stuns it (a crate of a far throw knocks it out at once). It is thrown back a little, lands on its
             // back and a star goes round over it (the star takes a place in the object list).
             e_hp = 1; e_dmg = 0; e_state = 5; e_pic = 6; e_xv = 16 * d; e_yv = -48;
             g.lv_snd = 15;
@@ -37,13 +37,14 @@ if (e_kind != 2 && e_hp != 0 && e_state != 12 && e_state != 13 && sx >= 0 && sx 
         e_hp = 0;                                               // (the star of a stunned mouse stays with it)
         if (e_kind == 4) { e_state = 8; e_xv = 12 * d; e_yv = -32; }         // the fork: no sound
         else { e_state = 9; e_dmg = 0; e_xv = 67 * d; e_yv = -67; g.lv_snd = 8; }
+        if (e_kind == 5) e_pic = 6;                             // the mouse with the spoon: on its back
         break;
     }
 }
 
 // ... or by a mouse the player has thrown? It knocks out whatever it meets (the mouse with the spoon at once,
-// too) and flies on. Sideways the two half widths count (16). Up and down: the two bodies overlap - a guess,
-// in both recordings the thrown mouse was 9 pixels lower.
+// too) and flies on. Sideways the two half widths count (16). Up and down: from 24 pixels below the other's
+// feet line up to its body height above it (both limits measured to the pixel).
 sx = e_wx - cam0;
 if (e_kind != 2 && e_hp != 0 && e_state != 12 && e_state != 13 && sx >= 0 && sx <= 255 && e_y >= 0 && e_y <= 255)
 {

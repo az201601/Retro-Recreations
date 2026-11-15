@@ -10,6 +10,9 @@ kitchen's entry and has to bring every mouse to the same place by itself.
   carry*    the stunned mouse picked up, carried, thrown (ahead, with UP held, in a jump)
   kill      the stunned mouse hit by a second crate
   thit, thit2   the carried mouse thrown at another mouse
+  thit3     thrown at the face of a mouse with a spoon
+  tv1-tv4   thrown at the limits of its reach up and down
+  far, far2 a crate of a far throw at the mouse with the spoon
   clong     carried for longer than the 600 frames it would lie
   cdie, churt   the last heart lost / hurt with the mouse on the head
   CHECKS3   what sim_mice.py compares: (name, recordings, buttons, first NES frame, start mode, last frame)
@@ -49,6 +52,18 @@ _f = 4362
 for _k, _c in CARRY + [(R, 14), (RA, 24), (N, 120), (BB, 2), (N, 60)]:
     for _i in range(_c): _sc[_f] = _k; _f += 1
 RUNS['churt'] = ({f_: k_ for f_, k_ in _sc.items() if f_ < _f}, _f)
+# thrown at a mouse with a spoon that looks at it, from 60 pixels away: the spoon does not answer
+RUNS['thit3'] = after(4072, CARRY + UP2 + [(N, 14), (L, 25), (N, 40), (RB, 2), (N, 80)])
+# how far above / below the thrown mouse still meets another: thrown in a jump, 1 pixel inside and 1 outside each limit
+_C2 = STUN + [(R, 48), (RB, 2), (R, 8), (RA, 22), (R, 44)]
+RUNS['tv1'] = after(4072, _C2 + [([A], 7), (N, 9), (BB, 2), (N, 70)])                 # 15 above the mouse under the crate: met
+RUNS['tv2'] = after(4072, _C2 + [([A], 4), (N, 2), (BB, 2), (N, 70)])                 # 16 above: not met
+RUNS['tv3'] = after(4072, CARRY + [(R, 146), ([A], 10), (N, 4), (BB, 2), (N, 70)])    # 24 below the mouse with the spoon: met
+RUNS['tv4'] = after(4072, CARRY + [(R, 146), ([A], 9), (N, 1), (BB, 2), (N, 70)])     # 25 below: not met
+# a crate of a far throw at the mouse with the spoon: a crate from the high shelf, down to the mouse's shelf, a run-up
+_FAR = [(R, 8), (RA, 20), (R, 36), ([A], 20), (N, 22), (R, 11), (RB, 2), (N, 2), (RA, 9), (R, 8), (N, 12), (R, 6), (N, 30)]
+RUNS['far'] = after(4291, _FAR + [(R, 32), (RB, 2), (N, 90)])                         # the spoon swings in time: the crate is not turned
+RUNS['far2'] = after(4291, _FAR + [(R, 44), (RB, 2), (N, 90)])                        # too late for the swing
 PART = 1200; KEEP = 3680
 JOBS = []
 for name_, (sc_, n_) in RUNS.items():

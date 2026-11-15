@@ -29,7 +29,10 @@ else if (st == 2)
         e_pic = 4;
         g.lv_snd = 16;
         c = scr_en_crate_ahead(32);                     // a crate that is near enough now flies back
-        if (c != noone) { c.c_dir = -c.c_dir; c.c_back = true; }
+        if (c != noone)                                 // (not a crate of a far throw: that one flies on)
+        {
+            if (c.c_mode != 3) { c.c_dir = -c.c_dir; c.c_back = true; }
+        }
     }
     else if (e_n == 18) e_pic = 5;
     else if (e_n == 27) e_pic = 0;

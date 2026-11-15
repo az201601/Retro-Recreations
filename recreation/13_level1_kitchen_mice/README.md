@@ -42,7 +42,14 @@ Speeds are in sixteenths of a pixel per frame. Gravity of the mice: 3 more per f
 - **A thrown mouse** flies through walls and crates until it leaves the screen, and is gone
   with its star. Every mouse it meets is knocked out at once, also a mouse with a spoon that
   has not been stunned (it is shown on its back); the thrown mouse flies on. It counts as met
-  when the two are 16 pixels or less apart sideways.
+  when the two are 16 pixels or less apart sideways and the thrown mouse's feet line is at
+  most 24 below the other's and at most the other's body height above it (thrown 15 above the
+  mouse under the crate: met, 16: not; 24 below the mouse with the spoon: met, 25: not).
+  The spoon does not answer a thrown mouse, even one that comes at its face from 60 pixels
+  away.
+- **A crate of a far throw** (after a run-up) makes the mouse swing its spoon like any crate,
+  but is not turned back by it. It knocks the mouse with the spoon out at once, stunned or
+  not, and flies on.
 - **A carried mouse stays stunned** for as long as it is carried: carried 650 frames, it had
   not woken and did not flicker.
 - **Hurt while carrying.** Losing a heart does not make the player drop the mouse. Losing the
@@ -79,15 +86,6 @@ Speeds are in sixteenths of a pixel per frame. Gravity of the mice: 3 more per f
   fly off (its own sound) and throws the player up, which is how the star's shelf is reached.
   None of this is in the port: the caps are not drawn and cannot be stood on. Proposal: step 14.
 - **Not measured, built on a guess or left out:**
-  - How far above or below a thrown mouse still meets another: here, when the two bodies
-    overlap. In both recordings the thrown mouse was 9 pixels lower than the one it met.
-  - A crate of a far throw (after a run-up) at a mouse. I could not get one recorded: there is
-    no stretch of floor in front of the first mice long enough for the run-up while carrying.
-    Here such a crate stuns or knocks out like any other and, as since step 09, flies on. (The
-    original gives a crate carried after a run-up the same strength value as a thrown mouse, 2,
-    so it may well knock a mouse with a spoon out at once. Not confirmed.)
-  - Whether the spoon answers a thrown mouse (here it does not; in the one recording the
-    thrown mouse arrived within 1 frame).
   - Being stunned (by a crate that was batted back) while carrying a mouse cannot happen: there
     is no crate to throw while the mouse is on the head.
   - More than 9 objects at once: the star of a stunned mouse is then left out here.
@@ -156,14 +154,16 @@ to throw at it are on the way.
 ## How it was checked
 
 `tools/capture/sim_mice.py` is a Python port of this step's GML. It was run with the same
-buttons as 41 emulator recordings: 17 kitchen recordings of steps 11 and 12, now compared to
+buttons as 48 emulator recordings: 17 kitchen recordings of steps 11 and 12, now compared to
 their end with the mice (the 12 that start in the middle of the kitchen, where the mice cannot
 be followed from their start, stay with `sim_kitchen2.py`); 10 of the step 11 runs recorded
-again from before the kitchen; and 14 new ones: touched by a mouse, a crate batted back, a mouse stunned and left to
+again from before the kitchen; and 21 new ones: touched by a mouse, a crate batted back, a mouse stunned and left to
 get up, stunned and pushed, picked up and thrown in four ways, knocked out with a second
 crate, the mouse under the crate waking, a mouse thrown at a mouse under a crate and at a
-mouse with a spoon, a mouse carried for 650 frames, and a heart and the last heart lost with
-the mouse on the head (the first after the kitchen has started again, with 3 hearts).
+mouse with a spoon, a mouse carried for 650 frames, a heart and the last heart lost with
+the mouse on the head (the first after the kitchen has started again, with 3 hearts), a mouse
+thrown at the face of a mouse with a spoon, four throws 1 pixel inside and outside the limits
+of its reach up and down, and two far throws of a crate at a mouse with a spoon.
 
 Compared on every frame: everything step 12 compared, and every mouse, star of a mouse and
 bottle cap in the object list with its place, position, picture and direction; the frames on
@@ -174,7 +174,7 @@ The check counts which sprites those are: only the bottle caps.
 
 | | frames | differences |
 |---|---|---|
-| Kitchen recordings (41) | 57,732 | 0 |
+| Kitchen recordings (48) | 64,070 | 0 |
 | All recordings of steps 06–10 (`--old --nopic`) | 121,903 | 0 |
 
 The GML itself was not run: there is no GameMaker here, and the GML was written from the

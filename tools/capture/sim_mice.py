@@ -254,7 +254,7 @@ class Enemy:                                    # obj_enemy.  e_kind: 1 flyer, 2
             s.e_n += 1
             if s.e_n == 9:
                 s.e_pic = 4; g.lv_snd = 16; c = s.crate_ahead(32)
-                if c is not None: c.c_dir = -c.c_dir; c.c_back = True
+                if c is not None and c.c_mode != 3: c.c_dir = -c.c_dir; c.c_back = True      # (a crate of a far throw is not turned)
             elif s.e_n == 18: s.e_pic = 5
             elif s.e_n == 27: s.e_pic = 0
             elif s.e_n == 36:                               # ... and on with the next of its walking pictures
@@ -324,15 +324,16 @@ class Enemy:                                    # obj_enemy.  e_kind: 1 flyer, 2
                 c = g.lv_slot[j]
                 if isinstance(c, Crate) and (c.c_hot or (c.c_mode == 0 and g.pl.p_state == 3 and g.pl.p_h == 0)) and s.hit_by(c):
                     d = -1 if (c.c_mode in (1, 3, 4) and c.c_dir < 0) else 1
-                    if c.c_mode != 3: c.smash()             # (not measured: a crate of a far throw is assumed to fly on)
+                    if c.c_mode != 3: c.smash()             # (a crate of a far throw flies on)
                     s.e_t = 0
-                    if k == 5 and s.e_hp == 2:              # the mouse with the spoon: the first hit only stuns it
+                    if k == 5 and s.e_hp == 2 and c.c_mode != 3:   # the mouse with the spoon: the first hit only stuns it (a crate of a far throw knocks it out at once and flies on)
                         s.e_hp = 1; s.e_dmg = 0; s.e_state = 5; s.e_pic = 6; s.e_xv = 16 * d; s.e_yv = -48; g.lv_snd = 15
                         s.e_star = g.take_slot('star'); s.e_new = True; s.e_sc = -1
                         break
                     s.e_hp = 0                              # (the star of a stunned mouse stays with it)
                     if k == 4: s.e_state = 8; s.e_xv = 12 * d; s.e_yv = -32
                     else: s.e_state = 9; s.e_dmg = 0; s.e_xv = 67 * d; s.e_yv = -67; g.lv_snd = 8
+                    if k == 5: s.e_pic = 6                  # (the mouse with the spoon: on its back)
                     break
         # ... or by a mouse the player has thrown?  It knocks out whatever it meets (the mouse with the spoon at once,
         # too) and flies on.  (Sideways: the two half widths, 16; up and down: the two bodies overlap - a guess,
