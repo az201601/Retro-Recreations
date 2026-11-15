@@ -412,6 +412,7 @@ if (!lv_done)
         var cnt = pl.p_cnt;
         lv_sec += 1;
         // (the count behind the flashing and the order of the sprites loses 3 frames at the first change, none at the second)
+        // (the second: confirmed by the status screen's portrait and by the frames on which a carried crate is bright)
         if (lv_sec == 1) lv_fc = (lv_fc + 5) mod 8;
         lv_fx_end += -9 - lt;       // (a sound effect that is playing plays on)
         lt = -9;

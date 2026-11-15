@@ -27,7 +27,11 @@ The section is split over several steps, as the kitchen was:
   later its picture comes on and fades in (steps at 5, 9 and 13 frames, control from frame 18).
   Hearts, lives and the bonus count are kept, the music plays on. One difference: the frame
   count behind the flashing and the order of the sprites loses 3 frames at the first section
-  change and none at this one (seen in the status screen, whose portrait depends on that order).
+  change and none at this one. Confirmed in two ways: the status screen's portrait, which
+  depends on the order of the sprites, and a carried crate in the original, which is bright on
+  the same four of every eight values of the game's frame counter (5, 6, 7, 0) in the kitchen
+  and in this section (`measure_sec3.py`). The port's count is compared with the picture in the
+  kitchen and keeps the same distance to the game's counter here.
 - **Camera:** as before, it follows a player in the right half of the screen who moves right and
   never goes back.
 - **Falling.** Below the picture a life is lost; the section starts again from its left end with
@@ -61,13 +65,14 @@ The section is split over several steps, as the kitchen was:
 - **The sink:** the tap (type `$09`), the thing lying in the sink (type `$1E`) and the rising
   water. In this step the sink is an empty box: a player who drops in cannot get out (falling
   out of the picture is not possible there either). Use the shortcut below to see the exit.
+- **One sound that belongs to the sink's object.** Landing on the sink's floor gives the
+  landing sound like any landing (measured at x 1640, 1652, 1680 and 1694, walking off the shelf
+  above and jumping from it, with the object on the screen). Only a landing right next to the
+  object (x 1714, it lies at 1728) is silent: the object notices the player on that frame, a
+  sound comes 16 frames later and after 3 more frames the object changes. That is the object's
+  doing and comes with it; in this step, where the object is not there, the landing sound plays
+  there too.
 - What follows the exit: the screen stays black, as it did after the kitchen until now.
-- **Not measured:**
-  - The frame count behind the flashing (above) is only known by its parity in this section;
-    its exact value shows once a crate flashes here (next step).
-  - Landing on the sink's floor while the thing of type `$1E` is on the screen gave no landing
-    sound in the one recording that has it (it did give one without that object). The port
-    always plays it. Left for the sink's step; that frame is outside the comparison.
 - Sprites per line and dropped frames as in step 09.
 - Two players, levels 2 and later.
 
@@ -142,6 +147,10 @@ recording was not hurt up to there).
 | Third section, 21 recordings | 9,756 | 0 |
 | Everything `sim_caps.py` checks (the kitchen, 103 runs; those that reach its exit now run on into the new section) | 172,327 | 0 (5 accepted frames, see step 14) |
 | All recordings of steps 06–10 (`--old --nopic`) | 121,903 | 0 |
+
+Two things the port cannot be compared on yet were measured in the emulator alone, with
+`tools/capture/measure_sec3.py`: the frames on which a carried crate is bright (kitchen and
+this section), and the landing sound in the sink at six places.
 
 The GML itself was not run: there is no GameMaker here. Please check in GameMaker in
 particular: the walk from the kitchen into the new section, a fall into a gap, and (with the
