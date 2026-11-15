@@ -5,35 +5,43 @@
 //   anything else that can hurt: a heart less, thrown up and 2 pixels a frame away from the enemy (state 9),
 //   64 frames in which nothing can hurt; the last heart costs a life
 // Nothing is touched while crouching under a crate (p_h == 0), in the 16 frames of a throw, or while p_ghost is set.
-if (p_h == 0 || p_ghost || p_throw != 0) return false;
 var j, e, dx, dy;
+// A star that was touched on the frame before: a life more (10 at most, shown as 9), and the star turns into the
+// sign "1UP", 17 pixels higher up - also when the player has moved away since, and also at 10 lives.
+for (j = 3; j < 12; j += 1)
+{
+    if (stage.lv_slot_k[j] != 5) continue;
+    e = stage.lv_slot[j];
+    if (e.i_kind == 1 && e.i_hit)
+    {
+        stage.lv_lives = min(stage.lv_lives + 1, 10);
+        p_snd = 14;
+        e.i_kind = 2;
+        e.i_t = -1;
+        e.e_y -= 17;
+    }
+}
+if (p_h == 0 || p_ghost || p_throw != 0) return false;
 for (j = 11; j >= 3; j -= 1)
 {
     if (stage.lv_slot_k[j] == 5)
     {
-        // an item. The acorn gives a heart (3 at most) and is gone, without a sound. The star gives a life and
-        // turns into the sign "1UP", 17 pixels higher up. Touching one does not end the search.
-        // (Sideways the reach is measured; up and down it is a guess. The most lives: see the README.)
+        // An item. Its reach is that of every object: sideways the two half widths, up and down from the item's
+        // height above its line to the player's body height below it.
+        //   the acorn (4 wide to each side, 10 high): a heart more (3 at most; at 3 hearts it is taken and gives
+        //     nothing) and it is gone at once, without a sound
+        //   the star (6 and 12): only marked here; what it gives comes on the next frame (above)
+        // Touching one does not end the search.
         e = stage.lv_slot[j];
         dx = p_x - (e.e_wx - stage.lv_cam_x);
         dy = p_y - e.e_y;
-        if (e.i_kind != 2 && abs(dx) <= 10 && dy >= -10 && dy <= p_h)
+        if (e.i_kind == 0 && abs(dx) <= 10 && dy >= -10 && dy <= p_h)
         {
-            if (e.i_kind == 0)
-            {
-                p_hp = min(p_hp + 1, 3);
-                e.e_gone = true;
-                stage.lv_slot_k[j] = 0;
-            }
-            else
-            {
-                stage.lv_lives = min(stage.lv_lives + 1, 9);
-                p_snd = 14;
-                e.i_kind = 2;
-                e.i_t = -1;
-                e.e_y -= 17;
-            }
+            p_hp = min(p_hp + 1, 3);
+            e.e_gone = true;
+            stage.lv_slot_k[j] = 0;
         }
+        else if (e.i_kind == 1 && abs(dx) <= 12 && dy >= -12 && dy <= p_h) e.i_hit = true;
         continue;
     }
     if (stage.lv_slot_k[j] == 1)

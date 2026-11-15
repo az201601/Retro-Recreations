@@ -64,6 +64,12 @@ switch (p_state)
     case 8:     // jumping: rising for as long as A is held
         var over = true;
         scr_pl_move_y();
+        if (scr_pl_on_mouse())
+        {
+            // rising inside a stunned mouse: put on top of it, standing
+            p_yv = 0; p_state = 5; p_pose = 0; p_cnt = 0;
+            break;
+        }
         if (p_y >= p_h && p_y <= 255 && scr_pl_row(p_y - p_h, 2))
         {
             p_y = (((p_y - p_h + stage.lv_cam_y) div 16) + 1) * 16 + p_h - stage.lv_cam_y;        // the head hit a solid block
@@ -85,9 +91,15 @@ switch (p_state)
         var y0 = p_y;
         p_yv = min(p_yv + 6, 110);
         scr_pl_move_y();
-        // lands only on the frame the feet pass the top edge of a block row
+        // lands on a stunned mouse (with the landing sound, like on a block) ...
+        if (p_hp != 0 && scr_pl_on_mouse())
+        {
+            p_landed = true;
+            p_cnt = 0; p_state = 2; p_pose = 3;
+        }
+        // ... or on a block, only on the frame the feet pass the top edge of a block row
         // (after the last heart: lands nowhere)
-        if (p_hp != 0 && p_y >= 0 && p_y <= 255 && floor((p_y + stage.lv_cam_y) / 16) != floor((y0 + stage.lv_cam_y) / 16))
+        else if (p_hp != 0 && p_y >= 0 && p_y <= 255 && floor((p_y + stage.lv_cam_y) / 16) != floor((y0 + stage.lv_cam_y) / 16))
         {
             if (scr_pl_row(p_y, 1))
             {
@@ -266,6 +278,11 @@ if (p_state != 23)
                 if (gap <= 0 || gap > 14 || me.e_y - me.e_h >= p_y || p_y - p_h >= me.e_y) continue;
                 me.e_wx += md;
                 p_x = me.e_wx - cam - 16 * md;
+                // not into a wall: the mouse is put back next to it, and the player then stands 15 pixels from it
+                var mxv = me.e_xv;
+                me.e_xv = md;
+                with (me) scr_en_wall();
+                me.e_xv = mxv;
                 if ((pressed & 32) != 0 && p_carry == noone && p_throw == 0 && p_h != 16)
                 {
                     me.e_wx += md;

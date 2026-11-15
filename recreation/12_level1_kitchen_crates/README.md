@@ -53,14 +53,14 @@ of steps 06–10 still compare without a difference.
   the mice in the port. The star's rules were therefore measured in a recording in which the
   player was put next to the star by writing his position into the game's memory; from there
   on the game ran untouched. How the player gets up there is open.
-- **Not measured, built on a guess:**
-  - How far up and down the acorn and the star can be reached (10 pixels below the feet to the
-    top of the body). Sideways it is measured: they are taken when the player's middle is 8
-    pixels away, coming at 2 pixels a frame.
-  - The acorn at 3 hearts: here it is taken and gives nothing.
-  - The most lives: here 9.
-  - What the bonus count gives when it is high.
-  - A thrown crate hitting a wall (it flies through, as before).
+- **Not measured when this step was written, measured since** (see step 13, whose files replace
+  this step's):
+  - The reach of the acorn and the star: sideways the two half widths (acorn 10, star 12), up
+    the item's height (10, 12), down the player's body height (22).
+  - The acorn at 3 hearts is taken and gives nothing (as here).
+  - The most lives are 10, shown as 9 (here: 9; corrected in step 13).
+  - The bonus count stops at 99 and is paid out at the end of the level.
+  - A thrown crate flies through walls and crates (as here).
 - **Differences left as they are:** the two of step 11 (the half-replaced row in the shaft;
   the player shown facing left once more when the exit takes him over from the right, 1 frame
   of the comparison).
