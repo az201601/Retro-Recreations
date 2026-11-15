@@ -125,7 +125,7 @@ HOVER = (24, 25, 24, 25, 26, 27, 26, 27, 22, 23, 22, 23)    # the flyer's pictur
 
 class Item:                                     # obj_item.  i_kind 0: the acorn (a heart), 1: the star (a life), 2: the sign "1UP"
     def __init__(s, stage, wx, y, kind=0):
-        s.stage = stage; s.e_wx = wx; s.e_y = y; s.e_gone = False; s.e_slot = stage.take_slot(s); s.i_kind = kind; s.i_t = 0
+        s.stage = stage; s.e_wx = wx; s.e_y = y; s.e_gone = False; s.e_slot = stage.take_slot(s); s.i_kind = kind; s.i_t = 0; s.i_hit = False
         s.s_x = wx - stage.lv_cam_x; s.s_y = y; s.s_vis = False; s.s_kind = kind
     def user0(s):
         # the sign rises a pixel every 4th frame, 15 times, and is gone 85 frames after the star was taken
@@ -278,7 +278,9 @@ class Enemy:                                    # obj_enemy.  e_kind: 1 flyer, 2
         elif st == 13: s.move_x()
         elif st == 6:
             s.e_t += 1
-            if s.e_t == 600: s.e_dmg = 1; s.e_state = 0; s.e_pic = 0; s.e_hp = 2; g.lv_slot[s.e_star] = None; s.e_star = 0
+            if s.e_t == 600:
+                s.e_dmg = 1; s.e_state = 0; s.e_pic = 0; s.e_hp = 2
+                if s.e_star: g.lv_slot[s.e_star] = None; s.e_star = 0
         if s.e_state == 1 and st == 1:
             c = s.crate_ahead(64)
             if c is not None: s.e_face = 1 if c.c_wx >= s.e_wx else 0; s.e_pic = 3; s.e_state = 2; s.e_n = 0
@@ -328,7 +330,7 @@ class Enemy:                                    # obj_enemy.  e_kind: 1 flyer, 2
                     s.e_t = 0
                     if k == 5 and s.e_hp == 2 and c.c_mode != 3:   # the mouse with the spoon: the first hit only stuns it (a crate of a far throw knocks it out at once and flies on)
                         s.e_hp = 1; s.e_dmg = 0; s.e_state = 5; s.e_pic = 6; s.e_xv = 16 * d; s.e_yv = -48; g.lv_snd = 15
-                        s.e_star = g.take_slot('star'); s.e_new = True; s.e_sc = -1
+                        s.e_star = max(g.take_slot('star'), 0); s.e_new = True; s.e_sc = -1     # (0: no place, no star)
                         break
                     s.e_hp = 0                              # (the star of a stunned mouse stays with it)
                     if k == 4: s.e_state = 8; s.e_xv = 12 * d; s.e_yv = -32
@@ -444,7 +446,16 @@ class Player:                                   # obj_player
         for c in range((wx - 6) // 16, (wx + 5) // 16 + 1):
             if 0 <= c < 128 and s.stage.lv_kind[r][c] >= kind: return True
         return False
+    def on_mouse(s):
+        """a stunned mouse (lying, or still in the air from the crate's hit) carries the player: with his middle 14 pixels or less from the mouse's and
+        his feet line from 25 above the mouse's down to less than his body height below it, he is put on top of it"""
+        for e in s.stage.enemies:
+            if e.e_kind != 5 or e.e_state not in (5, 6) or e.e_gone: continue
+            if abs(e.e_wx - s.stage.lv_cam_x - s.p_x) <= 14 and e.e_y - 25 <= s.p_y < e.e_y + s.p_h:
+                s.p_y = e.e_y - 25; return True                # (the fraction of the height stays)
+        return False
     def floor(s):
+        if s.on_mouse(): s.p_yv = 0; return True
         if s.p_y < 0 or s.p_y > 255: return False
         if (s.p_y + s.stage.lv_cam_y) % 16: return False
         if not s.row(s.p_y, 1): return False
@@ -470,7 +481,8 @@ class Player:                                   # obj_player
         k = g.lv_box[s.w_r][s.w_c]
         if k != 1 and k != 2 and k != 4: return
         g.open_box(s.w_c, s.w_r, 3 if k == 2 else 0)        # a crate with a bonus leaves the bonus box behind
-        if k == 4: g.items.append(Item(g, s.w_c * 16 + 8, s.w_r * 16 + 15 - g.lv_cam_y))      # ... one with the item the item (it takes its place in the object list first)
+        if k == 4 and not g.full(): g.items.append(Item(g, s.w_c * 16 + 8, s.w_r * 16 + 15 - g.lv_cam_y))      # ... one with the item the item (it takes its place in the object list first)
+        if g.full(): return                                 # no place for the crate: the block is gone, nothing is carried, no sound
         s.p_carry = Crate(g, s.p_x + g.lv_cam_x, s.p_y - 23); g.crates.append(s.p_carry)
         s.p_snd = 1
     def throw(s, held):
@@ -526,7 +538,8 @@ class Player:                                   # obj_player
                     if s.p_cnt == 128: s.p_cnt = 11
         elif st == 8:
             over = True; s.move_y()
-            if s.p_h <= s.p_y <= 255 and s.row(s.p_y - s.p_h, 2): s.p_y = ((s.p_y - s.p_h + s.stage.lv_cam_y) // 16 + 1) * 16 + s.p_h - s.stage.lv_cam_y
+            if s.on_mouse(): s.p_yv = 0; s.stand()
+            elif s.p_h <= s.p_y <= 255 and s.row(s.p_y - s.p_h, 2): s.p_y = ((s.p_y - s.p_h + s.stage.lv_cam_y) // 16 + 1) * 16 + s.p_h - s.stage.lv_cam_y
             else:
                 s.p_yv += 6
                 if s.p_yv < 0: over = False
@@ -536,7 +549,8 @@ class Player:                                   # obj_player
                 else: s.fall()
         elif st == 1:
             y0 = s.p_y; s.p_yv = min(s.p_yv + 6, 110); s.move_y()
-            if s.p_hp != 0 and 0 <= s.p_y <= 255 and (s.p_y + s.stage.lv_cam_y) // 16 != (y0 + s.stage.lv_cam_y) // 16 and s.row(s.p_y, 1):
+            if s.p_hp != 0 and s.on_mouse(): s.p_landed = True; s.p_cnt = 0; s.p_state = 2; s.p_pose = 3
+            elif s.p_hp != 0 and 0 <= s.p_y <= 255 and (s.p_y + s.stage.lv_cam_y) // 16 != (y0 + s.stage.lv_cam_y) // 16 and s.row(s.p_y, 1):
                 s.p_y = (s.p_y + s.stage.lv_cam_y) // 16 * 16 - s.stage.lv_cam_y; s.p_ysub = 0; s.p_landed = True; s.p_cnt = 0; s.p_state = 2; s.p_pose = 3
         elif st == 2:
             if not s.floor(): s.fall()
@@ -566,7 +580,8 @@ class Player:                                   # obj_player
             if s.p_yv == 0 and s.floor(): s.p_push = 0
             else:
                 y0 = s.p_y; s.p_yv = min(s.p_yv + 6, 110); s.move_y()
-                if 0 <= s.p_y <= 255 and (s.p_y + s.stage.lv_cam_y) // 16 != (y0 + s.stage.lv_cam_y) // 16 and s.row(s.p_y, 1):
+                if s.on_mouse(): s.p_yv = 0; s.p_push = 0       # (a stunned mouse carries a stunned player too)
+                elif 0 <= s.p_y <= 255 and (s.p_y + s.stage.lv_cam_y) // 16 != (y0 + s.stage.lv_cam_y) // 16 and s.row(s.p_y, 1):
                     s.p_y = (s.p_y + s.stage.lv_cam_y) // 16 * 16 - s.stage.lv_cam_y; s.p_ysub = 0; s.p_yv = 0; s.p_push = 0
             s.p_cnt -= 1
             if s.p_cnt == 0: s.p_stun = False; s.p_push = 0; s.stand()
@@ -608,7 +623,7 @@ class Player:                                   # obj_player
                     s.p_x += s.p_xv
                     if s.p_x - 6 < 12: s.p_x = 18
                     if s.p_hp != 0 and s.wall(s.p_x - 6): s.p_x = (s.p_x + 9 + cam) // 16 * 16 + 6 - cam; s.pick(pressed)
-                # a stunned mouse in the way is pushed along, a pixel a frame; with B it is picked up like a crate
+                # a stunned mouse in the way is pushed along, a pixel a frame (not into a wall); with B it is picked up like a crate
                 if s.p_xv != 0 and s.p_hp != 0:
                     d = 1 if s.p_xv > 0 else -1
                     for e in s.stage.enemies:
@@ -616,6 +631,7 @@ class Player:                                   # obj_player
                         gap = (e.e_wx - cam - s.p_x) * d
                         if not (0 < gap <= 14) or e.e_y - e.e_h >= s.p_y or s.p_y - s.p_h >= e.e_y: continue
                         e.e_wx += d; s.p_x = e.e_wx - cam - 16 * d
+                        xv = e.e_xv; e.e_xv = d; e.wall(); e.e_xv = xv       # at a wall the mouse stays; the player stands 15 from it
                         if pressed & 32 and s.p_carry is None and s.p_throw == 0 and s.p_h != 16:
                             e.e_wx += d; e.e_state = 12; e.e_n = 0; s.p_carry = e; s.p_snd = 1
                         break
@@ -656,14 +672,15 @@ class Player:                                   # obj_player
     def enemy_touch(s):
         """the player's body touches an enemy (both where they were after the previous frame)"""
         g = s.stage
+        for e in g.lv_slot[3:]:                             # a star touched on the frame before: a life more (10 at most), the sign
+            if isinstance(e, Item) and e.i_kind == 1 and e.i_hit: g.lv_lives = min(g.lv_lives + 1, 10); s.p_snd = 14; e.i_kind = 2; e.i_t = -1; e.e_y -= 17
         if s.p_h == 0 or s.p_ghost or s.p_throw != 0: return      # (not during the 16 frames of a throw)
         for j in range(11, 2, -1):
             e = g.lv_slot[j]
-            if isinstance(e, Item):                         # the acorn: a heart more; the star: a life more
+            if isinstance(e, Item):                         # the acorn: a heart more (3 at most), at once; the star: on the next frame
                 dx = s.p_x - (e.e_wx - g.lv_cam_x); dy = s.p_y - e.e_y
-                if e.i_kind != 2 and abs(dx) <= 10 and -10 <= dy <= s.p_h:
-                    if e.i_kind == 0: s.p_hp = min(s.p_hp + 1, 3); e.e_gone = True; g.lv_slot[j] = None
-                    else: g.lv_lives = min(g.lv_lives + 1, 9); s.p_snd = 14; e.i_kind = 2; e.i_t = -1; e.e_y -= 17
+                if e.i_kind == 0 and abs(dx) <= 10 and -10 <= dy <= s.p_h: s.p_hp = min(s.p_hp + 1, 3); e.e_gone = True; g.lv_slot[j] = None
+                elif e.i_kind == 1 and abs(dx) <= 12 and -12 <= dy <= s.p_h: e.i_hit = True
                 continue
             if isinstance(e, Crate):                        # a crate the mouse has batted back: stunned, the crate breaks
                 dx = s.p_x - (e.c_wx - g.lv_cam_x); dy = s.p_y - e.c_y
@@ -730,18 +747,21 @@ class Stage:                                    # obj_stage1
         """the lowest free place in the object list (0-2 are the players and the hearts); objects act in this order"""
         for j in range(3, 12):
             if s.lv_slot[j] is None: s.lv_slot[j] = o; return j
-        raise Exception('object list full')
+        return -1                                   # all 9 taken: whoever asked goes without
+    def full(s): return all(o is not None for o in s.lv_slot[3:])
     def spawn_col(s, col, upto):
         """the objects of the list in column col (upto: and all before it) enter"""
         obs = OBJECTS if s.lv_sec == 0 else OBJECTS2; cy = 240 if upto else s.lv_cam_y
         while s.lv_sp_i < len(obs) and (obs[s.lv_sp_i][0] == col or (upto and obs[s.lv_sp_i][0] < col)):
             c_, r_, k_ = obs[s.lv_sp_i]; s.lv_sp_i += 1
+            if s.full(): continue                           # no place in the object list: it never appears (there is no second try)
             if k_ == 9: Exit(s)
             elif k_ == 5: s.items.append(Item(s, c_ * 16, r_ * 16 - cy, 1))  # the star
             elif k_ == 17: Cap(s, c_ * 16 + 8, r_ * 16 - cy)
             elif k_ >= 15: s.enemies.append(Enemy(s, k_ - 10, c_ * 16, r_ * 16 - cy, 0))
             else: s.enemies.append(Enemy(s, k_, c_ * 16, r_ * 16 - 512, 0))
     def spawn(s, kind, by):
+        if s.full(): return
         e = Enemy(s, kind, by.e_wx, by.e_y, by.e_face); s.enemies.append(e)
         # in a place before its maker's it does not act on this frame, and misses this frame's camera step
         if e.e_slot < by.e_slot: e.e_wx += s.lv_cam_x - s.lv_cam_show
@@ -855,8 +875,10 @@ class Stage:                                    # obj_stage1
                 else: pl.p_pad = pad; pl.p_pressed = pressed
                 x0 = pl.p_x; y0 = pl.p_y; pl.user0()
                 # stunned: a star goes round the head.  It has a place in the object list (which decides what it covers)
-                if pl.p_state == 15 and s.lv_star == 0: s.lv_star = s.take_slot('star')
-                elif pl.p_state != 15 and s.lv_star != 0: s.lv_slot[s.lv_star] = None; s.lv_star = 0
+                if pl.p_state == 15 and s.lv_star == 0: s.lv_star = s.take_slot('star')      # (-1: no place; this stun has no star)
+                elif pl.p_state != 15 and s.lv_star != 0:
+                    if s.lv_star > 0: s.lv_slot[s.lv_star] = None
+                    s.lv_star = 0
                 d = pl.p_x - x0; camx0 = s.lv_cam_x
                 if pl.p_x >= 128 and 0 < d < 5:
                     # (the kitchen: the camera stops at the shaft, x = 1280, until it has gone all the way up)
@@ -1037,7 +1059,7 @@ class Stage:                                    # obj_stage1
             # of the player, then of the crates and enemies in the order of their places in the object list
             tl = s.pl.tiles(); bb = s.lv_bright
             things = [(o.c_slot if isinstance(o, Crate) else o.e_slot, o) for o in s.crates + s.enemies + s.items]
-            if s.pl.s_star >= 0: things.append((s.pl.s_star_slot, None))
+            if s.pl.s_star >= 0 and s.pl.s_star_slot > 0: things.append((s.pl.s_star_slot, None))
             for e in s.enemies:                             # the star of a stunned mouse: 2 pixels higher; at its head while it is carried
                 if e.s_star >= 0: things.append((e.s_star_slot, ('star', e)))
             for slot_, o in sorted(things, key=lambda q: q[0]):
@@ -1298,6 +1320,19 @@ class Rec:
         return S, pic, [tuple(q) for q in s.d['apu'][k]]
 
 EXTRA = {}                                      # NES sprites the port did not draw: tile -> how often
+FILL = 'filled'                                 # a place of the object list taken by a memory write (capture_mice.py: 'fill')
+def port_poke(g, op):
+    """what capture_mice.py wrote into the NES's memory before this frame, done to the port"""
+    p = g.pl
+    if op[0] == 'px': p.p_x = op[1]
+    elif op[0] == 'py': p.p_y = op[1]
+    elif op[0] == 'state': p.p_state = op[1]
+    elif op[0] == 'ex': g.lv_slot[op[1]].e_wx = op[2] + g.lv_cam_x
+    elif op[0] == 'fill':
+        for j in [j for j in range(3, 12) if g.lv_slot[j] is None][op[1]:]: g.lv_slot[j] = FILL
+    elif op[0] == 'free':
+        for j in range(3, 12):
+            if g.lv_slot[j] is FILL: g.lv_slot[j] = None
 GHOST = 'taken'                                 # a place of the object list that something of the NES has, which the port does not have yet
 
 def sync_boxes(g, r):
@@ -1330,6 +1365,12 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
     rp = r; ppw_ = []; evs = {}; foreign = -999; rp_f0 = 0
     if how != 'dining': g.lv_bonus = int(r[0xA3])
     if how == 'middle':
+        # (the mice that are about at such a start cannot be followed from their start: the port starts without them,
+        #  their places in the object list are only kept taken, and they are left out of the comparison)
+        for e in g.enemies: g.lv_slot[e.e_slot] = None
+        g.enemies = []
+        for j in range(3, 12):
+            if isinstance(g.lv_slot[j], Cap): g.lv_slot[j] = None
         sync_boxes(g, r); col = (g.lv_cam_x + 264) >> 4; g.lv_sp_col = col
         while g.lv_sp_i < len(OBJECTS2) and OBJECTS2[g.lv_sp_i][0] <= col: g.lv_sp_i += 1
         for j in range(3, 12):
@@ -1348,6 +1389,7 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
         q = rec.get(f)
         if q is None: break
         S, pic, w = q; r = S['ram']
+        for op_ in CM.PORT_POKES.get(name, {}).get(f, []): port_poke(g, op_)
         if g.lt >= 18 and int(r[0x2D]) == lastfc and g.lv_restart_t < 0 and g.lv_exit_t < 0 and g.lv_stat == 0 and g.lv_go < 2 and S['mask'] & 0x18:
             g.lag(); continue                                # the NES left a frame out: the port waits
         lastfc = int(r[0x2D])
@@ -1405,6 +1447,7 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                 elif ty == 5 and not fl & 0x80: nsl[j] = ('cap', ox + cam)
                 elif ty == 0 and kd == 1 and not fl & 0x80: nsl[j] = 'star'
                 o = g.lv_slot[j]
+                if o is GHOST or o is FILL: nsl.pop(j, None)
                 if isinstance(o, Enemy):
                     if o.e_hide: ssl[j] = ('new', o.e_wx, o.e_y)
                     else: ssl[j] = (o.e_wx, o.e_y, o.e_xs, o.e_ys, o.e_xv, o.e_yv, o.e_pic, o.e_face, o.e_hp, o.e_dmg, o.e_w, o.e_h)
@@ -1424,7 +1467,10 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                 nes.append([]); sim.append(bb_)
             if nes != sim: bad_ram += 1; ex(f, g.lt, 'nes', nes, 'port', sim)
         elif g.lv_go >= 2 and (int(r[0xA7]), int(r[0x76])) != (g.lv_lives, g.lv_credits): bad_ram += 1; ex(f, 'lives, credits')
-        if pictures:
+        # (a place written into memory shows on the NES one frame later: its picture already made, the port's not; those frames' pictures are not compared)
+        # (and with the acorns of a 'fill' on the screen the NES can run out of its 64 sprites: not compared either)
+        if any(o_ is FILL for o_ in g.lv_slot) and int((S['oam'].reshape(64, 4)[:, 0] < 239).sum()) >= 61: pass
+        elif pictures and not any(o_[0] in ('px', 'py', 'ex') for o_ in CM.PORT_POKES.get(name, {}).get(f, [])):
             scr, tl = g.draw(); whole = tl is None or g.lv_go >= 2; tl = tl or []
             o = S['oam'].reshape(64, 4).astype(int); vis = [(int(q_[3]), int(q_[0])) for q_ in o if q_[0] < 0xEF]
             mine = set((tx, ty) for tx, ty, k in tl); ok = np.ones((240, 256), bool)

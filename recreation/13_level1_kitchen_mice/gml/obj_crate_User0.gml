@@ -22,4 +22,4 @@ c_t += 1;
 // gone when its middle is off the screen (measured with the camera position before this frame) or far above it
 var sx = c_wx - stage.lv_cam_show;
 if (sx < 0 || sx > 255 || c_y < -72) { c_gone = true; stage.lv_slot_k[c_slot] = 0; }
-// Not checked: hitting a wall (see the README).
+// A thrown crate flies through walls and other crates: nothing in its code looks at the blocks.

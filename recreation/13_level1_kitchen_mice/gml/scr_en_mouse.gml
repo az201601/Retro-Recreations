@@ -87,8 +87,7 @@ else if (st == 6)
     if (e_t == 600)
     {
         e_dmg = 1; e_state = 0; e_pic = 0; e_hp = 2;
-        g.lv_slot_k[e_star] = 0;
-        e_star = 0;
+        if (e_star != 0) { g.lv_slot_k[e_star] = 0; e_star = 0; }   // (no star if the object list was full when it was stunned)
     }
 }
 if (e_state == 1 && st == 1)

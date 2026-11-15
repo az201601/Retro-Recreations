@@ -250,12 +250,18 @@ if (!lv_done)
         }
         with (pl) event_user(0);
         // stunned: a star goes round the head. It takes a place in the object list (which decides what it covers).
+        // If all 9 places are taken on the frame the stun starts, this stun has no star (lv_star = -1): the
+        // original does not try again when a place becomes free.
         if (pl.p_state == 15 && lv_star == 0)
         {
             lv_star = scr_lv_take_slot();
-            if (lv_star > 0) lv_slot_k[lv_star] = 4; else lv_star = 0;
+            if (lv_star > 0) lv_slot_k[lv_star] = 4; else lv_star = -1;
         }
-        else if (pl.p_state != 15 && lv_star != 0) { lv_slot_k[lv_star] = 0; lv_star = 0; }
+        else if (pl.p_state != 15 && lv_star != 0)
+        {
+            if (lv_star > 0) lv_slot_k[lv_star] = 0;
+            lv_star = 0;
+        }
 
         // the camera follows when the player is in the right half of the screen and has moved right
         var d = pl.p_x - x0;

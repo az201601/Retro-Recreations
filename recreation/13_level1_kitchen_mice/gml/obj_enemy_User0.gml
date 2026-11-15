@@ -19,14 +19,15 @@ if (e_kind != 2 && e_hp != 0 && e_state != 12 && e_state != 13 && sx >= 0 && sx 
         if (!scr_en_hit_by(c)) continue;
         d = 1;                                                  // it is flung the way the crate flew (right if it did not fly sideways)
         if ((c.c_mode == 1 || c.c_mode == 3 || c.c_mode == 4) && c.c_dir < 0) d = -1;
-        // the crate stops and breaks; a crate of a far throw flies on. (The fling to the left was not seen, no
-        // crate flying left hit anything in the recordings.)
+        // the crate stops and breaks; a crate of a far throw flies on. A crate flying left flings the enemy to the
+        // left in the same way.
         if (c.c_mode != 3) { c.c_mode = 5; c.c_t = 0; c.c_hot = false; }
         e_t = 0;
         if (e_kind == 5 && e_hp == 2 && c.c_mode != 3)
         {
             // the mouse with the spoon: the first crate only stuns it (a crate of a far throw knocks it out at once). It is thrown back a little, lands on its
-            // back and a star goes round over it (the star takes a place in the object list).
+            // back and a star goes round over it (the star takes a place in the object list; if all 9 places are
+            // taken the mouse is stunned all the same, without a star).
             e_hp = 1; e_dmg = 0; e_state = 5; e_pic = 6; e_xv = 16 * d; e_yv = -48;
             g.lv_snd = 15;
             with (g) j = scr_lv_take_slot();

@@ -2,7 +2,8 @@
 // Called by obj_stage1 (or "with (stage)"). Creates an enemy (1 flyer, 2 what it drops, 3 cook, 4 fork, 5 the mouse
 // with the spoon, 6 the mouse under a crate) at the
 // position (wx in the section, y on the screen) and gives it the lowest free place in the object list.
-// Returns the instance, or noone if the list is full.
+// Returns the instance, or noone if the list is full: the enemy then never appears (the original does not
+// try again either).
 var j = scr_lv_take_slot();
 if (j < 0) return noone;
 var e = instance_create(0, 0, obj_enemy);

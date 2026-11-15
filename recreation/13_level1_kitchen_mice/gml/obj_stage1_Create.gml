@@ -59,7 +59,7 @@ lv_fx_inst   = -1;     // its playing instance
 // ---- the hearts in the corner (shown one frame behind, like everything) ---------------------
 s_hp         = 3;      // hearts shown
 s_lives      = 3;      // (the face above the hearts goes when the last life is gone)
-lv_star      = 0;      // the place in the object list of the star over a stunned player (0 = no star)
+lv_star      = 0;      // the place in the object list of the star over a stunned player (0 = not stunned, -1 = stunned without a star: the list was full)
 
 // ---- the status screen (SELECT): the game stands still ---------------------------------------
 lv_stat      = 0;      // 0 not shown, 1 open, 2 closing
