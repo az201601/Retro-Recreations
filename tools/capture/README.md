@@ -61,6 +61,9 @@ python3 build_kitchen.py     # ~15 s: PNG -> recreation/11_level1_kitchen/assets
 python3 sim_kitchen.py       # ~20 s: checks step 11: memory, landing sound, picture (--old, ~4.5 min: all runs of steps 06-10)
 python3 build_kitchen_boxes.py # PNG, OGG -> recreation/12_level1_kitchen_crates/assets; boxes -> work/kt_boxes.pkl, work/kt_box_tables.gml
 python3 sim_kitchen2.py      # ~50 s: checks step 12: memory, objects, sounds, picture (--old --nopic, ~1 min: all runs of steps 06-10)
+python3 capture_mice.py      # several minutes: the kitchen runs again from frame 3680, the mouse runs, 6 sound-only runs -> work/mi_*.pkl
+python3 build_mice.py        # PNG, OGG -> recreation/13_level1_kitchen_mice/assets; tables -> work/mi_tables.pkl, work/mouse_tables.gml
+python3 sim_mice.py          # ~100 s: checks step 13: memory, objects, sounds, picture (--old --nopic, ~40 s: all runs of steps 06-10)
 ```
 
 ## Files
@@ -111,6 +114,9 @@ python3 sim_kitchen2.py      # ~50 s: checks step 12: memory, objects, sounds, p
 | `kitchen_runs.json` | Buttons from power-on for the 10 step 12 runs (`cr_a0` … `cr_h3`): crates picked up, thrown in every way, bonus boxes, the acorn. Found by a savestate search that keeps away from the mice. |
 | `build_kitchen_boxes.py` | Step 12: finds the kitchen's crates, bonus boxes and item crates in the block map and, from the ROM's second copy of each screen, what is behind each; cuts the acorn, star and "1UP" sprites and the extra-life sound. |
 | `sim_kitchen2.py` | Python port of the step 12 GML: `sim_kitchen.py` plus the kitchen's boxes, the items and the corrected throw rules. Compares the step 11 runs, the `kitchen_runs.json` runs and `kt_star`. |
+| `capture_mice.py` | Step 13: records the kitchen runs of steps 11 and 12 again, kept from frame 3680 (before the kitchen) so the mice can be followed from their start, 9 runs with the mice (hurt, crate batted back, stunned, pushed, carried and thrown, knocked out, the mouse under the crate) and 6 sound-only runs. Takes job names as arguments to record single jobs. |
+| `build_mice.py` | Step 13: adds the tiles of the mice to the enemy strip of step 09, writes their picture tables and cuts the three sounds out of the sound-only runs. |
+| `sim_mice.py` | Python port of the step 13 GML: `sim_kitchen2.py` plus the two mice, the stun star, pushing / carrying / throwing a stunned mouse, the bottle caps' places in the object list. Counts the NES sprites the port does not draw. |
 
 `capture_kitchen.py` also records the step 12 runs (`kt_cr_*`), `kt_star` and `kt_fx_life_sq2`. `kt_star` is the only
 recording that is not pure button input: on frame 6545 the player's position is written into the game's memory
