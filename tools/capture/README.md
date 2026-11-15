@@ -70,6 +70,7 @@ python3 sim_caps.py         # ~5.5 min: checks step 14: memory, objects, sounds,
 python3 capture_sec3.py     # ~5 min: the third section: the route to the sink, 13 runs, 7 with memory written -> work/s3_*.pkl; needs level1_route3.json
 python3 build_sec3.py       # ~5 s: PNG -> recreation/15_level1_stove/assets; block map -> work/s3_blocks.pkl, work/s3_tables.gml
 python3 sim_sec3.py         # ~6 min: checks step 15 and again everything sim_caps.py checks (--new: only the third section, ~20 s; --old --nopic: all runs of steps 06-10)
+python3 measure_sec3.py     # ~1 min: step 15, emulator only: when a carried crate is bright (kitchen / third section), the landing sound in the sink
 ```
 
 ## Files
@@ -130,6 +131,7 @@ python3 sim_sec3.py         # ~6 min: checks step 15 and again everything sim_ca
 | `capture_sec3.py` | Step 15: the third section up to the sink, a fall into a pit, lost lives up to GAME OVER and CONTINUE, random buttons on the first screen, the status screen, held buttons at the section change, three runs with Dale; 7 runs with the player's place written into memory (into the sink, under the tap, next to the exit). All are kept from frame 6540, the end of the kitchen. |
 | `build_sec3.py` | Step 15: builds the section's 7 background screens in 7 brightness steps, the picture's right end without the backdrop colour (drawn over a player who is behind the picture), the block map and the map of the "behind" blocks. |
 | `sim_sec3.py` | Python port of the step 15 GML: `sim_caps.py` plus the third section (block map, camera up to 1536, the exit right of the sink, "behind the picture" from the block map). Runs the checks of step 15 and those of `sim_caps.py`. |
+| `measure_sec3.py` | Step 15: two measurements without the port, for things that need later steps to be compared: the values of the frame counter `$2D` on which a carried crate is bright, in the kitchen and in the third section (the same: 5, 6, 7, 0 of every 8); and the landing sound on the sink's floor at six places (always there, except next to the object of type `$1E`). |
 
 `capture_kitchen.py` also records the step 12 runs (`kt_cr_*`), `kt_star` and `kt_fx_life_sq2`. `kt_star` is the only
 recording that is not pure button input: on frame 6545 the player's position is written into the game's memory
