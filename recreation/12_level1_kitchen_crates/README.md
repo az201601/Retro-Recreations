@@ -55,8 +55,9 @@ of steps 06–10 still compare without a difference.
   on the game ran untouched. How the player gets up there is open.
 - **Not measured when this step was written, measured since** (see step 13, whose files replace
   this step's):
-  - The reach of the acorn and the star: sideways the two half widths (acorn 10, star 12), up
-    the item's height (10, 12), down the player's body height (22).
+  - The reach of the acorn and the star: sideways the two half widths (acorn 10, star 12);
+    the player's feet line above the item's by the item's height (10, 12) at most, or below it
+    by his body height (22) at most.
   - The acorn at 3 hearts is taken and gives nothing (as here).
   - The most lives are 10, shown as 9 (here: 9; corrected in step 13).
   - The bonus count stops at 99 and is paid out at the end of the level.

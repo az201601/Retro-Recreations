@@ -162,7 +162,13 @@ switch (p_state)
             var y0 = p_y;
             p_yv = min(p_yv + 6, 110);
             scr_pl_move_y();
-            if (p_y >= 0 && p_y <= 255 && floor((p_y + stage.lv_cam_y) / 16) != floor((y0 + stage.lv_cam_y) / 16))
+            if (scr_pl_on_mouse())
+            {
+                // a stunned mouse carries a stunned player too
+                p_yv = 0;
+                p_push = 0;
+            }
+            else if (p_y >= 0 && p_y <= 255 && floor((p_y + stage.lv_cam_y) / 16) != floor((y0 + stage.lv_cam_y) / 16))
             {
                 if (scr_pl_row(p_y, 1))
                 {

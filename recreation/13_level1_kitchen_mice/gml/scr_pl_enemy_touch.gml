@@ -26,8 +26,8 @@ for (j = 11; j >= 3; j -= 1)
 {
     if (stage.lv_slot_k[j] == 5)
     {
-        // An item. Its reach is that of every object: sideways the two half widths, up and down from the item's
-        // height above its line to the player's body height below it.
+        // An item. Its reach is that of every object: sideways the two half widths; the player's feet line may be
+        // above the item's line by the item's height, and below it by his own body height.
         //   the acorn (4 wide to each side, 10 high): a heart more (3 at most; at 3 hearts it is taken and gives
         //     nothing) and it is gone at once, without a sound
         //   the star (6 and 12): only marked here; what it gives comes on the next frame (above)

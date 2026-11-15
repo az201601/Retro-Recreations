@@ -108,15 +108,91 @@ POKED = [('mi_acorn3', _E2[0], 4880, KEEP, {3690: [(0x3D4, 3), (0xA9, 3)]}), ('m
 CHECKS3 += [('mi_acorn3', ['mi_acorn3', 'mi_acorn3_b'], _E2[0], 3695, 'dining', None),
             ('mi_lives10', ['mi_lives10'], CK.STAR[0], 6606, 'middle', None), ('mi_lives11', ['mi_lives11'], CK.STAR[0], 6606, 'middle', None)]
 
+# ---- recordings with memory written in the middle of a run: what cannot be reached by playing ----------------------
+# A write is (address, value) or one of these, which sim_mice.py repeats in the port on the same frame (PORT_POKES):
+#   ('px', v) / ('py', v)   the player's place on the screen
+#   ('state', v)            the player's state ($B8): 14 = about to be stunned, 9 = about to be hurt
+#   ('ex', place, v)        the screen x of the object in that place of the object list
+#   ('fill', k)             every free place of the object list but the k lowest is taken by an acorn that does nothing
+#   ('free',)               those acorns are gone again
+# The acorn that fills a place: the 34 bytes of the kitchen's acorn (each field of the object tables, $278 + 12 * n)
+_ACORN = [2, 33, 128, 0, 0, 0, 0, 0, 0, 0, 10, 226, 0, 168, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 10, 0, 1, 192, 0, 0, 138]
+def _hold(f0, n, ops): return {f_: list(ops) for f_ in range(f0, f0 + n)}
+def _mix(*ds):
+    out = {}
+    for d_ in ds:
+        for f_, v_ in d_.items(): out.setdefault(f_, []).extend(v_)
+    return out
+_R2 = ({f_: (k_ or []) for f_, k_ in ROUTE2.items()}, 4950)
+_STARP = CK.STAR[3]
+_ON = STUN + [(R, 2), (RA, 20)]                 # .. 4303: in the air towards the stunned mouse
+_M = [
+    # the bonus count at 98 from before the kitchen (the run cr_a0 of step 12): two boxes are taken, 99 and 99
+    ('bonus99', (CK.RUNS['cr_a0'][0], 4500), {3690: [(0xA3, 98)]}, 'dining'),
+    # the star's reach (the star run of step 12; the star is at 208,64 on the screen): 3 frames 1 pixel outside, then 1 pixel inside
+    ('star_r', CK.STAR[:2], _mix(_STARP, _hold(6610, 3, [('px', 221), ('py', 64)]), {6613: [('px', 220), ('py', 64)]}), 'middle'),
+    ('star_l', CK.STAR[:2], _mix(_STARP, _hold(6610, 3, [('px', 195), ('py', 64)]), {6613: [('px', 196), ('py', 64)]}), 'middle'),
+    ('star_u', CK.STAR[:2], _mix(_STARP, _hold(6610, 3, [('px', 208), ('py', 51)]), {6613: [('px', 208), ('py', 52)]}), 'middle'),
+    ('star_d', CK.STAR[:2], _mix(_STARP, _hold(6610, 3, [('px', 208), ('py', 87)]), {6613: [('px', 208), ('py', 86)]}), 'middle'),
+    # the acorn's reach (the acorn run of step 12; the acorn is at 168,226 from frame 6026 on)
+    ('acorn_s', (_E2[0], 6150), _hold(6027, 3, [('px', 157)]), 'dining'),
+    ('acorn_u', (_E2[0], 6150), _mix(_hold(6027, 3, [('px', 168), ('py', 215)]), {6030: [('px', 168), ('py', 216)]}), 'dining'),
+    # inside a stunned mouse on the ground; rising inside it; on a mouse that is still in the air from the hit
+    ('inside', after(4072, STUN + [(N, 20), (R, 12), (N, 10)]), {4290: [('px', 211)]}, 'dining'),
+    ('rise', after(4072, _ON + [(R, 20), (N, 10), ([A], 14), (N, 40)]), {4340: [('py', 175)]}, 'dining'),
+    ('air', after(4072, PRE + [(N, 20), (BB, 2), (N, 80)]), {4251: [('px', 185), ('py', 159)]}, 'dining'),
+    # stunned with a mouse on the head
+    ('cstun', after(4072, STUN + [(R, 50), (RB, 2), (R, 10), (N, 150), (R, 10), (RB, 2), (N, 40)]), {4355: [('state', 14)]}, 'dining'),
+    # stunned in the air over a stunned mouse (kept over its middle while coming down); hurt while standing on it
+    ('stunfall', after(4072, _ON + [(R, 6), (N, 182)]), _mix({4311: [('state', 14)]}, _hold(4311, 40, [('px', 155)])), 'dining'),
+    ('hurtfall', after(4072, _ON + [(R, 20), (N, 130)]), {4335: [('state', 9)]}, 'dining'),
+    # a stunned mouse pushed to the left against a crate: mouse and player are put to the right of the two crates
+    ('pushl', after(4072, _ON + [(R, 60), (N, 4), (L, 60), (N, 10), (R, 6), (L, 12), (N, 10)]), {4365: [('ex', 3, 192), ('px', 212)]}, 'dining'),
+    # the object list full: a crate picked up; the crate with the acorn (no place / one place free); a mouse stunned;
+    # the player stunned; a mouse whose column comes up
+    ('fpick', after(4072, [(L, 28), (N, 25), (R, 6), (RB, 2), (N, 40)]), {4128: [('fill', 0)], 4142: [('free',)]}, 'dining'),
+    ('fitem0', (_E2[0], 6150), {6024: [('fill', 0)], 6040: [('free',)]}, 'dining'),
+    ('fitem1', (_E2[0], 6150), {6024: [('fill', 1)], 6040: [('free',)]}, 'dining'),
+    ('fstar', after(4072, STUN + [(N, 640)]), {4240: [('fill', 0)], 4300: [('free',)]}, 'dining'),
+    ('fplstar', RUNS['swat'], {4231: [('fill', 0)], 4250: [('free',)]}, 'dining'),
+    ('fspawn', _R2, {4853: [('fill', 0)], 4876: [('free',)]}, 'dining'),
+]
+PORT_POKES = {}
+for name_, (sc_, n_), pk_, how_ in _M:
+    nm_ = 'mi_p_' + name_; PORT_POKES[nm_] = {f_: [o_ for o_ in v_ if isinstance(o_[0], str)] for f_, v_ in pk_.items()}
+    if how_ == 'middle':
+        POKED.append((nm_, sc_, n_, CK.STAR[2], pk_)); CHECKS3.append((nm_, [nm_], sc_, 6606, 'middle', None))
+    else:
+        parts_ = []; k_ = KEEP; i_ = 0
+        while k_ < n_:
+            pn_ = nm_ + ('' if i_ == 0 else '_' + 'bcdefgh'[i_ - 1]); parts_.append(pn_)
+            POKED.append((pn_, sc_, min(n_, k_ + PART), k_, pk_)); k_ += PART; i_ += 1
+        CHECKS3.append((nm_, parts_, sc_, 3695, 'dining', None))
+
 def _poked(args):
     import ctypes, pickle, zlib
     import numpy as np
     from emu import Emu, WORK
     name, sc, n, keep_from, pokes = args
-    e = Emu(); fr = []; st = []; apu = []; cnt = []; fc = []
+    e = Emu(); fr = []; st = []; apu = []; cnt = []; fc = []; filled = []
+    def wr(a, v): ctypes.memmove(e.lib.retro_get_memory_data(2) + a, bytes([v & 255]), 1)
     for i in range(n):
-        for a, v in pokes.get(i, []): ctypes.memmove(e.lib.retro_get_memory_data(2) + a, bytes([v]), 1)
-        f = e.step(sc.get(i, [])); w = e.apu_writes(); cnt.append(sum(len(a) for a in e.audio)); r = e.ram(); fc.append(int(r[0x2D]))
+        for op in pokes.get(i, []):
+            if op[0] == 'px': wr(0x314, op[1])
+            elif op[0] == 'py': wr(0x2FC, op[1])
+            elif op[0] == 'state': wr(0xB8, op[1])
+            elif op[0] == 'ex': wr(0x314 + op[1], op[2]); wr(0x320 + op[1], 0)
+            elif op[0] == 'fill':
+                r = e.ram(); free = [j for j in range(3, 12) if (int(r[0x2F0 + j]) & 15) == 0][op[1]:]
+                for j in free:
+                    for q, base in enumerate(range(0x278, 0x410, 12)): wr(base + j, _ACORN[q])
+                    wr(0x314 + j, 128); wr(0x2FC + j, 40)
+                filled += free
+            elif op[0] == 'free':
+                for j in filled: wr(0x2F0 + j, 0x80)
+                filled = []
+            else: wr(op[0], op[1])
+        f = e.step(sc.get(i) or []); w = e.apu_writes(); cnt.append(sum(len(a) for a in e.audio)); r = e.ram(); fc.append(int(r[0x2D]))
         if i >= keep_from - 1:
             p = e.ppu(); apu.append(w); fr.append(zlib.compress(f.tobytes(), 1))
             st.append(dict(ram=r.copy(), oam=p['oam'].copy(), pal=p['pal'].copy(), mask=p['mask'], vram=p['vram'].copy() if i % 16 == 0 else None))
@@ -130,7 +206,7 @@ if __name__ == '__main__':
     with mp.Pool(2, maxtasksperchild=1) as p:
         p.map(_run, [j for j in JOBS if only is None or j[0] in only or j[0][:-2] in only], chunksize=1)
     with mp.Pool(2, maxtasksperchild=1) as p:
-        p.map(_poked, [j for j in POKED if only is None or j[0] in only or j[0][:-2] in only], chunksize=1)
+        p.map(_poked, [j for j in POKED if only is None or j[0] in only or (j[0][-2] == '_' and j[0][:-2] in only)], chunksize=1)
     with mp.Pool(2, maxtasksperchild=1) as p:
         p.map(_fx, [j for j in FX if only is None or j[0] in only], chunksize=1)
     print('done')

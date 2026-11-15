@@ -37,12 +37,13 @@ Speeds are in sixteenths of a pixel per frame. Gravity of the mice: 3 more per f
   mouse's down to less than his own body height below it (21 below standing: yes, 22: no; 15
   and 16 crouching), he is put on top of it, 25 above its feet line: a fall ends there with
   the landing sound, he can walk, crouch and jump on it, and he falls off once his middle is 15
-  away. This holds while the mouse is still in the air from the hit, too. When the mouse gets
-  up under him he is hurt like by any touch.
+  away. This holds while the mouse is still in the air from the hit, too, and for a player
+  who is stunned or has just been hurt. A player inside the mouse (below its top) is put on
+  top at once, also while rising. When the mouse gets up under him he is hurt like by any
+  touch.
 - **Pushing, carrying, throwing.** The player walking into a stunned mouse from the side pushes
   it along at 1 pixel a frame, to the right and to the left. A wall or a crate stops the mouse
-  (its edge next to the block); the player then stands 15 pixels from it. (Recorded to the
-  right; to the left the port uses the same wall test, mirrored, as for a walking mouse.) With B pressed on such a frame it is picked up like a crate (same sound): it
+  (its edge next to the block); the player then stands 15 pixels from it. With B pressed on such a frame it is picked up like a crate (same sound): it
   sits upside down on the head, looking the other way, and its star goes round at the height of
   its head. B again throws it: straight ahead only, 4 pixels a frame, with the throw sound. It
   leaves from where the player stands after that frame's step. Crouching with a mouse on the
@@ -77,14 +78,15 @@ Speeds are in sixteenths of a pixel per frame. Gravity of the mice: 3 more per f
   - The star gives a life up to 10 (the status screen shows one less: 9). At 10 it is still
     taken, with its sound and its sign.
   - The star's gift comes one frame after the touch.
-  - Reach: sideways the two half widths, up the item's height, down the player's body height.
-    Star: 12 to either side (13: not), feet line 12 above the player's (13: not) to 22 below
-    (23: not). Acorn: 10 sideways, 10 above (11: not), 22 below.
+  - Reach: sideways the two half widths; the player's feet line may be above the item's line
+    by the item's height, and below it by his own body height. Star: 12 to either side (13:
+    not), the player 12 above it (13: not) to 22 below it (23: not). Acorn: 10 to either side
+    (11: not), the player 10 above it (11: not); below it the same rule is used.
   - The bonus count stops at 99; a box taken after that still makes its sound. In the kitchen
     the count does nothing else. It is paid out at the end of the level (routine at `$F60A` of
     the fixed bank); that belongs to the step with the level's end.
-- **A full object list** (all 9 places taken; found with memory writes, the kitchen's own
-  objects never fill more than a few):
+- **A full object list** (all 9 places taken; only with memory writes, the kitchen's own
+  objects never fill more than a few). While it is full the original also runs slower:
   - Picking up a crate: the block is gone, no crate, no sound, nothing carried.
   - The crate with the acorn: with one free place the acorn appears and no crate; with none,
     neither.
@@ -121,16 +123,14 @@ Speeds are in sixteenths of a pixel per frame. Gravity of the mice: 3 more per f
   player can stand on a cap; each landing on it changes its picture; the third landing makes it
   fly off (its own sound) and throws the player up, which is how the star's shelf is reached.
   None of this is in the port: the caps are not drawn and cannot be stood on. Proposal: step 14.
-- **Not measured: nothing that this step contains.** What follows was measured, but only with
-  memory writes, because it cannot be reached by playing; no recording checks it:
-  - the rules of the full object list (they are in the GML only: the Python port stops with an
-    error if the list fills, and it never did in 58 recordings);
-  - the player put on top of a mouse when he is inside it from below or while rising, and on a
-    mouse still in the air;
-  - stunned with a mouse on the head;
-  - the limits of the reach of the star and the acorn, and the bonus count's stop at 99.
-- **Not tried:** a hurt or stunned player (thrown aside, no control) coming down on a stunned
-  mouse. The port uses the same test there as for a normal fall.
+- **Not measured: nothing that this step contains.** The rules that cannot be reached by
+  playing are now recorded too, with memory written in the middle of a run, and the Python port
+  is checked against those recordings like against the others (the table below).
+- **What no recording can show:**
+  - The acorn's reach downwards. The kitchen's one acorn lies 6 pixels above the bottom line,
+    and a player 22 below it would be off the screen and lost. The port uses the star's rule.
+  - A stunned player sliding sideways (after a real crate from the spoon) onto a stunned mouse.
+    The recording has him stunned by a memory write straight above the mouse: he lands on it.
 - **Differences left as they are:**
   - The half-replaced row in the shaft (step 11).
 - Sprites per line and dropped frames as in step 09.
@@ -197,7 +197,7 @@ Added after the first version of this step (all of it is in the files above; if 
 transferred step 13 yet, there is nothing extra to do):
 
 - **`scr_pl_on_mouse`** (new), **`scr_pl_floor`**, **`obj_player` User Defined 0** (jumping,
-  falling, pushing): standing on a stunned mouse; a pushed mouse stops at a wall.
+  falling, stunned, pushing): standing on a stunned mouse; a pushed mouse stops at a wall.
 - **`scr_pl_enemy_touch`**, **`obj_item` Create**: 10 lives at most; the star has its own reach
   and gives its life one frame after the touch.
 - **`scr_pl_pick`**, **`obj_stage1` End Step**, **`scr_en_mouse`**: the full object list (no
@@ -206,7 +206,7 @@ transferred step 13 yet, there is nothing extra to do):
 ## How it was checked
 
 `tools/capture/sim_mice.py` is a Python port of this step's GML. It was run with the same
-buttons as 58 emulator recordings: 17 kitchen recordings of steps 11 and 12, now compared to
+buttons as 78 emulator recordings: 17 kitchen recordings of steps 11 and 12, now compared to
 their end with the mice (the 12 that start in the middle of the kitchen, where the mice cannot
 be followed from their start, stay with `sim_kitchen2.py`); 10 of the step 11 runs recorded
 again from before the kitchen; 21 of the first version of this step: touched by a mouse, a
@@ -215,7 +215,8 @@ in four ways, knocked out with a second crate, the mouse under the crate waking,
 at a mouse under a crate and at a mouse with a spoon, a mouse carried for 650 frames, a heart
 and the last heart lost with the mouse on the head, a mouse thrown at the face of a mouse with
 a spoon, four throws 1 pixel inside and outside the limits of its reach up and down, and two
-far throws of a crate at a mouse with a spoon; and 10 new ones:
+far throws of a crate at a mouse with a spoon; 10 added with the first follow-up; and 20 with
+memory written in the middle of the run (second table):
 
 | recording | what it shows |
 |---|---|
@@ -230,20 +231,44 @@ far throws of a crate at a mouse with a spoon; and 10 new ones:
 | `mi_lives10` | the star run of step 12 with 9 lives written into memory: 10 |
 | `mi_lives11` | the same with 10 lives: 10 stay, sound and sign as usual |
 
-The last two start in the middle of the kitchen; the one mouse that walks below the star's
-shelf in them is not followed (and its sprite is left out of the picture comparison).
+With memory written during the run (`capture_mice.py` lists the writes; the port repeats each
+one on the same frame):
+
+| recording | written | what it shows |
+|---|---|---|
+| `mi_p_bonus99` | bonus count 98 | two boxes taken: 99, 99, the sound both times |
+| `mi_p_star_r`, `_l`, `_u`, `_d` | the player's place | 3 frames 1 pixel outside the star's reach (13 right, 13 left, 13 above, 23 below): nothing; then 1 pixel inside: taken |
+| `mi_p_acorn_s`, `_u` | the player's place | the same for the acorn: 11 to the side, 11 above; then 10 |
+| `mi_p_inside` | the player's place | put inside a lying mouse on the ground: on top of it at once |
+| `mi_p_rise` | the player's height | inside it while jumping up: on top, standing |
+| `mi_p_air` | the player's place | on a mouse still in the air from the hit: carried up with it |
+| `mi_p_cstun` | the player's state | stunned with a mouse on the head: it stays there and is thrown afterwards |
+| `mi_p_stunfall` | state and place | stunned in the air above a stunned mouse: lands on it |
+| `mi_p_hurtfall` | the player's state | hurt while standing on it: thrown up, comes down on it again |
+| `mi_p_pushl` | places of mouse and player | pushed to the left against a crate: the mouse stops next to it, the player 15 away |
+| `mi_p_fpick` | list filled | a crate picked up: block gone, nothing carried, no sound |
+| `mi_p_fitem0`, `mi_p_fitem1` | list filled / one place left | the crate with the acorn: nothing at all / the acorn and no crate |
+| `mi_p_fstar` | list filled | a mouse stunned without a star; none when places come free; it gets up as usual |
+| `mi_p_fplstar` | list filled | the player stunned without a star |
+| `mi_p_fspawn` | list filled | the mouse of column 78 never appears |
+
+`mi_lives10`, `mi_lives11` and the four star recordings start in the middle of the kitchen; the
+one mouse that walks below the star's shelf in them is not followed (and its sprite is left out
+of the picture comparison). Not compared either: the picture on a frame on which a place was
+written (the NES shows it one frame later), and on the one frame on which the acorns that
+fill the list make the NES run out of its 64 sprites.
 
 Compared on every frame: everything step 12 compared, and every mouse, star of a mouse and
 bottle cap in the object list with its place, position, picture and direction; the frames on
 which the three new sounds start; and the whole picture.
 
 Left out of the comparison: the picture where the NES has a sprite the port does not draw.
-The check counts which sprites those are: the bottle caps, and the mouse of the two star
-recordings.
+The check counts which sprites those are: the bottle caps, the mouse of the star recordings,
+and the acorns that fill the object list.
 
 | | frames | differences |
 |---|---|---|
-| Kitchen recordings (58) | 73,077 | 0 |
+| Kitchen recordings (78) | 93,451 | 0 |
 | All recordings of steps 06–10 (`--old --nopic`) | 121,903 | 0 |
 
 The GML itself was not run: there is no GameMaker here, and the GML was written from the
