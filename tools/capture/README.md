@@ -64,9 +64,9 @@ python3 sim_kitchen2.py      # ~50 s: checks step 12: memory, objects, sounds, p
 python3 capture_mice.py      # several minutes: the kitchen runs again from frame 3680, the mouse runs, 6 sound-only runs -> work/mi_*.pkl
 python3 build_mice.py        # PNG, OGG -> recreation/13_level1_kitchen_mice/assets; tables -> work/mi_tables.pkl, work/mouse_tables.gml
 python3 sim_mice.py          # ~100 s: checks step 13: memory, objects, sounds, picture (--old --nopic, ~40 s: all runs of steps 06-10)
-python3 capture_caps.py     # ~12 min: 10 runs with the bottle caps, 9 with memory written, 4 sound-only runs -> work/cp_*.pkl
+python3 capture_caps.py     # ~12 min: 16 runs with the bottle caps, 11 with memory written, 4 sound-only runs -> work/cp_*.pkl
 python3 build_caps.py       # PNG, OGG -> recreation/14_level1_kitchen_caps/assets; tables -> work/cp_tables.pkl, work/cap_tables.gml
-python3 sim_caps.py         # ~4.5 min: checks step 14: memory, objects, sounds, picture (--old --nopic, ~40 s: all runs of steps 06-10)
+python3 sim_caps.py         # ~5.5 min: checks step 14: memory, objects, sounds, picture (--old --nopic, ~40 s: all runs of steps 06-10)
 ```
 
 ## Files
@@ -120,7 +120,7 @@ python3 sim_caps.py         # ~4.5 min: checks step 14: memory, objects, sounds,
 | `capture_mice.py` | Step 13: records the kitchen runs of steps 11 and 12 again, kept from frame 3680 (before the kitchen) so the mice can be followed from their start, 9 runs with the mice (hurt, crate batted back, stunned, pushed, carried and thrown, knocked out, the mouse under the crate) and 6 sound-only runs. Takes job names as arguments to record single jobs. |
 | `build_mice.py` | Step 13: adds the tiles of the mice to the enemy strip of step 09, writes their picture tables and cuts the three sounds out of the sound-only runs. |
 | `sim_mice.py` | Python port of the step 13 GML: `sim_kitchen2.py` plus the two mice, the stun star, pushing / carrying / throwing a stunned mouse, the bottle caps' places in the object list. Counts the NES sprites the port does not draw. Since the follow-up: standing on a stunned mouse, a pushed mouse stopping at a wall, 10 lives, and 10 more recordings (`mi_cleft`, `mi_push`, `mi_push2`, `mi_mtop`, `mi_mtop2`, `mi_mwake`, `mi_cwall`, and with memory written `mi_acorn3`, `mi_lives10`, `mi_lives11`). Also 20 recordings `mi_p_*` with memory written in the middle of a run (the list in `capture_mice.py`, `_M`), which the port repeats through `PORT_POKES`: 78 recordings in all. |
-| `capture_caps.py` | Step 14: 10 runs from the ledge at the first bottle (kept from frame 3680 like the runs of step 13), 9 runs with the player's place written into memory on one frame (under a cap, at its edges), and the cap's sound alone, one channel at a time. |
+| `capture_caps.py` | Step 14: 16 runs from the ledge at the first bottle, 6 of them with a crate (kept from frame 3680 like the runs of step 13), 11 runs with the player's place written into memory on one frame (under a cap, at its edges, next to it in its flight), and the cap's sound alone, one channel at a time. |
 | `build_caps.py` | Step 14: adds the 8 tiles of the cap to the enemy strip of step 13, writes the picture tables 80-83 and cuts the sound. |
 | `sim_caps.py` | Python port of the step 14 GML: `sim_mice.py` plus the bottle caps (an enemy of kind 7) and the solid-thing test of the player. Runs the checks of step 13 and of step 14. |
 

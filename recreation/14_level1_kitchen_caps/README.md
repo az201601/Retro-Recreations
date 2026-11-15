@@ -61,7 +61,10 @@ crates, bonus boxes, acorn, star; step 13: the mice). One player.
 
 ### From the side and from below
 
-- Walking or jumping into its side: he stops 15 pixels from its middle.
+- Walking or jumping into its side: he stops 15 pixels from its middle. The same for a cap in
+  its flight (measured from both sides, the player falling next to it): he is stopped 15 pixels
+  from where the cap was before its step, and as he falls faster than the cap he is put on top of
+  it a few frames later.
 - Rising into it with his feet line above the cap's line: he is put on top of it, standing.
 - Rising into it lower than that: his head is stopped 1 pixel under the cap's line (his feet 23
   below it) and he falls from the next frame. A jump from the floor does not reach a cap on its
@@ -69,6 +72,18 @@ crates, bonus boxes, acorn, star; step 13: the mice). One player.
   is stopped, 1 above he is put on the cap).
 - A flying cap that comes down through a player on the floor lifts him for single frames (he
   is "in" it, his feet above its line, so he is put on top) and goes on.
+
+### With a crate
+
+- Carrying a crate changes nothing for the cap: the landings count, the cap flies, he rides it.
+- Thrown from a cap a crate flies as from the ground: ahead, upwards, from the flying cap
+  (standing and walking along), and put down crouching (it falls past the bottle).
+- When a cap moves the player (a step down, up with the third landing, every frame of the
+  flight), the crate over his head goes with him on the same frame if its place in the object
+  list is after the cap's, and one frame later if it is before (measured both ways: a crate
+  taken on the ledge is after the first cap and before the second).
+- A flying cap and the mouse with the spoon go through each other; neither does anything to the
+  other (the first cap falls through the mouse in most recordings).
 
 ### The sound
 
@@ -84,14 +99,13 @@ stops the one before it and starts 2 frames after its cause.
 
 ## Not in this step
 
-- **What no recording shows:**
-  - A walking mouse and a flying cap in the same place. They go through each other in the
-    recordings; nothing was seen that one does to the other.
-  - Standing on a cap with a crate in his hands, and throwing from it. The port uses the same
-    rules as on the ground.
-  - A cap from the side while it flies (only caps on their bottles were walked into).
-- On the frame a cap enters, the original has it up to 2 pixels off its place for one frame
-  (it is not drawn on that frame). The port has it in its place at once.
+- **Not measured:** a stunned mouse carried onto a cap. The mice are on the floor and the caps
+  are reached from the ledge; no way was found to bring one up. The port moves a carried mouse
+  with the cap by the crate's rule.
+- On single frames the original's memory has a cap's place on the screen one camera step (2
+  pixels) behind: on the frame it enters, when another object enters, when a crate is thrown.
+  The picture shows it in its right place. The port does not have this; the check accepts those
+  frames (5 in all recordings) and counts them.
 - Sprites per line and dropped frames as in step 09; the half-replaced row in the shaft (step
   11).
 - Two players, levels 2 and later.
@@ -112,7 +126,7 @@ All other assets of steps 01 to 13 are still needed and unchanged.
 1. **Sprite `spr_enemy`**: load `spr_enemy_strip1680.png` in place of the old strip (1680
    sub-images of 8x8, origin 0,0, **Remove Background** and **Smooth Edges** unticked).
 2. **Sound** (new): `snd_cap`, settings as the other effects.
-3. **Scripts, new**: `scr_en_cap`, `scr_pl_solid_at`.
+3. **Scripts, new**: `scr_en_cap`, `scr_en_cap_carry`, `scr_pl_solid_at`.
 4. **Scripts, replace**: `scr_pl_on_mouse`, `scr_lv_spawn2`, and (comments only) `scr_lv_spawn`,
    `scr_lv_take_slot`.
 5. **Object `obj_enemy`**: replace Create (comments only) and User Defined 0.
@@ -130,6 +144,7 @@ there.
 ### What changed in the code
 
 - **`scr_en_cap`** (new): the whole cap; called by `obj_enemy` User Defined 0 for kind 7.
+  **`scr_en_cap_carry`** (new): what the player carries, when the cap moves him.
 - **`scr_pl_solid_at`** (new): the solid thing the player is in. **`scr_pl_on_mouse`**: uses it
   and sets `p_on`.
 - **`scr_lv_spawn2`**: list kind 17 creates an enemy of kind 7.
@@ -142,7 +157,7 @@ there.
 ## How it was checked
 
 `tools/capture/sim_caps.py` is a Python port of this step's GML. It was run with the same
-buttons as the emulator recordings of step 13 and 19 new ones (95 runs in all). Compared on every
+buttons as the emulator recordings of step 13 and 27 new ones (103 runs in all). Compared on every
 frame: the player's memory (position, speed, state, hearts, picture), every place of the object
 list (for a cap: position, speed, picture, height), the blocks, the sounds started, and the
 picture (sprite tiles and pixels).
@@ -158,6 +173,10 @@ picture (sprite tiles and pixels).
 | `cp_side` | a jump from the first cap in its flight that comes down against the side of the second |
 | `cp_reland` | off the second cap in its flight and on it twice more on the way down |
 | `cp_under` | the player on the floor where the second cap comes down |
+| `cp_crate` | with a crate from the ledge: three landings, the crate thrown from the flying cap |
+| `cp_crate_ride` | the same walking along with the cap, thrown later |
+| `cp_crate_two` | with the crate on to the second cap, thrown from it |
+| `cp_crate_stand`, `cp_crate_up`, `cp_crate_down` | one landing with the crate, then thrown ahead / upwards / put down crouching |
 | `cp_again` | the first cap sent off, the last heart lost: the kitchen starts again and the cap is back |
 
 With memory written in the middle of the run (the port gets the same value on the same frame):
@@ -166,9 +185,10 @@ With memory written in the middle of the run (the port gets the same value on th
 |---|---|---|
 | `cp_p_bump`, `cp_p_bump96` | the player's height during a jump under the first cap: 20 / 0 pixels below its line | his head is stopped under the cap |
 | `cp_p_bump95` | 1 pixel above its line | he is put on the cap |
+| `cp_p_fsider`, `cp_p_fsidel` | his place while he falls next to the flying cap: 17 pixels left / 27 right of its middle, then walking towards it | stopped at its side, then put on top of it |
 | `cp_p_edgel13` … `cp_p_edger15` (6) | his place during the fall onto the first cap: 13, 14, 15 pixels left / right of its middle | he lands on it at 13 and 14, falls past it at 15 |
 
-Result: **149,750 frames compared, 0 with a difference**. The earlier runs of steps 06 to 10 with
+Result: **172,050 frames compared, 0 with a difference**. The earlier runs of steps 06 to 10 with
 `--old --nopic`: **121,903 frames, 0 with a difference**.
 
 The tile `D5` (the caps) has left the list of NES sprites the port does not draw. What is left

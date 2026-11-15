@@ -297,15 +297,20 @@ class Enemy:                                    # obj_enemy.  e_kind: 1 flyer, 2
         elif st == 2:                                       # flying: a pixel to the right a frame; up at 4 pixels a frame, 3/16 less each frame
             if s.e_yv < 80: s.e_yv += 3
             s.e_n = on
-            if on: pl.p_late = pl.p_y - (s.e_y - 16); pl.p_y = s.e_y - 16                      # the player is put on it before it moves: he is a frame behind
+            if on: pl.p_late = pl.p_y - (s.e_y - 16); pl.p_y = s.e_y - 16; s.cap_carry()                      # the player is put on it before it moves: he is a frame behind
             s.e_wx += 1; s.move_y()
         else:
             if st == 0:
                 if not s.e_n: s.e_state = 1
             elif s.e_n:                                     # a landing: a step down, and the player with it
-                s.e_pic += 1; s.e_h = CAP_H[s.e_pic - 80]; s.e_state = 0; pl.p_late = pl.p_y - (s.e_y - s.e_h - 1); pl.p_y = s.e_y - s.e_h - 1
+                s.e_pic += 1; s.e_h = CAP_H[s.e_pic - 80]; s.e_state = 0; pl.p_late = pl.p_y - (s.e_y - s.e_h - 1); pl.p_y = s.e_y - s.e_h - 1; s.cap_carry()
                 if s.e_pic == 83: g.lv_snd = 18; s.e_yv = -64; s.e_state = 2; s.e_wx += 1; s.move_y(); return
             s.e_n = on
+    def cap_carry(s):
+        """the cap has moved the player: what he carries goes with him on this frame if it comes after the cap in the
+        object list (it takes its place over his head on its own turn), otherwise on the next"""
+        pl = s.stage.pl; c = pl.p_carry
+        if c is not None and (c.c_slot if isinstance(c, Crate) else c.e_slot) > s.e_slot and pl.p_h != 0: c.c_y = pl.p_y - pl.p_h - 1
     def cmouse(s, st):
         """the mouse under a crate.  e_state 0 waits to be seen, 1 hides, 2 gets up, 3 walks, 4 in the air"""
         g = s.stage
@@ -1356,6 +1361,7 @@ class Rec:
 def CAPTEST(w, pw): return (0x4005, 0x8B) in w and (0x4006, 0xBD) in w and (0x4004, 0xBF) in w
 EXTRA = {}                                      # NES sprites the port did not draw: tile -> how often
 FILL = 'filled'                                 # a place of the object list taken by a memory write (capture_mice.py: 'fill')
+cap_late = [0]        # frames on which a cap's place was accepted one camera step off (see compare_kt)
 def port_poke(g, op):
     """what capture_mice.py wrote into the NES's memory before this frame, done to the port"""
     p = g.pl
@@ -1486,10 +1492,13 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                 o = g.lv_slot[j]
                 if o is GHOST or o is FILL: nsl.pop(j, None)
                 # a cap that enters: the NES takes its place in the list one frame (two when a frame is lost) before the cap
-                # is set up, and has it up to 2 pixels off its place on the first of them; the port has it hidden for one frame
-                if isinstance(o, Enemy) and o.e_kind == 7 and getattr(o, 'e_born', -1) == g.lt:
-                    if kd == 9 and fl & 0x80: nsl[j] = ('cap', o.e_wx, o.e_y, 0, 0, 0, 7)
-                    elif j in nsl and nsl[j][0] == 'cap' and abs(nsl[j][1] - o.e_wx) <= 2: nsl[j] = ('cap', o.e_wx) + nsl[j][2:]
+                # is set up; the port has it hidden for one frame
+                if isinstance(o, Enemy) and o.e_kind == 7 and g.lt - getattr(o, 'e_born', -9) in (0, 1) and kd == 9 and fl & 0x80:
+                    nsl[j] = ('cap', o.e_wx, o.e_y, 0, 0, 0, 7)
+                # on single frames the NES has the camera's step in a cap's place on the screen one frame late (seen when
+                # another object enters or a crate is thrown on that frame; the cap is drawn in its right place)
+                elif isinstance(o, Enemy) and o.e_kind == 7 and j in nsl and nsl[j][0] == 'cap' and nsl[j][1] - o.e_wx == g.lv_cam_x - g.lv_cam_show != 0:
+                    nsl[j] = ('cap', o.e_wx) + nsl[j][2:]; cap_late[0] += 1
                 if isinstance(o, Enemy):
                     if o.e_kind == 7: ssl[j] = ('cap', o.e_wx + (8 if o.e_hide else 0), o.e_y, o.e_ys, o.e_yv, max(o.e_pic - 80, 0), o.e_h if not o.e_hide else 7)
                     elif o.e_hide: ssl[j] = ('new', o.e_wx, o.e_y)
@@ -1553,6 +1562,7 @@ if __name__ == '__main__':
             r = compare_kt(name, files, sc, first, how, last, pictures=not nopic, verbose=V)
             tot[0] += r[0]; tot[1] += r[1]
         print('frames compared %d, frames with a difference %d' % tuple(tot))
+        if cap_late[0]: print("frames with a cap's place one camera step off in the NES memory (accepted): %d" % cap_late[0])
         if not nopic: print('NES sprites the port does not draw (tile: times):', ' '.join('%02X:%d' % q for q in sorted(EXTRA.items())))
         if PICS and os.environ.get('DUMP'):
             Image.fromarray(np.hstack([PICS[2], PICS[3], np.where((PICS[2] != PICS[3]).any(axis=2)[:, :, None], 255, 0).astype(np.uint8).repeat(3, axis=2)])).save('/tmp/diff.png'); print('first differing picture: /tmp/diff.png', PICS[0], PICS[1])
@@ -1564,3 +1574,4 @@ if __name__ == '__main__':
         r = compare(j[0], j[1], pictures=not nopic, verbose=V)
         tot[0] += r[0]; tot[1] += r[1]
     print('frames compared %d, frames with a difference %d' % tuple(tot))
+    if cap_late[0]: print("frames with a cap's place one camera step off in the NES memory (accepted): %d" % cap_late[0])

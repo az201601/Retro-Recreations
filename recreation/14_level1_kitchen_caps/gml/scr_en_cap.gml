@@ -29,7 +29,7 @@ else if (st == 2)
 {
     if (e_yv < 80) e_yv += 3;
     e_n = on;
-    if (on) { pl.p_late = pl.p_y - (e_y - 16); pl.p_y = e_y - 16; }
+    if (on) { pl.p_late = pl.p_y - (e_y - 16); pl.p_y = e_y - 16; scr_en_cap_carry(); }
     e_wx += 1;
     scr_en_move_y();
 }
@@ -47,6 +47,7 @@ else
         e_state = 0;
         pl.p_late = pl.p_y - (e_y - e_h - 1);       // (the picture shows it a frame later: see obj_stage1 End Step)
         pl.p_y = e_y - e_h - 1;
+        scr_en_cap_carry();
         if (e_pic == 83)
         {
             // the third: it flies off (and does not look on this frame)
