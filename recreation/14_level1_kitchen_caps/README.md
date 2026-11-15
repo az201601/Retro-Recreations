@@ -100,8 +100,8 @@ stops the one before it and starts 2 frames after its cause.
 ## Not in this step
 
 - **Not measured:** a stunned mouse carried onto a cap. The mice are on the floor and the caps
-  are reached from the ledge; no way was found to bring one up. The port moves a carried mouse
-  with the cap by the crate's rule.
+  are reached from the ledge; no recording brings one up (not tried). The port moves a carried
+  mouse with the cap by the crate's rule.
 - On single frames the original's memory has a cap's place on the screen one camera step (2
   pixels) behind: on the frame it enters, when another object enters, when a crate is thrown.
   The picture shows it in its right place. The port does not have this; the check accepts those
