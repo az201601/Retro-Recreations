@@ -70,18 +70,20 @@ for name_, (runs_, x_) in _E.items():
     POKED.append(('s3_p_' + name_, sc_, n_, 7600, pk_))
     PORT_POKES['s3_p_' + name_] = pk_
 # step 16: the crates and bonus boxes.  The route never picks a crate up, so in these runs the player is put on the
-# counter next to crates by a write into the game's memory on one frame (and the port does the same to its player):
-# cr0  the two crates on the first counter (columns 14 and 15): pick one up, throw it into the other, pick the other
-#      up and throw it straight up (it breaks on the shelf above)
-# cr1  the crate with a bonus box inside at (11, 41): the bonus box appears, is taken on the way, the crate is thrown
-#      into the next crate; that one is picked up too and thrown far (it breaks on an enemy)
-# cr2  the stack at (10/11, 62): the upper crate first, then the one with the bonus, its bonus box, then a far throw
-#      to the left (breaks on the crates of cr1's place, untouched on this way)
+# counter next to crates by a write into the game's memory on one frame (and the port does the same to its player).
+# (Checked against the recordings; the crates' ways out are as they happened there:)
+# cr0  the two crates on the first counter (columns 14 and 15): pick one up, throw it (it slides along the counter
+#      and off the screen), pick the other up and throw it straight up (it leaves the picture at the top)
+# cr1  the crate with a bonus box inside at (11, 41): the bonus box appears and is taken on the way; the crate is
+#      thrown along the counter; its neighbour at (11, 42) is picked up and thrown after it
+# cr2  the stack at (10/11, 62): the upper crate first (walked into from the left, the upper block is found first),
+#      thrown off along the counter; then the lower one, which has a bonus box inside: the box appears, is taken,
+#      and that crate is thrown too
 _CR = [('cr0', 6946, [(N, 2), (R, 6), ([RIGHT, B], 2), (R, 8), ([B], 2), (N, 40), (R, 6), ([RIGHT, B], 2), (N, 2), ([UP, B], 2), ([UP], 3), (N, 90)],
         {6946: [('px', 102), ('py', 192)]}),
        ('cr1', 7250, [(N, 2), (R, 8), ([RIGHT, B], 2), (R, 12), ([B], 2), (N, 40), (R, 6), ([RIGHT, B], 2), (N, 2), ([RIGHT, B], 2), (N, 110)],
         {7250: [('px', 54), ('py', 192)]}),
-       ('cr2', 7383, [(N, 1), (R, 10), ([RIGHT, B], 2), (R, 4), ([RIGHT, B], 2), (R, 10), (L, 2), ([LEFT, B], 2), (N, 100)],
+       ('cr2', 7383, [(N, 1), (R, 10), ([RIGHT, B], 2), (R, 4), ([B], 2), (N, 20), (R, 6), ([RIGHT, B], 2), (R, 6), ([B], 2), (N, 100)],
         {7383: [('px', 114), ('py', 192)]})]
 for name_, cut_, runs_, pk_ in _CR:
     sc_, n_ = after(cut_, runs_, ROUTE3)

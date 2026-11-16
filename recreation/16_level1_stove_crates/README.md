@@ -34,10 +34,9 @@ and bonus boxes. Second of the section's four steps; still to come: the enemies,
   much falls out of the crate code from step 08).
 - **The sink** (the tap, the thing in it, the rising water): step 18.
 - The enemy sounds themselves are not in the port yet, so while the NES plays one — above all
-  the flyer's buzz, which it restarts while the flyer flies (the restart writes only the
-  channel's timer registers and does not match the buzz's start test of step 09) — the
-  starting of sounds is not compared for 100 frames after; the boxes' sounds are compared
-  outside those windows.
+  the flyer's buzz, the very sound 6 of step 09, which the NES restarts every 3 frames while
+  the flyer flies — the starting of sounds is not compared for 100 frames after; the boxes'
+  sounds are compared outside those windows.
 - Two players, levels 2 and later. Sprites per line and dropped frames as in step 09.
 
 ## Assets
@@ -78,7 +77,7 @@ untouched. `capture_sec3.py` now also makes these recordings.
 Compared on every frame, now also in the third section: the player's memory values, camera,
 lives, **the bonus count**, **the block buffer** (the boxes the NES still knows, in the 16
 columns it holds), the starts of the landing/pick/throw/bonus sounds (not for 100 frames
-after a sound the port does not have yet, among them the enemies' alarm), and the whole
+after a sound the port does not have yet — the flyer's buzz, restarted while it flies), and the whole
 picture — including the patched 16x16 pieces where a box is gone. The object list is still
 not compared in the third section (the enemies come in step 17), and the picture is not
 compared in a block the NES has changed that is not a box (the sink's water and object: step
@@ -86,7 +85,7 @@ compared in a block the NES has changed that is not a box (the sink's water and 
 
 | | frames | differences |
 |---|---|---|
-| Third section, 24 recordings | 10,245 | 0 |
+| Third section, 24 recordings | 10,267 | 0 |
 | Everything `sim_caps.py` checks (the kitchen and before it) | 172,327 | 0 (5 accepted frames, see step 14) |
 | All recordings of steps 06–10 (`--old --nopic`) | 121,903 | 0 |
 
