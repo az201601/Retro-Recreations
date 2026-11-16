@@ -1528,9 +1528,12 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
         if (0x4006, 0xFC) in w and (0x4007, 0xF9) in w and (0x4004, 0xBF) in w and (0x400E, 0x00) in w: nes_now.add(17)
         if CAPTEST(w, pw_): nes_now.add(18)
         if g.lv_sec == 2:
-            # (the third section's enemies are not in the port yet: a sound of theirs is not the port's - among them
-            #  the alarm - and for 100 frames after one the sounds are not compared; the boxes' and the throw's are)
-            if nes_now - {1, 2, 3, 4, 5} or ((0x4006, 0x3A) in w and (0x4007, 0xFA) in w): foreign = f      # (the second: the alarm)
+            # (the third section's enemies are not in the port yet: a sound of theirs is not the port's - above all
+            #  the flyer's buzz, restarted while it flies - and for 100 frames after one the sounds are not compared;
+            #  the boxes' and the throw's are)
+            if nes_now - {1, 2, 3, 4, 5} or ((0x4006, 0x3A) in w and (0x4007, 0xFA) in w): foreign = f
+            # (the second: a buzz restart - the buzz is cut back on while its effect is still playing, which rewrites
+            #  only the channel's two timer registers and so does not match the test for sound 6 of sim_enemies.py)
             nes_now &= {1, 2, 3, 4, 5}
             if f - foreign < 100: nes_now = set(k_ for k_ in g.started if k_ in (1, 2, 3, 4, 5))
         if g.lv_go < 2 and g.lv_stat == 0 and f - first > 3:

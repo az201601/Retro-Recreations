@@ -33,9 +33,11 @@ and bonus boxes. Second of the section's four steps; still to come: the enemies,
   alarm) and what they throw: step 17. A thrown crate already hits one and knocks it out (that
   much falls out of the crate code from step 08).
 - **The sink** (the tap, the thing in it, the rising water): step 18.
-- What the enemy's alarm and the enemy sounds are is not in the port yet, so while the NES
-  plays one (it does through most of the second half of the section), the starting of sounds
-  is not compared for 100 frames after; the boxes' sounds are compared outside those windows.
+- The enemy sounds themselves are not in the port yet, so while the NES plays one — above all
+  the flyer's buzz, which it restarts while the flyer flies (the restart writes only the
+  channel's timer registers and does not match the buzz's start test of step 09) — the
+  starting of sounds is not compared for 100 frames after; the boxes' sounds are compared
+  outside those windows.
 - Two players, levels 2 and later. Sprites per line and dropped frames as in step 09.
 
 ## Assets
