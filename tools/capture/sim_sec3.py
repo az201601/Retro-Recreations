@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Python port of deliverable 15 (level 1, section 3: the stove and the sink - map, camera, player, exit) and of
+"""Python port of deliverable 16 (level 1, section 3: the crates and bonus boxes) and of
 everything before it: obj_stage1, obj_player, obj_crate, obj_enemy, obj_item and the scr_* scripts of
-recreation/15_level1_stove/gml/.  Keep in sync with that folder.  Needs build_hurt.py, build_kitchen.py,
-build_kitchen_boxes.py, build_mice.py, build_caps.py and build_sec3.py to have run.
+recreation/16_level1_stove_crates/gml/.  Keep in sync with that folder.  Needs build_hurt.py, build_kitchen.py,
+build_kitchen_boxes.py, build_mice.py, build_caps.py, build_sec3.py and build_s3_boxes.py to have run.
 
 Without --old: the recordings of capture_sec3.py (CHECKS5 there), then - unless --new is given - everything
 sim_caps.py runs (the kitchen: capture_kitchen.py, capture_mice.py, capture_caps.py).  Per frame it compares
@@ -12,9 +12,10 @@ sim_caps.py runs (the kitchen: capture_kitchen.py, capture_mice.py, capture_caps
 (b) the frames on which the sounds start;
 (c) the whole picture, except: where the NES has a sprite the port does not draw (counted and listed at the end),
     picture lines with more than 8 sprites, and the kitchen's half-replaced shaft row.
-The third section's crates, bonus boxes, enemies and the things of the sink are not in the port yet.  There the
-object list and the bonus count are not compared, of the sounds only the landing sound (and not while the NES plays
-one the port does not have), and the picture not in a block the NES has changed (a bonus box taken).
+The third section's enemies and the things of the sink are not in the port yet.  There the object list is not
+compared, of the sounds only the landing, picking, throwing and bonus ones (and not for a while after one the port
+does not have), and the picture not in a block the NES has changed that is not a box (the tap's water, the sink's
+object).
 The s3_p_* recordings have the player's place written into the game's memory on one or two frames.
 With --old: the recordings of steps 6 to 10, compared as sim_hurt.py does (the dining room must be unchanged).
 A frame the NES leaves out when it is too busy (its frame counter $2D stands still) is skipped: the port waits.
@@ -55,6 +56,8 @@ for b_ in range(7):
     WORLD3.append(w_)
 _h = np.array(Image.open('%s/sprites/spr_lv1c_front_strip7.png' % OUT3).convert('RGBA')); FRONT3 = [_h[:, k_ * 224:k_ * 224 + 224] for k_ in range(7)]
 BACK3 = S3B['raw'] == 0x9F                      # the blocks in which the player is behind the picture
+S3BX = pickle.load(open(os.path.join(WORK, 's3_boxes.pkl'), 'rb'))       # the third section's crates and bonus boxes (build_s3_boxes.py)
+S3PATCH = {(c_, r_): (dc_, dr_) for c_, r_, k_, dc_, dr_ in S3BX['cells']}
 OBJECTS3 = [(111, 10, 9)]                       # the third section's list (bank 3 $A444): for now only its exit
 KSCR = {(0, 1): 0, (1, 1): 1, (2, 1): 2, (3, 1): 3, (4, 1): 4, (5, 1): 5, (5, 0): 6, (6, 0): 7, (7, 0): 8}     # (column, row) of a kitchen screen -> its picture
 TABS = pickle.load(open(os.path.join(WORK, 'cr_tables.pkl'), 'rb')); ETAB = pickle.load(open(os.path.join(WORK, 'cp_tables.pkl'), 'rb'))
@@ -789,9 +792,10 @@ class Stage:                                    # obj_stage1
         if s.lv_sec == 0:
             s.lv_rows = 15; s.lv_kind = [[int(v) for v in row] for row in BL['cls']]
             s.lv_box = [[{0xF4: 1, 0xF5: 2, 0xF9: 3}.get(int(v), 0) for v in row] for row in BL['raw']]
-        elif s.lv_sec == 2:                                 # the third section: crates are solid blocks and bonus boxes air for now
+        elif s.lv_sec == 2:                                 # the third section: its crates are solid blocks and its bonus boxes air
             s.lv_rows = 15; s.lv_kind = [[int(v) for v in row] + [0] * 16 for row in S3B['cls']]
             s.lv_box = [[0] * 128 for row in range(15)]
+            for c_, r_, k_, dc_, dr_ in S3BX['cells']: s.lv_box[r_][c_] = k_
         else:
             s.lv_rows = 30; s.lv_kind = [[int(v) for v in row] for row in KB['cls']]
             s.lv_box = [[0] * 128 for row in range(30)]
@@ -1099,7 +1103,15 @@ class Stage:                                    # obj_stage1
         if s.lv_sec == 0:
             scr[:, :256 + x] = BG[n * 7 + s.lv_bright][:, -x:]
             if x < 0: scr[:, 256 + x:] = BG[(n + 1) * 7 + s.lv_bright][:, :-x]
-        elif s.lv_sec == 2: scr[:] = WORLD3[s.lv_bright][:, s.lv_cam_show:s.lv_cam_show + 256]
+        elif s.lv_sec == 2:
+            cx = s.lv_cam_show; W_ = WORLD3[s.lv_bright]
+            if s.lv_open:                                   # where a crate or bonus box is gone: what is behind it
+                W_ = W_.copy(); W0 = WORLD3[s.lv_bright]
+                for c, r, t, k in s.lv_open:
+                    if s.lt - t < TABS['patch_delay']: continue
+                    dc, dr = S3BX['box'] if k else S3PATCH[(c, r)]
+                    W_[r * 16:r * 16 + 16, c * 16:c * 16 + 16] = W0[dr * 16:dr * 16 + 16, dc * 16:dc * 16 + 16]
+            scr[:] = W_[:, cx:cx + 256]
         else:                                               # up to 2 x 2 of the kitchen's 9 screens
             cx = s.lv_cam_show; cy = s.lv_cam_yshow; W_ = WORLD2[s.lv_bright]
             if s.lv_open:
@@ -1429,6 +1441,14 @@ def sync_boxes(g, r):
             k_ = {0xF4: 1, 0xF5: 2, 0xF9: 3, 0xF6: 4}.get(int(m[b_, c_ % 16]), 0)
             if k_ != g.lv_box[rw][c_]: g.open_box(c_, rw, k_); g.lv_open[-1] = (c_, rw, -999, 1 if k_ == 3 else 0)
 
+def sync_boxes3(g, r):
+    """a start in the middle of the third section: the boxes that are already gone, from the NES's block buffer"""
+    m = r[0x43A:0x43A + 240].reshape(15, 16).astype(int); lo = ((g.lv_cam_x + 248) >> 4) - 15
+    for b_ in range(15):
+        for c_ in range(lo, min(lo + 16, 112)):
+            k_ = {0xF4: 1, 0xF5: 2, 0xF9: 3}.get(int(m[b_, c_ % 16]), 0)
+            if k_ != g.lv_box[b_][c_]: g.open_box(c_, b_, k_); g.lv_open[-1] = (c_, b_, -999, 1 if k_ == 3 else 0)
+
 def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose=1):
     """how: 'start'  the port starts with the kitchen, on the NES frame `first` (8 frames before the player can move);
             'dining' the port starts from the NES memory on frame `first`, in the dining room (the walk out of it)"""
@@ -1452,6 +1472,7 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
     if how == 'sec3':
         col = (g.lv_cam_x + 264) >> 4; g.lv_sp_col = col
         if col >= 111: g.lv_sp_i = 1; Exit(g)
+        sync_boxes3(g, r)
     if how == 'middle':
         # (the mice that are about at such a start cannot be followed from their start: the port starts without them,
         #  their places in the object list are only kept taken, and they are left out of the comparison)
@@ -1507,10 +1528,11 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
         if (0x4006, 0xFC) in w and (0x4007, 0xF9) in w and (0x4004, 0xBF) in w and (0x400E, 0x00) in w: nes_now.add(17)
         if CAPTEST(w, pw_): nes_now.add(18)
         if g.lv_sec == 2:
-            # (the third section: only the landing sound is the port's; not compared while another one plays on the NES)
-            if nes_now - {5} or ((0x4006, 0x3A) in w and (0x4007, 0xFA) in w): foreign = f      # (the second: the alarm of an enemy that is not in the port yet)
-            nes_now &= {5}
-            if f - foreign < 100: nes_now = set(k_ for k_ in g.started if k_ == 5)
+            # (the third section's enemies are not in the port yet: a sound of theirs is not the port's - among them
+            #  the alarm - and for 100 frames after one the sounds are not compared; the boxes' and the throw's are)
+            if nes_now - {1, 2, 3, 4, 5} or ((0x4006, 0x3A) in w and (0x4007, 0xFA) in w): foreign = f      # (the second: the alarm)
+            nes_now &= {1, 2, 3, 4, 5}
+            if f - foreign < 100: nes_now = set(k_ for k_ in g.started if k_ in (1, 2, 3, 4, 5))
         if g.lv_go < 2 and g.lv_stat == 0 and f - first > 3:
             mine_ = set(k_ for k_ in g.started if k_ <= 5 or k_ in (8, 9, 10, 14, 15, 16, 17, 18))
             for k_ in mine_: evs[k_] = evs.get(k_, 0) + 1
@@ -1559,9 +1581,9 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                 elif isinstance(o, Item): ssl[j] = ('1up' if o.i_kind == 2 else 'item', o.e_wx, o.e_y)
             nes.append(nsl); sim.append(ssl)
             if g.lv_sec == 2:
-                # the third section's crates, bonus boxes and enemies are not in the port yet: the object list and the
-                # bonus count are not compared there
-                nes[-1] = sim[-1] = None; nes[12] = sim[12] = 0
+                # the third section's enemies are not in the port yet: the object list is not compared there
+                # (the bonus count and the block buffer are)
+                nes[-1] = sim[-1] = None
             if g.lv_sec == 1:                                # the boxes in the columns and rows the NES has in its buffer
                 m = r[0x43A:0x43A + 240].reshape(15, 16).astype(int); lo = ((cam + 248) >> 4) - 15; bb_ = []
                 for b_ in range(15):
@@ -1570,6 +1592,13 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                     for c_ in range(lo, min(lo + 16, 128)):
                         k_ = {0xF4: 1, 0xF5: 2, 0xF9: 3, 0xF6: 4}.get(int(m[b_, c_ % 16]), 0); rw_ = b_ if up else b_ + 15
                         if k_ != g.lv_box[rw_][c_]: bb_.append((c_, rw_, k_, g.lv_box[rw_][c_]))
+                nes.append([]); sim.append(bb_)
+            if g.lv_sec == 2:                                # the same in the third section (one floor, 112 columns)
+                m = r[0x43A:0x43A + 240].reshape(15, 16).astype(int); lo = ((cam + 248) >> 4) - 15; bb_ = []
+                for b_ in range(15):
+                    for c_ in range(lo, min(lo + 16, 112)):
+                        k_ = {0xF4: 1, 0xF5: 2, 0xF9: 3}.get(int(m[b_, c_ % 16]), 0)
+                        if k_ != g.lv_box[b_][c_]: bb_.append((c_, b_, k_, g.lv_box[b_][c_]))
                 nes.append([]); sim.append(bb_)
             if nes != sim: bad_ram += 1; ex(f, g.lt, 'nes', nes, 'port', sim)
         elif g.lv_go >= 2 and (int(r[0xA7]), int(r[0x76])) != (g.lv_lives, g.lv_credits): bad_ram += 1; ex(f, 'lives, credits')
@@ -1600,11 +1629,12 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                         rows_out += 1
                         for y_ in (b_ * 16 - g.lv_cam_yshow, b_ * 16 + 240 - g.lv_cam_yshow): ok[max(y_, 0):max(y_ + 16, 0)] = False
             if g.lv_sec == 2 and not whole:
-                # the blocks the NES has changed (a bonus box taken) are left out
+                # the blocks the NES has changed which the port does not have yet (the tap's water and the sink's
+                # object) are left out; where a crate or bonus box was, the port now patches the picture itself
                 m = r[0x43A:0x43A + 240].reshape(15, 16).astype(int); lo = ((g.lv_cam_show + 248) >> 4) - 15
                 for c_ in range(max(lo, 0), min(lo + 16, 112)):
                     for b_ in range(15):
-                        if m[b_, c_ % 16] != S3B['raw'][b_, c_]:
+                        if m[b_, c_ % 16] != S3B['raw'][b_, c_] and int(S3B['raw'][b_, c_]) not in (0xF4, 0xF5, 0xF9):
                             boxes_out[0] += 1; x_ = c_ * 16 - g.lv_cam_show; ok[b_ * 16:b_ * 16 + 16, max(x_, 0):max(x_ + 16, 0)] = False
             diff = (scr != pic).any(axis=2) & ok
             if diff.any():
