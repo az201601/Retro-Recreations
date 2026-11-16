@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Python port of deliverable 16 (level 1, section 3: the crates and bonus boxes) and of
+"""Python port of deliverable 17 (level 1, section 3: the enemies) and of
 everything before it: obj_stage1, obj_player, obj_crate, obj_enemy, obj_item and the scr_* scripts of
-recreation/16_level1_stove_crates/gml/.  Keep in sync with that folder.  Needs build_hurt.py, build_kitchen.py,
+recreation/17_level1_stove_enemies/gml/.  Keep in sync with that folder.  Needs build_hurt.py, build_kitchen.py,
 build_kitchen_boxes.py, build_mice.py, build_caps.py, build_sec3.py and build_s3_boxes.py to have run.
 
 Without --old: the recordings of capture_sec3.py (CHECKS5 there), then - unless --new is given - everything
@@ -12,10 +12,12 @@ sim_caps.py runs (the kitchen: capture_kitchen.py, capture_mice.py, capture_caps
 (b) the frames on which the sounds start;
 (c) the whole picture, except: where the NES has a sprite the port does not draw (counted and listed at the end),
     picture lines with more than 8 sprites, and the kitchen's half-replaced shaft row.
-The third section's enemies and the things of the sink are not in the port yet.  There the object list is not
-compared, of the sounds only the landing, picking, throwing and bonus ones (and not for a while after one the port
-does not have), and the picture not in a block the NES has changed that is not a box (the tap's water, the sink's
-object).
+The third section's enemies are in the port since step 17: the object list and the enemy sounds (the flyer's
+buzz, the cook's throw - and the knock-out, if one happens) are compared there too.  Not yet: the tap and the
+thing in the sink.  Their places in the object list are kept, and the picture is not compared in a block the NES
+has changed that is not a box (the tap's water, the sink's object).  On a start in the middle of the section
+(the p_* recordings) enemies already out are not in the port: their places in the object list are taken, and for
+100 frames after a sound of theirs the sounds are not compared.
 The s3_p_* recordings have the player's place written into the game's memory on one or two frames.
 With --old: the recordings of steps 6 to 10, compared as sim_hurt.py does (the dining room must be unchanged).
 A frame the NES leaves out when it is too busy (its frame counter $2D stands still) is skipped: the port waits.
@@ -58,7 +60,15 @@ _h = np.array(Image.open('%s/sprites/spr_lv1c_front_strip7.png' % OUT3).convert(
 BACK3 = S3B['raw'] == 0x9F                      # the blocks in which the player is behind the picture
 S3BX = pickle.load(open(os.path.join(WORK, 's3_boxes.pkl'), 'rb'))       # the third section's crates and bonus boxes (build_s3_boxes.py)
 S3PATCH = {(c_, r_): (dc_, dr_) for c_, r_, k_, dc_, dr_ in S3BX['cells']}
-OBJECTS3 = [(111, 10, 9)]                       # the third section's list (bank 3 $A444): for now only its exit
+def sec3_objects():
+    """the third section's list follows the kitchen's (bank 3 $A444): 8 entries.  The row byte holds the row in its
+    low 4 bits (the section has one floor of 15 rows).  Types: $27 flyer, $25 cook, $09 the tap, $1E the thing in
+    the sink, $21 the exit.  Kinds 10 and 11 only keep a place in the object list here (step 18 brings them)."""
+    rom = open(os.path.join(ROOT, "Chip 'n Dale - Rescue Rangers 2 (USA).nes"), 'rb').read()[16:]
+    a = 3 * 0x4000 + 0x2444; out = []
+    while rom[a] != 255: out.append((rom[a], rom[a + 1] & 15, {0x27: 1, 0x25: 3, 0x09: 10, 0x1E: 11, 0x21: 9}[rom[a + 2]])); a += 3
+    return out
+OBJECTS3 = sec3_objects()
 KSCR = {(0, 1): 0, (1, 1): 1, (2, 1): 2, (3, 1): 3, (4, 1): 4, (5, 1): 5, (5, 0): 6, (6, 0): 7, (7, 0): 8}     # (column, row) of a kitchen screen -> its picture
 TABS = pickle.load(open(os.path.join(WORK, 'cr_tables.pkl'), 'rb')); ETAB = pickle.load(open(os.path.join(WORK, 'cp_tables.pkl'), 'rb'))
 HT = pickle.load(open(os.path.join(WORK, 'hu_tables.pkl'), 'rb')); NEW = os.path.join(ROOT, 'recreation', '10_level1_hurt', 'assets')
@@ -819,7 +829,8 @@ class Stage:                                    # obj_stage1
             if k_ == 9: Exit(s)
             elif k_ == 5: s.items.append(Item(s, c_ * 16, r_ * 16 - cy, 1))  # the star
             elif k_ >= 15: s.enemies.append(Enemy(s, k_ - 10, c_ * 16, r_ * 16 - cy, 0))
-            else: s.enemies.append(Enemy(s, k_, c_ * 16, r_ * 16 - 512, 0))
+            elif k_ >= 10: s.take_slot(FILL)                # the tap and the thing in the sink: the place stays taken (step 18)
+            else: s.enemies.append(Enemy(s, k_, c_ * 16, r_ * 16 - (512 if s.lv_sec == 0 else 0), 0))
     def spawn(s, kind, by):
         if s.full(): return
         e = Enemy(s, kind, by.e_wx, by.e_y, by.e_face); s.enemies.append(e)
@@ -1424,6 +1435,7 @@ def port_poke(g, op):
     elif op[0] == 'py': p.p_y = op[1]
     elif op[0] == 'state': p.p_state = op[1]
     elif op[0] == 'ex': g.lv_slot[op[1]].e_wx = op[2] + g.lv_cam_x
+    elif op[0] == 'wx': p.p_x = op[1] - g.lv_cam_x      # the player's 16-bit world x at the frame's camera
     elif op[0] == 'fill':
         for j in [j for j in range(3, 12) if g.lv_slot[j] is None][op[1]:]: g.lv_slot[j] = FILL
     elif op[0] == 'free':
@@ -1449,9 +1461,15 @@ def sync_boxes3(g, r):
             k_ = {0xF4: 1, 0xF5: 2, 0xF9: 3}.get(int(m[b_, c_ % 16]), 0)
             if k_ != g.lv_box[b_][c_]: g.open_box(c_, b_, k_); g.lv_open[-1] = (c_, b_, -999, 1 if k_ == 3 else 0)
 
-def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose=1):
+# the sounds compare_kt looks for on the port's side: the kitchen/dining checks leave out the enemies' buzz and
+# throw (6, 7) as sim_caps.py always did; step 17's third-section checks have them in the port
+SOUNDS = {False: (8, 9, 10, 14, 15, 16, 17, 18), True: (6, 7, 8, 9, 10, 14, 15, 16, 17, 18)}
+
+def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose=1, enemies=False):
     """how: 'start'  the port starts with the kitchen, on the NES frame `first` (8 frames before the player can move);
-            'dining' the port starts from the NES memory on frame `first`, in the dining room (the walk out of it)"""
+            'dining' the port starts from the NES memory on frame `first`, in the dining room (the walk out of it).
+            enemies: the third section's enemy sounds (6, 7) are compared - only step 17's recordings have them in
+            the port; the older kitchen/dining checks are compared exactly as sim_caps.py did before step 17."""
     character(1 if '_dl_' in name else 0); rec = Rec(files); g = Stage(); pad = lambda f: sum(PADBIT[k] for k in sched.get(f, []))
     S, pic, w = rec.get(first); r = S['ram']
     if how == 'start':
@@ -1471,7 +1489,11 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
     if how != 'dining': g.lv_bonus = int(r[0xA3])
     if how == 'sec3':
         col = (g.lv_cam_x + 264) >> 4; g.lv_sp_col = col
-        if col >= 111: g.lv_sp_i = 1; Exit(g)
+        # the columns already passed: only the exit itself enters now; the enemies the NES has out are kept out of
+        # the port (the GHOST marks below) - a place in the object list is taken for them, nothing else is compared
+        while g.lv_sp_i < len(OBJECTS3) and OBJECTS3[g.lv_sp_i][0] <= col:
+            if OBJECTS3[g.lv_sp_i][2] == 9: Exit(g)
+            g.lv_sp_i += 1
         sync_boxes3(g, r)
     if how == 'middle':
         # (the mice that are about at such a start cannot be followed from their start: the port starts without them,
@@ -1505,7 +1527,7 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
         # the mice and the other things the port does not have yet: their places in the object list are taken
         for j in range(3, 12):
             fl_ = int(rp[0x2F0 + j]); other = not fl_ & 0x80 and (fl_ & 15) not in (0, 10) and not (int(rp[0x32C + j]) == 3 and (fl_ & 15) in (1, 3, 9)) and not (int(rp[0x32C + j]) == 6 and (fl_ & 15) == 1)
-            if other and g.lv_slot[j] is None and g.lv_sec == 1 and how == 'middle' and f == first + 1: g.lv_slot[j] = GHOST
+            if other and g.lv_slot[j] is None and f == first + 1 and (g.lv_sec == 1 and how == 'middle' or g.lv_sec == 2 and how == 'sec3'): g.lv_slot[j] = GHOST
             elif not other and g.lv_slot[j] is GHOST: g.lv_slot[j] = None
         rp = r
         g.end_step(pad(f)); p = g.pl
@@ -1519,6 +1541,8 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
         if (0x4006, 0x6A) in w and (0x4004, 0xBF) in w: nes_now.add(3)
         if (0x400C, 0xBF) in w and (0x400C, 0xBF) not in pw_: nes_now.add(4)
         if (0x4006, 0x70) in w and (0x4004, 0xBF) in w: nes_now.add(5)
+        if enemies and (0x4006, 0x3A) in w and (0x4007, 0xFA) in w and (0x4004, 0x3F) in w and (0x4005, 0x08) in w: nes_now.add(6)
+        if enemies and (0x4006, 0xFD) in w and (0x4004, 0xBF) in w: nes_now.add(7)
         if (0x4006, 0xC4) in w and (0x4004, 0xFF) in w and (0x4007, 0xF9) in w and (0x4006, 0xDF) not in pw_: nes_now.add(14)
         if (0x4005, 0x9D) in w and (0x4004, 0x3C) in w: nes_now.add(8)
         if (0x4006, 0x3F) in w and (0x4005, 0x93) in w and (0x400C, 0x3F) in w: nes_now.add(9)
@@ -1527,15 +1551,15 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
         if (0x4006, 0xDA) in w and (0x4004, 0xBC) in w and (0x4004, 0xBC) not in pw_: nes_now.add(16)
         if (0x4006, 0xFC) in w and (0x4007, 0xF9) in w and (0x4004, 0xBF) in w and (0x400E, 0x00) in w: nes_now.add(17)
         if CAPTEST(w, pw_): nes_now.add(18)
-        if g.lv_sec == 2:
-            # (the third section's enemies are not in the port yet: a sound of theirs is not the port's - above all
-            #  the flyer's buzz, sound 6 of sim_enemies.py, restarted every 3 frames while it flies - and for 100
-            #  frames after one the sounds are not compared; the boxes' and the throw's are)
-            if nes_now - {1, 2, 3, 4, 5} or ((0x4006, 0x3A) in w and (0x4007, 0xFA) in w): foreign = f      # (the second: a buzz)
-            nes_now &= {1, 2, 3, 4, 5}
-            if f - foreign < 100: nes_now = set(k_ for k_ in g.started if k_ in (1, 2, 3, 4, 5))
+        if g.lv_sec == 2 and how == 'sec3':
+            # (on a start in the middle of the third section the enemies already out are not in the port: a sound of
+            #  theirs is not the port's - above all the flyer's buzz, restarted every 3 frames while it flies - and
+            #  for 100 frames after one the sounds are not compared; the boxes' and the throw's are)
+            if nes_now - {1, 2, 3, 4, 5, 8} or ((0x4006, 0x3A) in w and (0x4007, 0xFA) in w): foreign = f   # (the second: a buzz)
+            nes_now &= {1, 2, 3, 4, 5, 8}
+            if f - foreign < 100: nes_now = set(k_ for k_ in g.started if k_ in (1, 2, 3, 4, 5, 8))
         if g.lv_go < 2 and g.lv_stat == 0 and f - first > 3:
-            mine_ = set(k_ for k_ in g.started if k_ <= 5 or k_ in (8, 9, 10, 14, 15, 16, 17, 18))
+            mine_ = set(k_ for k_ in g.started if k_ <= 5 or k_ in SOUNDS[enemies])
             for k_ in mine_: evs[k_] = evs.get(k_, 0) + 1
             if mine_ != nes_now: bad_snd += 1; ex(f, 'sounds started: NES %s, port %s' % (sorted(nes_now), sorted(mine_)))
         pw_ = w; rp_f0 = r[0xF0]
@@ -1564,6 +1588,9 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                 elif ty == 5 and not fl & 0x80: nsl[j] = ('cap', ox + cam, oy, int(r[0x374 + j]) >> 4, sg(r[0x35C + j]), int(r[0x338 + j]), int(r[0x3BC + j]))
                 elif ty == 0 and kd == 1 and not fl & 0x80: nsl[j] = 'star'
                 o = g.lv_slot[j]
+                # a start in the middle of the section only: the NES has an object the port never got (born of an
+                # enemy that is itself not there, or the tap's / the sink's): its place is taken, nothing else compared
+                if o is None and j in nsl and how == 'sec3' and g.lv_sec == 2: o = g.lv_slot[j] = GHOST
                 if o is GHOST or o is FILL: nsl.pop(j, None)
                 # a cap that enters: the NES takes its place in the list one frame (two when a frame is lost) before the cap
                 # is set up; the port has it hidden for one frame
@@ -1581,10 +1608,6 @@ def compare_kt(name, files, sched, first, how, last=None, pictures=True, verbose
                 if isinstance(o, Crate): ssl[j] = ('pieces', o.c_wx, o.c_y, o.c_pic) if o.c_mode == 5 and o.c_t > 0 else ('crate', o.c_wx, o.c_y)
                 elif isinstance(o, Item): ssl[j] = ('1up' if o.i_kind == 2 else 'item', o.e_wx, o.e_y)
             nes.append(nsl); sim.append(ssl)
-            if g.lv_sec == 2:
-                # the third section's enemies are not in the port yet: the object list is not compared there
-                # (the bonus count and the block buffer are)
-                nes[-1] = sim[-1] = None
             if g.lv_sec == 1:                                # the boxes in the columns and rows the NES has in its buffer
                 m = r[0x43A:0x43A + 240].reshape(15, 16).astype(int); lo = ((cam + 248) >> 4) - 15; bb_ = []
                 for b_ in range(15):
@@ -1650,9 +1673,10 @@ if __name__ == '__main__':
     args = sys.argv[1:]; nopic = '--nopic' in args; only = [a for a in args if not a.startswith('--')]; tot = [0, 0]
     V = int(os.environ.get('V', '1'))
     if '--old' not in args:
+        new_names = set(c[0] for c in S3.CHECKS5)
         for name, files, sc, first, how, last in S3.CHECKS5 + ([] if '--new' in args else [c for c in CK.CHECKS + CK.CHECKS2 if c[4] != 'middle'] + CM.CHECKS3 + CCP.CHECKS4):
             if only and name not in only: continue
-            r = compare_kt(name, files, sc, first, how, last, pictures=not nopic, verbose=V)
+            r = compare_kt(name, files, sc, first, how, last, pictures=not nopic, verbose=V, enemies=name in new_names)
             tot[0] += r[0]; tot[1] += r[1]
         print('frames compared %d, frames with a difference %d' % tuple(tot))
         if cap_late[0]: print("frames with a cap's place one camera step off in the NES memory (accepted): %d" % cap_late[0])

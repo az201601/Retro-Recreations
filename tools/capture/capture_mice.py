@@ -182,6 +182,9 @@ def _poked(args):
             elif op[0] == 'py': wr(0x2FC, op[1])
             elif op[0] == 'state': wr(0xB8, op[1])
             elif op[0] == 'ex': wr(0x314 + op[1], op[2]); wr(0x320 + op[1], 0)
+            elif op[0] == 'wx':  # the player's 16-bit x at world x: read the camera; write what is asked for
+                r_ = e.ram(); cam_ = int(r_[0x10]) + 256 * int(r_[0x13]); q_ = op[1] - cam_
+                wr(0x314, q_ & 255); wr(0x320, (q_ >> 8) & 255)
             elif op[0] == 'fill':
                 r = e.ram(); free = [j for j in range(3, 12) if (int(r[0x2F0 + j]) & 15) == 0][op[1]:]
                 for j in free:

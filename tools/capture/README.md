@@ -67,9 +67,9 @@ python3 sim_mice.py          # ~100 s: checks step 13: memory, objects, sounds, 
 python3 capture_caps.py     # ~12 min: 16 runs with the bottle caps, 11 with memory written, 4 sound-only runs -> work/cp_*.pkl
 python3 build_caps.py       # PNG, OGG -> recreation/14_level1_kitchen_caps/assets; tables -> work/cp_tables.pkl, work/cap_tables.gml
 python3 sim_caps.py         # ~5.5 min: checks step 14: memory, objects, sounds, picture (--old --nopic, ~40 s: all runs of steps 06-10)
-python3 capture_sec3.py     # ~5 min: the third section: the route to the sink, 13 runs, 7 with memory written -> work/s3_*.pkl; needs level1_route3.json
+python3 capture_sec3.py     # ~5 min: the third section: the route to the sink, 13 runs, 7 with memory written (step 15), 3 with crates (step 16), 4 with the player put in an enemy's way (step 17) -> work/s3_*.pkl; needs level1_route3.json
 python3 build_sec3.py       # ~5 s: PNG -> recreation/15_level1_stove/assets; block map -> work/s3_blocks.pkl, work/s3_tables.gml
-python3 sim_sec3.py         # ~6 min: checks step 15 and again everything sim_caps.py checks (--new: only the third section, ~20 s; --old --nopic: all runs of steps 06-10)
+python3 sim_sec3.py         # ~6 min: checks step 17 and again everything sim_caps.py checks (--new: only the third section, ~20 s; --old --nopic: all runs of steps 06-10)
 python3 measure_sec3.py     # ~1 min: step 15, emulator only: when a carried crate is bright (kitchen / third section), the landing sound in the sink
 ```
 
@@ -128,9 +128,9 @@ python3 measure_sec3.py     # ~1 min: step 15, emulator only: when a carried cra
 | `build_caps.py` | Step 14: adds the 8 tiles of the cap to the enemy strip of step 13, writes the picture tables 80-83 and cuts the sound. |
 | `sim_caps.py` | Python port of the step 14 GML: `sim_mice.py` plus the bottle caps (an enemy of kind 7) and the solid-thing test of the player. Runs the checks of step 13 and of step 14. |
 | `level1_route3.json` | Buttons for the third section from frame 6841 (no buttons from 6600 to there) to its exit, found by a savestate search. Step 15 uses it up to the sink (frame 8076); the rest needs the rising water. |
-| `capture_sec3.py` | Step 15: the third section up to the sink, a fall into a pit, lost lives up to GAME OVER and CONTINUE, random buttons on the first screen, the status screen, held buttons at the section change, three runs with Dale; 7 runs with the player's place written into memory (into the sink, under the tap, next to the exit). All are kept from frame 6540, the end of the kitchen. |
+| `capture_sec3.py` | Steps 15–17: the third section up to the sink, a fall into a pit, lost lives up to GAME OVER and CONTINUE, random buttons on the first screen, the status screen, held buttons at the section change, three runs with Dale; 7 runs with the player's place written into memory (into the sink, under the tap, next to the exit), 3 next to crates (step 16) and 4 in an enemy's way (step 17, `s3_p_en0`–`s3_p_en3`). All are kept from frame 6540, the end of the kitchen. |
 | `build_sec3.py` | Step 15: builds the section's 7 background screens in 7 brightness steps, the picture's right end without the backdrop colour (drawn over a player who is behind the picture), the block map and the map of the "behind" blocks. |
-| `sim_sec3.py` | Python port of the step 15 GML: `sim_caps.py` plus the third section (block map, camera up to 1536, the exit right of the sink, "behind the picture" from the block map). Runs the checks of step 15 and those of `sim_caps.py`. |
+| `sim_sec3.py` | Python port of the step 17 GML: `sim_caps.py` plus the third section (block map, camera up to 1536, the exit right of the sink, "behind the picture" from the block map) and its enemies (the object list at bank 3 `$A444`). Runs the 28 step 17 checks and those of `sim_caps.py`; `--new` runs only the third section, `--old --nopic` all runs of steps 06–10. |
 | `measure_sec3.py` | Step 15: two measurements without the port, for things that need later steps to be compared: the values of the frame counter `$2D` on which a carried crate is bright, in the kitchen and in the third section (the same: 5, 6, 7, 0 of every 8); and the landing sound on the sink's floor at six places (always there, except next to the object of type `$1E`). |
 
 `capture_kitchen.py` also records the step 12 runs (`kt_cr_*`), `kt_star` and `kt_fx_life_sq2`. `kt_star` is the only

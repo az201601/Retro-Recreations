@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Emulator runs for step 15 (level 1, section 3: the stove and the sink).  Results: work/s3_<name>.pkl
+"""Emulator runs for steps 15-17 (level 1, section 3: the stove and the sink).  Results: work/s3_<name>.pkl
   s3_route0..2  level1_route.json, level1_route2.json up to the kitchen's exit, then level1_route3.json: the third
                 section played from its start to the sink (the whole way to its exit is in the json, the part in the
                 sink needs things of later steps)
   the RUNS      the route up to some frame, then other buttons: a fall into a pit, lost lives up to GAME OVER and
                 CONTINUE, random buttons on the first screen, the status screen, held buttons at the section
                 change, three with Dale.  Stored in parts of 1200 frames.
-  the POKED     the exit cannot be reached without the rising water of the sink (a later step), so in these the
-                player is put into the sink and then next to the exit by writes into the game's memory
+  the POKED     step 15: the exit cannot be reached without the rising water of the sink (a later step), so in
+                these the player is put into the sink and then next to the exit by writes into the game's memory.
+                step 16: the route never picks a crate up, so the player is put on a counter next to crates.
+                step 17: the route never meets an enemy, so the player is put in an enemy's way.  These four
+                runs are kept from the kitchen's exit, so the port has every enemy from its spawn.
   CHECKS5       what sim_sec3.py compares: (name, recordings, buttons, first NES frame, how the port starts, last frame)
 usage: capture_sec3.py [job ...]     (everything: ~4 min)"""
 import json, os, sys
@@ -89,7 +92,34 @@ for name_, cut_, runs_, pk_ in _CR:
     sc_, n_ = after(cut_, runs_, ROUTE3)
     POKED.append(('s3_p_' + name_, sc_, n_, cut_ - 20, pk_))
     PORT_POKES['s3_p_' + name_] = pk_
+# step 17: what the enemies do to the player (step 10's ways).  The route
+# never meets an enemy, so in these runs the player is put in their way by a write into the game's memory on
+# one frame (and the port does the same to its player): 'wx' writes his 16-bit world x, 'py' his y.  The runs
+# are kept from the kitchen's exit so the port has every enemy from its spawn.  (Checked against the recordings:)
+# en0  put at the level of the cook of column 60: the fork it throws reaches him — a heart gone, then
+#      blinking (checked)
+# en1  put just past the first cook over the pit: he falls out of the picture while the counter's enemies go
+#      by, then the section starts again (checked)
+# en2  left standing under the flyer of column 78 as the route's run goes by: it flies over him and never
+#      drops on him (checked)
+# en3  walking out of the first ledge (the make-up of the walk-out y is put on one frame): the fork of the
+#      first cook reaches him, then he is flung into the pit (checked)
+# (name, the route frame the put is on (its buttons run after its frame), buttons after the frame, writes into the
+# game's memory after it ('wx': the player's 16-bit world x, 'py': his y))
+_EN = [('en0', 7355, [(N, 230)], {7355: [('wx', 884), ('py', 192)]}),
+       ('en1', 7355, [(R, 10), ([RIGHT, A], 18), (N, 45), (L, 10), (N, 90), (L, 30), (N, 40)], {7355: [('wx', 1010), ('py', 192)]}),
+       ('en2', 7583, [(N, 240)], {7678: [('wx', 1248), ('py', 190)]}),
+       ('en3', 7021, [(N, 300)], {7021: [('py', 104)]})]
+# ('wx' needs the run's camera at that frame: find it in the low-memory write there)
+for name_, put_, runs_, pk_ in _EN:
+    # kept from the kitchen's exit (as the route is): the port walks the whole section, so it has every enemy
+    # from its spawn and can show what the fork / the flyer do to the player put in their way
+    sc_, n_ = after(put_, runs_, ROUTE3)
+    POKED.append(('s3_p_' + name_, sc_, n_, KEEP, pk_))
+    PORT_POKES['s3_p_' + name_] = pk_
 def files(name): return [j[0] for j in JOBS2 + POKED if j[0] == 's3_' + name or j[0][:-2] == 's3_' + name]
+# (getting a thrown crate onto one of these enemies in hand play is a run for later: en1's throw was lost to a pit
+# fall before it)
 
 # all start two seconds before the kitchen's exit is entered: the port takes the place of the player and the camera
 # from the NES there ('middle'), walks out of the kitchen and into the third section
@@ -98,6 +128,7 @@ CHECKS5 = [('s3_route', ROUTE_FILES, ROUTE3, 6552, 'middle', SINK)]
 for name_ in RUNS: CHECKS5.append(('s3_' + name_, files(name_), RUNS[name_][0], 6552, 'middle', None))
 for name_ in _E: CHECKS5.append(('s3_p_' + name_, files('p_' + name_), after(TAP, _E[name_][0], ROUTE3)[0], 7652, 'sec3', None))
 for name_, cut_, runs_, pk_ in _CR: CHECKS5.append(('s3_p_' + name_, ['s3_p_' + name_], after(cut_, runs_, ROUTE3)[0], cut_ - 2, 'sec3', None))
+for name_, put_, runs_, pk_ in _EN: CHECKS5.append(('s3_p_' + name_, ['s3_p_' + name_], after(put_, runs_, ROUTE3)[0], 6552, 'middle', None))
 
 if __name__ == '__main__':
     import multiprocessing as mp
