@@ -29,9 +29,9 @@ and bonus boxes. Second of the section's four steps; still to come: the enemies,
 
 ## Not in this step
 
-- **The enemies** (they stand and walk about in this section from column 36 on, one plays an
-  alarm) and what they throw: step 17. A thrown crate already hits one and knocks it out (that
-  much falls out of the crate code from step 08).
+- **The enemies** (they stand and walk about in this section from column 36 on, the flyers
+  with their buzz) and what they throw: step 17. A thrown crate already hits one and knocks
+  it out (that much falls out of the crate code from step 08).
 - **The sink** (the tap, the thing in it, the rising water): step 18.
 - The enemy sounds themselves are not in the port yet, so while the NES plays one — above all
   the flyer's buzz, the very sound 6 of step 09, which the NES restarts every 3 frames while
