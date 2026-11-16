@@ -69,6 +69,26 @@ for name_, (runs_, x_) in _E.items():
     if x_: pk_[7830] = [('px', x_), ('py', 150)]
     POKED.append(('s3_p_' + name_, sc_, n_, 7600, pk_))
     PORT_POKES['s3_p_' + name_] = pk_
+# step 16: the crates and bonus boxes.  The route never picks a crate up, so in these runs the player is put on the
+# counter next to crates by a write into the game's memory on one frame (and the port does the same to its player).
+# (Checked against the recordings; the crates' ways out are as they happened there:)
+# cr0  the two crates on the first counter (columns 14 and 15): pick one up, throw it (it slides along the counter
+#      and off the screen), pick the other up and throw it straight up (it leaves the picture at the top)
+# cr1  the crate with a bonus box inside at (11, 41): the bonus box appears and is taken on the way; the crate is
+#      thrown along the counter; its neighbour at (11, 42) is picked up and thrown after it
+# cr2  the stack at (10/11, 62): the upper crate first (walked into from the left, the upper block is found first),
+#      thrown off along the counter; then the lower one, which has a bonus box inside: the box appears, is taken,
+#      and that crate is thrown too
+_CR = [('cr0', 6946, [(N, 2), (R, 6), ([RIGHT, B], 2), (R, 8), ([B], 2), (N, 40), (R, 6), ([RIGHT, B], 2), (N, 2), ([UP, B], 2), ([UP], 3), (N, 90)],
+        {6946: [('px', 102), ('py', 192)]}),
+       ('cr1', 7250, [(N, 2), (R, 8), ([RIGHT, B], 2), (R, 12), ([B], 2), (N, 40), (R, 6), ([RIGHT, B], 2), (N, 2), ([RIGHT, B], 2), (N, 110)],
+        {7250: [('px', 54), ('py', 192)]}),
+       ('cr2', 7383, [(N, 1), (R, 10), ([RIGHT, B], 2), (R, 4), ([B], 2), (N, 20), (R, 6), ([RIGHT, B], 2), (R, 6), ([B], 2), (N, 100)],
+        {7383: [('px', 114), ('py', 192)]})]
+for name_, cut_, runs_, pk_ in _CR:
+    sc_, n_ = after(cut_, runs_, ROUTE3)
+    POKED.append(('s3_p_' + name_, sc_, n_, cut_ - 20, pk_))
+    PORT_POKES['s3_p_' + name_] = pk_
 def files(name): return [j[0] for j in JOBS2 + POKED if j[0] == 's3_' + name or j[0][:-2] == 's3_' + name]
 
 # all start two seconds before the kitchen's exit is entered: the port takes the place of the player and the camera
@@ -77,6 +97,7 @@ KT = 'kt_route3'                                     # (capture_kitchen.py: the 
 CHECKS5 = [('s3_route', ROUTE_FILES, ROUTE3, 6552, 'middle', SINK)]
 for name_ in RUNS: CHECKS5.append(('s3_' + name_, files(name_), RUNS[name_][0], 6552, 'middle', None))
 for name_ in _E: CHECKS5.append(('s3_p_' + name_, files('p_' + name_), after(TAP, _E[name_][0], ROUTE3)[0], 7652, 'sec3', None))
+for name_, cut_, runs_, pk_ in _CR: CHECKS5.append(('s3_p_' + name_, ['s3_p_' + name_], after(cut_, runs_, ROUTE3)[0], cut_ - 2, 'sec3', None))
 
 if __name__ == '__main__':
     import multiprocessing as mp

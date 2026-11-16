@@ -61,7 +61,7 @@ The section is split over several steps, as the kitchen was:
 
 - **Crates and bonus boxes:** crates are solid blocks that cannot be picked up, bonus boxes are
   only part of the picture.
-- **The enemies** (the list has five, of the two types of the dining room) and what they throw.
+- **The enemies** (the list has seven, of the two types of the dining room) and what they throw.
 - **The sink:** the tap (type `$09`), the thing lying in the sink (type `$1E`) and the rising
   water. In this step the sink is an empty box: a player who drops in cannot get out (falling
   out of the picture is not possible there either). Use the shortcut below to see the exit.
