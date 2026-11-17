@@ -1,0 +1,25 @@
+# Sprites the GML refers to but that are NOT in the extracted pack yet.
+# tools/check_assets.py treats these as "known but pending" instead of errors.
+# Delete a line once the sprite has been extracted and imported.
+#
+# 1) gameplay props / enemies of chapter 1 - the level frames we can reproduce
+#    only ever show Chip and the HUD in the crate-firing room, so these still
+#    need a capture that actually contains them:
+spr_crate
+spr_debris
+spr_enemy_walker
+# 2) cut-scene cast: the FATCAM intro starts after the 6000-frame capture
+#    window, so these need a longer recording (tools/RECON.md):
+spr_chip_intro_stand
+spr_chip_intro_walk
+spr_chip_scene_stand
+spr_chip_scene_walk
+spr_dale_intro_stand
+spr_dale_intro_crouch
+spr_gadget_stand
+spr_gadget_talk
+spr_gadget_wave
+spr_doctor_talk
+spr_cutscene_pair
+spr_cutscene_logo
+spr_logo_pair

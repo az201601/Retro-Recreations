@@ -1,0 +1,156 @@
+[
+ {
+  "character": "chip",
+  "anim": "idle",
+  "image": "sprites/chip/idle.png",
+  "frame_w": 20,
+  "frame_h": 24,
+  "count": 2,
+  "origin": [
+   10,
+   24
+  ],
+  "sources": [
+   {
+    "trace": "pi_holdR",
+    "frame": 5617
+   },
+   {
+    "trace": "pi_holdR",
+    "frame": 5991
+   }
+  ]
+ },
+ {
+  "character": "chip",
+  "anim": "walk",
+  "image": "sprites/chip/walk.png",
+  "frame_w": 20,
+  "frame_h": 25,
+  "count": 4,
+  "origin": [
+   10,
+   25
+  ],
+  "sources": [
+   {
+    "trace": "pi_holdR",
+    "frame": 5601
+   },
+   {
+    "trace": "pi_holdR",
+    "frame": 5609
+   },
+   {
+    "trace": "pi_holdR",
+    "frame": 5625
+   },
+   {
+    "trace": "pi_holdR",
+    "frame": 5633
+   }
+  ]
+ },
+ {
+  "character": "chip",
+  "anim": "jump",
+  "image": "sprites/chip/jump.png",
+  "frame_w": 23,
+  "frame_h": 25,
+  "count": 2,
+  "origin": [
+   11,
+   25
+  ],
+  "sources": [
+   {
+    "trace": "mv_g",
+    "frame": 5734
+   },
+   {
+    "trace": "mv_g",
+    "frame": 5744
+   }
+  ]
+ },
+ {
+  "character": "chip",
+  "anim": "fall",
+  "image": "sprites/chip/fall.png",
+  "frame_w": 20,
+  "frame_h": 24,
+  "count": 2,
+  "origin": [
+   10,
+   24
+  ],
+  "sources": [
+   {
+    "trace": "mv_g",
+    "frame": 5752
+   },
+   {
+    "trace": "mv_g",
+    "frame": 5860
+   }
+  ]
+ },
+ {
+  "character": "chip",
+  "anim": "land",
+  "image": "sprites/chip/land.png",
+  "frame_w": 23,
+  "frame_h": 18,
+  "count": 1,
+  "origin": [
+   11,
+   18
+  ],
+  "sources": [
+   {
+    "trace": "mv_a",
+    "frame": 5718
+   }
+  ]
+ },
+ {
+  "character": "chip",
+  "anim": "push",
+  "image": "sprites/chip/push.png",
+  "frame_w": 18,
+  "frame_h": 25,
+  "count": 1,
+  "origin": [
+   9,
+   25
+  ],
+  "sources": [
+   {
+    "trace": "pi_holdR",
+    "frame": 5625
+   }
+  ]
+ },
+ {
+  "character": "chip",
+  "anim": "throw",
+  "image": "sprites/chip/throw.png",
+  "frame_w": 20,
+  "frame_h": 25,
+  "count": 2,
+  "origin": [
+   10,
+   25
+  ],
+  "sources": [
+   {
+    "trace": "pb",
+    "frame": 5700
+   },
+   {
+    "trace": "pb",
+    "frame": 5609
+   }
+  ]
+ }
+]

@@ -1,0 +1,12 @@
+# python venv / caches
+.venv/
+__pycache__/
+*.pyc
+
+# emulator capture dumps (regenerate with tools/capture_*.sh)
+out/
+*.ppm
+*.bin
+
+# build intermediates
+pack/
