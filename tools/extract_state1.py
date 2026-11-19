@@ -4,7 +4,8 @@ Extract state-1 (second screen) graphics from the ROM.
 
 Outputs (extracted/screens/state1/):
   state1_bg.png     256x240 background rendered from the nametable the ROM
-                    builds (fill + $B98B strip + $B9CD patch), CHR bank 31,
+                    builds (fill + $B98B strip tiled 15x by $D74C +
+                    $B9CD patch), CHR bank 31,
                     state-1 background palette.
   emblem.png        the 4-object mirrored metasprite composite (parent +
                       3 flip children) with the parent anchor marked in the
@@ -12,11 +13,14 @@ Outputs (extracted/screens/state1/):
   emblem_one.png    a single unflipped copy of metasprite set 0 frame 0.
   state1_data.json  palettes, metasprite records, trajectory phases.
 
-Background stream format ($C46D): repeating blocks of
+Background blocks ($C46A consumes exactly one per call):
   [count_code, row_code, data...]
 count_code: bits0-5 = bytes per row (0 means 64), bit6 = column mode,
 bit7 = RLE (one byte repeated). row_code: bits0-5 = rows, bit7 = repeat-row
-mode. Only the plain literal mode is supported here (asserted).
+mode. Only the plain literal mode is supported here (asserted). The state-1
+layout itself is driven by init $D74C: the 32x2 $B98B brick block is loaded
+15 times in a row (filling all 30 rows at $2400, then $2000), and the 12x8
+$B9CD patch once at $2144.
 """
 
 import json
@@ -72,25 +76,23 @@ class Rom:
         return out
 
 
-def decode_c46d(stream):
-    """Decode one $C46A stream -> list of (row_width, [rows]) blocks."""
-    blocks = []
-    i = 0
-    while i < len(stream):
-        b0, b1 = stream[i], stream[i + 1]
-        i += 2
-        count = (b0 & 0x3F) or 0x40
-        rows = b1 & 0x3F
-        assert not (b0 & 0xC0), "RLE/column mode not supported (b0=$%02X)" % b0
-        assert not (b1 & 0x80), "repeat-row mode not supported (b1=$%02X)" % b1
-        data = []
-        for _ in range(rows):
-            data.append(list(stream[i:i + count]))
-            i += count
-        blocks.append((count, data))
-        if rows == 0 or i >= len(stream):
-            break
-    return blocks
+def decode_c46a_block(rom, bank, ptr):
+    """Decode ONE $C46A block at a bank/CPU pointer -> list of rows.
+
+    $C46A consumes exactly one block per call: [count_code, row_code,
+    data...]; count_code bits 0-5 = bytes per row (0 means 64), row_code
+    bits 0-5 = row count. (count bit 7 = RLE, bit 6 = column mode,
+    row_code bit 7 = repeat-row; the two state-1 blocks use none of
+    these -- asserted.)
+    """
+    count_code = rom.bank_byte(bank, ptr)
+    row_code = rom.bank_byte(bank, ptr + 1)
+    assert not (count_code & 0xC0), "RLE/column mode (count=$%02X)" % count_code
+    assert not (row_code & 0x80), "repeat-row mode (rows=$%02X)" % row_code
+    count = (count_code & 0x3F) or 0x40
+    rows = row_code & 0x3F
+    data = rom.bank_bytes(bank, ptr + 2, count * rows)
+    return [list(data[r * count:(r + 1) * count]) for r in range(rows)]
 
 
 def draw_tile(img, px, chr_bank, index, palette, dx, dy, flip_x=False, flip_y=False):
@@ -133,18 +135,26 @@ def main():
     bg_pal_idx = list(ROM.bank_bytes(3, 0xB081, 16))
     spr_pal_idx = list(ROM.bank_bytes(3, 0xB091, 16))
 
-    # --- background nametable ($2000; $2400 gets the same strip) ---
+    # --- background nametable ($2000; $2400 gets identical content) ---
+    # State init $D74C (bank 3 switched in by $C2C5) calls $C46A on the
+    # $B98B block FIFTEEN times back to back; the destination ($44/$45)
+    # keeps advancing 2 rows after each call, so the 32x2 brick strip
+    # tiles the full 30-row nametable -- first at $2400 (dest table
+    # $D781,X with X=2), then again at $2000 (X=0). After the $C309
+    # tile-$00 fill every nametable byte is covered by the strip.
+    # The $B9CD 12x8 silhouette patch is then written at $2144.
+    # (An earlier version decoded only the first 2 rows, which shipped
+    # a mostly-empty backdrop; the 15x repeat loop is the fix.)
     nametable = [0] * (32 * 30)
-    strip = decode_c46d(ROM.bank_bytes(3, 0xB98B, 2 + 32 * 2))
-    for width, rows in strip:
-        for r, row in enumerate(rows):
-            nametable[r * 32:r * 32 + width] = row
-    patch = decode_c46d(ROM.bank_bytes(3, 0xB9CD, 2 + 12 * 8))
-    patch_off = 0x144  # $2144
-    for width, rows in patch:
-        for r, row in enumerate(rows):
-            start = patch_off + r * 32
-            nametable[start:start + width] = row
+    row = 0
+    for _ in range(15):
+        for strip_row in decode_c46a_block(ROM, 3, 0xB98B):
+            nametable[row * 32:row * 32 + len(strip_row)] = strip_row
+            row += 1
+    patch_off = 0x144  # $2144 - $2000
+    for r, patch_row in enumerate(decode_c46a_block(ROM, 3, 0xB9CD)):
+        start = patch_off + r * 32
+        nametable[start:start + len(patch_row)] = patch_row
 
     # Spotlight compositing: BG palette colour 1 is $0F (black), colour 0 is
     # transparent on the NES (backdrop/sprites show through). So the BG layer

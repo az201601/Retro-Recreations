@@ -13,12 +13,12 @@ Palette engine (`$C06C` in NMI, set up by `$C1B0/$C1BF`): 8 groups of 4 colours 
 
 ## Background (CHR bank 31 → PPU $0000 table)
 
-State init `$D63D` first fills both nametables with tile `$00`/attr 0 (`$C309`), then `$D74C` loads:
+State init `$D63D` first fills both nametables with tile `$00`/attr 0 (`$C309`), then the state-1 handler `$D74C` (bank 3 switched in via `$C2C5`) loads:
 
-- bank 3 `$B98B` stream → `$2000` and `$2400` (same data both): header `20 02` = 32 tiles × 2 rows of brick-pattern tiles (`CC CD CA CB` repeating).
-- bank 3 `$B9CD` stream → `$2144`: header `0C 08` = 12 × 8 tiles at row 10, cols 4–15: the character silhouettes against bricks.
+- bank 3 `$B98B` block → `$2400`, then `$2000` (dest table at `$D781`, X=2 then 0): the block (header `20 02` = 32 tiles × 2 rows of brick-pattern tiles, courses `CC CD CA CB` / `CB CC CD CA`) is loaded **fifteen times back to back** — the destination `($44/$45)` keeps advancing 2 rows per call — so the brick strip tiles the **whole 30-row nametable**: a full-screen brick wall on both nametables.
+- bank 3 `$B9CD` block → `$2144`: header `0C 08` = 12 × 8 tiles at row 10, cols 4–15: the character silhouettes against the bricks.
 
-Stream format (`$C46D`): blocks of `[count_code, row_code, literal data...]`; count_code bits 0–5 = bytes/row (0→64), bit 6 = column mode, bit 7 = RLE; row_code bits 0–5 = rows, bit 7 = repeat-row. Only literal mode occurs here (extractor asserts the rest).
+Block format (`$C46A` consumes exactly one block per call): `[count_code, row_code, literal data...]`; count_code bits 0–5 = bytes/row (0→64), bit 6 = column mode, bit 7 = RLE; row_code bits 0–5 = rows, bit 7 = repeat-row. Only literal mode occurs here (extractor asserts the rest). NOTE: an earlier extraction decoded only the first 2 rows and shipped a mostly-empty backdrop; the 15× repeat loop in `$D74C` is what the corrected extractor now mirrors.
 
 `state1_bg.png` is exported as **black ink (value >0) on transparency** — see compositing below.
 
@@ -46,6 +46,6 @@ The per-frame bank-3 routine `$B508` (another `$C54E` dispatch, on `$98`) is **i
 ## Transfer #3 (beginner steps also given in chat)
 
 1. Create sprite `spr_spotlight1` from `extracted/screens/state1/emblem.png`, set **Origin X=32, Y=32** (type the numbers; the anchor is the disc's centre, so for this 64×64 image the Center button happens to give the same result).
-2. Create sprite `spr_state1_bg` from `extracted/screens/state1/state1_bg.png`, Origin stays **0, 0**.
+2. Create sprite `spr_state1_bg` from `extracted/screens/state1/state1_bg.png`, Origin stays **0, 0**. (If the sprite already exists from an earlier transfer, just double-click it, **Load Sprite**, pick the same file again, OK — no code changes.)
 3. Re-paste `gml/scripts/scr_nes_init.gml`, `gml/scripts/scr_game_state_step.gml`, and `gml/objects/obj_nes_core/Draw.gml` (double-click each in the tree, Ctrl+A, Delete, paste the new file, green ✓).
 4. Ctrl+S, F5. Expect: fade-in, then a pale spotlight disc swooping around the dark screen over faint silhouettes; pressing any button (or waiting ~11 s) ends it to STATE 2 (black placeholder).
