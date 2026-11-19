@@ -188,9 +188,14 @@ def main():
     ap.add_argument('--length', type=int, default=64)
     ap.add_argument('--follow', action='store_true',
                     help='Follow control flow, tracking MMC1 writes')
+    ap.add_argument('--bank', type=int, default=None,
+                    help='PRG bank mapped at $8000-$BFFF (sets MMC1 PRG mode 3)')
     args = ap.parse_args()
 
     rom = Rom(args.rom)
+    if args.bank is not None:
+        rom.mmc1_control = 0x1E  # PRG mode 3: switch $8000 bank, fix $C000
+        rom.mmc1_prg = args.bank
     print('; Mapper %d (MMC1), PRG %d x 16KB, CHR %d x 8KB' %
           (rom.mapper, rom.prg_banks, rom.chr_banks))
     print('; Reset vector: $%04X' % (rom.prg_read(0xFFFC) | (rom.prg_read(0xFFFD) << 8)))

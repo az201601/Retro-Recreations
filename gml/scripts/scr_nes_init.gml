@@ -33,6 +33,11 @@ global.pad_released = 0;
 global.game_state = 1;
 global.game_state_timer = 0;
 
+// State-1 spotlight anchor position, 8.8 fixed point (set again on state
+// entry in scr_game_state_step). ROM start: X=192, Y=-64 (docs/06/07).
+global.s1_x = 192 * 256;
+global.s1_y = -64 * 256;
+
 // Placeholder seed only. The ROM RNG routine has not been located yet;
 // do not use this for gameplay until it is replaced (see TASKS.md).
 global.nes_rng_state = $A5;
