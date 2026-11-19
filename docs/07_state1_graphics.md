@@ -26,7 +26,7 @@ Stream format (`$C46D`): blocks of `[count_code, row_code, literal data...]`; co
 
 Object rendering (`$F191`, PRG bank 5): `$032C,X` selects a metasprite set from the pointer table at `$8000`, `$0338,X` a frame. Frame format: `[count][dx, dy, tile, attr][tile, attr] × (count−1)` — a horizontal strip of 8×16 sprites advancing 8 px per tile (count bit 7 would make it vertical). Object flag byte `$0344` is XORed into each sprite's attribute (so bits 6/7 flip the whole object), and when `$0344` bit 7 is set the object Y is raised by `$03BC` (32 here).
 
-State 1 uses set 0 frame 0 for all four objects: strip of 4 tiles (`$C5 $C7 $C9 $D5`, attr `$02` → sprite palette 2) at offset (−32,−32). Parent flags `$20`; children `$60/$A0/$E0` (the script's FLG ops) produce the four flip combinations → a 64×32 pale disc (`emblem.png`, anchor at image (32,32) = the object's position, i.e. disc bottom-centre).
+State 1 uses set 0 frame 0 for all four objects: TWO strips of 4 tiles — (`$C5 $C7 $C9 $D5`) at offset (−32,−32) and (`$D7 $D9 $D9 $D9`) at offset (−32,−16), attr `$02` throughout (→ sprite palette 2), frame terminated by `$00`. Parent flags `$20`; children `$60/$A0/$E0` (the script's FLG ops) produce the four flip combinations, mirroring each strip across both axes → a 64×64 beaded disc (`emblem.png`, anchor at image (32,32) = the object's position = disc centre).
 
 Trajectory (from decoded script `$F2DB`, velocities via the nibble-packed format; see `state1_data.json`): start (192,−64); phases 128f (vy+2), 96f (−1.375,−1.375), 64f (+2,0), 48f (−1.375,+1.375), 128f (−2,0), then SETY 104 + 134f (+2,0), 16f (−4,0), WAIT 60 → state 2 (≈674 frames; button press skips). End anchor (70,104), inside the silhouette patch.
 
