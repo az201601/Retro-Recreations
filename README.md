@@ -4,6 +4,8 @@ Goal: recreate **Chip 'n Dale Rescue Rangers 2 (USA)** as faithfully as possible
 
 This repository is the analysis + asset/code production side of the project. The user imports/transfers the generated GML and resources into a GMS 1.4.1760 project.
 
+> **Beginner mode:** the project owner is a complete beginner to GMS 1.4. All transfer instructions — in `docs/03_import_guide_gms14.md` and in chat — are click-by-click: exact menu choices, exact names to type, paste-only code (never type code by hand), and a "you should see" success check for every transfer.
+
 ## Accuracy target
 
 For this project, “cycle accurate” is defined at the observable game-behaviour boundary:
@@ -45,4 +47,4 @@ A literal transistor-level or 6502-cycle-by-cycle emulator inside GML is a diffe
 - CHR pattern data extracted to tile sheets.
 - GMS core scaffold created: NES constants, controller polling, fixed-point helpers, frame counter.
 
-Next: decode the `$F001` inline-data object/spawn helper used by boot state $00, then follow state $00 to the first attract/title screen so the GMS project boots into the same first screen.
+Next: extract state 1's graphics (palettes from bank 3 `$B081`, nametable streams from the `$D74C` init, CHR banks 31/29) and the child-object render helpers, so GMS can draw the second screen with the decoded script timing. The first/copyright screen (state 0) is intentionally skipped: the GMS boot state is 1.

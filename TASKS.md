@@ -12,11 +12,15 @@
 - [ ] Decode `$C23F`, `$EFCE`, `$F0C8`, `$D63D`, `$D624` (post-boot init chain).
 - [ ] Identify bank-6 `$8000` per-frame routine (suspected sound tick).
 
-## M1 — Boot to first screen
+## M1 — Boot to second screen (state 0 copyright SKIPPED by decision)
 
-- [ ] Map the first game state(s): Capcom logo / title / attract flow.
-- [ ] Extract the palettes and nametable data used by the first screen.
-- [ ] GMS: state machine shell that reaches the same first screen.
+- [x] Map the boot flow: state 0 (copyright, skipped) → state 1 (second screen) → state 2.
+- [x] GMS: boot directly at state 1 (`scr_nes_init`), matching the ROM right after state 0 exits.
+- [ ] Extract state-1 palettes: bank 3 `$B081-$B0A0` (32 bytes).
+- [ ] Decode `$C46A` nametable stream format; extract state-1 maps (loads to `$2000`, `$2400`, `$2144` from `$D74C`).
+- [ ] Decode child render helpers `$F37C`, `$E4C6`, `$E749` (state-1 logo pieces' metasprites).
+- [ ] GMS: state-1 screen rendered; script timing/phases running on the VM timing model.
+- [ ] Identify sound requests `$7F/$74/$73` in the bank-6 sound engine (can defer to audio milestone).
 
 ## M2 — Rendering model
 

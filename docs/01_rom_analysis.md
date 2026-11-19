@@ -116,6 +116,14 @@ For the boot call site at `$D07C`, the inline table starts at `$D081`:
 
 `$F001` also starts with `JSR $C576`, another return-address helper: it reads a 16-bit inline pointer from after its call site and advances the stacked return address by 2. So the recurring pattern in this engine is **JSR to a helper followed by inline data**. Any future disassembly pass must stop linear decoding at these call sites or it will invent false instructions.
 
+## Object system and script VM (decoded)
+
+- `$F001` is the object spawner: `$EFEE` finds a free slot among **12 object slots** (per-field arrays, stride `$0C`), then the slot is initialised with the type from Y (stored | `$80` in `$02F0`) and a **script pointer** taken from the two inline bytes after the `JSR $F001` (fetched by the `$C576` return-address helper).
+- Per-frame object update is `$ED6A`: hide OAM entries 1–63, then dispatch each live slot by type. Type 1 → `$EE89` (sets PRG bank 4, jumps to the VM at `$DB90`); type 2 → bank 2 `$A7A9`; type 6 → `$EDE0` then VM.
+- The VM executes bytecode scripts (64 opcodes: WAIT, SPAWN, GOSUB/RET, LOOP, WRITE, SETX/SETY, velocities + MOVE, SOUND, SETSTATE, …). Full reference: **`docs/05_vm_opcodes.md`**; decoder tool: `tools/decode_script.py`.
+- Screen flow: a screen's script eventually writes the next state into `$40` and jumps to the shared bank-4 exit script at `$AF68` (fade, WAIT 20, set done-flag `$75`), after which the main loop re-enters `$D043` with the new state. State configs (palettes/CHR/scroll) come from the `$D610` table via `$D63D`. Full sequence: **`docs/06_screens_sequence.md`**.
+- Boot state 0 (first/copyright screen) is only `WAIT 120` → state 1. **The recreation skips state 0 and boots at state 1** (user decision); state 1's decoded script, sounds and timing are in `docs/06_screens_sequence.md`.
+
 ## Preliminary RAM shadows
 
 See `docs/ram_map_preliminary.csv`. Everything marked “shadow” is confirmed by boot/NMI code; gameplay meanings are added only when a routine proves them.
