@@ -15,13 +15,46 @@ switch (argument0) {
         // Skipped by project decision - this case should never be entered.
         break;
     case 1:
-        // ROM $D0D7: sound request $7F, spawn script $F2DB (second screen).
-        // Decoded script timing (docs/06_screens_sequence.md):
-        //   spawn 3 linked children, movement phases of 128/96/64/48/128
-        //   frames, SOUND $74, 134+16 frames, SOUND $73, WAIT 60,
-        //   then state 2. Any pressed button skips to state 2 immediately.
-        // TODO M1: run this on the script-VM timing model once the state-1
-        // graphics (palettes/nametables/CHR banks 31+29) are extracted.
+        // ROM $D0D7: sound request $7F, spawn script $F2DB (docs/06, docs/07).
+        // The script moves a spotlight (parent + 3 mirrored children) with
+        // velocity phases; any pressed button skips to state 2.
+        // Positions are 8.8 fixed point, like the ROM (docs/05).
+        var t;
+        t = global.game_state_timer;
+        if (t == 0) {
+            // Script start: SETX $C0,$00 / SETY $C0,$FF (signed Y = -64)
+            global.s1_x = 192 * 256;
+            global.s1_y = -64 * 256;
+        }
+        if (global.pad_pressed != 0 && t < 614) {
+            // PADJ in the ROM's $F352 subroutine: skip straight to state 2.
+            global.game_state = 2;
+            global.game_state_timer = 0;
+            break;
+        }
+        if (t < 128) {
+            global.s1_y += 512;                    // SETVY $20 = +2 px/frame
+        } else if (t < 224) {
+            global.s1_x -= 352;                    // SETVX $EA = -1.375
+            global.s1_y -= 352;                    // SETVY $EA
+        } else if (t < 288) {
+            global.s1_x += 512;                    // SETVX $20
+        } else if (t < 336) {
+            global.s1_x -= 352;                    // SETVX $EA
+            global.s1_y += 352;                    // SETVY $16 = +1.375
+        } else if (t < 464) {
+            global.s1_x -= 512;                    // SETVX $E0 = -2
+        } else if (t < 598) {
+            if (t == 464) global.s1_y = 104 * 256; // SETY $68,$00; SOUND $74 here
+            global.s1_x += 512;                    // SETVX $20
+        } else if (t < 614) {
+            global.s1_x -= 1024;                   // SETVX $C0 = -4; SOUND $73 at 614
+        }
+        // t 614..673: WAIT 60. ROM then fades (20f) into state 2.
+        if (t >= 674) {
+            global.game_state = 2;
+            global.game_state_timer = 0;
+        }
         break;
     default:
         // Handler not yet transcribed. Keep frame timing alive; do not guess.
