@@ -24,7 +24,7 @@ Stream format (`$C46D`): blocks of `[count_code, row_code, literal data...]`; co
 
 ## Sprites: the spotlight disc (CHR bank 29 → PPU $1000 table, 8×16)
 
-Object rendering (`$F191`, PRG bank 5): `$032C,X` selects a metasprite set from the pointer table at `$8000`, `$0338,X` a frame. Frame format: `[count][dx, dy, tile, attr][tile, attr] × (count−1)` — a horizontal strip of 8×16 sprites advancing 8 px per tile (count bit 7 would make it vertical). Object flag byte `$0344` is XORed into each sprite's attribute (so bits 6/7 flip the whole object), and when `$0344` bit 7 is set the object Y is raised by `$03BC` (32 here).
+Object rendering (`$F191`, PRG bank 5): `$032C,X` selects a metasprite set from the pointer table at `$8000`, `$0338,X` a frame. Frame format: a sequence of strips ended by a `$00` byte. Each strip: `[count][dx, dy][tile, attr] × count` — 8×16 sprites advancing 8 px per tile (count bit 7 makes the strip vertical, bits 0–6 are the sprite count); the renderer loops back for the next count byte after each strip. Object flag byte `$0344` is XORed into each sprite's attribute (so bits 6/7 flip the whole object), and when `$0344` bit 7 is set the object Y is raised by `$03BC` (32 here).
 
 State 1 uses set 0 frame 0 for all four objects: TWO strips of 4 tiles — (`$C5 $C7 $C9 $D5`) at offset (−32,−32) and (`$D7 $D9 $D9 $D9`) at offset (−32,−16), attr `$02` throughout (→ sprite palette 2), frame terminated by `$00`. Parent flags `$20`; children `$60/$A0/$E0` (the script's FLG ops) produce the four flip combinations, mirroring each strip across both axes → a 64×64 beaded disc (`emblem.png`, anchor at image (32,32) = the object's position = disc centre).
 
