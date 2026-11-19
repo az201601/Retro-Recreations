@@ -4,6 +4,8 @@ Goal: recreate **Chip 'n Dale Rescue Rangers 2 (USA)** as faithfully as possible
 
 This repository is the analysis + asset/code production side of the project. The user imports/transfers the generated GML and resources into a GMS 1.4.1760 project.
 
+> **Beginner mode:** the project owner is a complete beginner to GMS 1.4. All transfer instructions — in `docs/03_import_guide_gms14.md` and in chat — are click-by-click: exact menu choices, exact names to type, paste-only code (never type code by hand), and a "you should see" success check for every transfer.
+
 ## Accuracy target
 
 For this project, “cycle accurate” is defined at the observable game-behaviour boundary:
