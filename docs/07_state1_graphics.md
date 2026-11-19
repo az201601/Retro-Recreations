@@ -24,9 +24,9 @@ Stream format (`$C46D`): blocks of `[count_code, row_code, literal data...]`; co
 
 ## Sprites: the spotlight disc (CHR bank 29 → PPU $1000 table, 8×16)
 
-Object rendering (`$F191`, PRG bank 5): `$032C,X` selects a metasprite set from the pointer table at `$8000`, `$0338,X` a frame. Frame format: `[count][dx, dy, tile, attr][tile, attr] × (count−1)` — a horizontal strip of 8×16 sprites advancing 8 px per tile (count bit 7 would make it vertical). Object flag byte `$0344` is XORed into each sprite's attribute (so bits 6/7 flip the whole object), and when `$0344` bit 7 is set the object Y is raised by `$03BC` (32 here).
+Object rendering (`$F191`, PRG bank 5): `$032C,X` selects a metasprite set from the pointer table at `$8000`, `$0338,X` a frame. Frame format: a sequence of strips ended by a `$00` byte. Each strip: `[count][dx, dy][tile, attr] × count` — 8×16 sprites advancing 8 px per tile (count bit 7 makes the strip vertical, bits 0–6 are the sprite count); the renderer loops back for the next count byte after each strip. Object flag byte `$0344` is XORed into each sprite's attribute (so bits 6/7 flip the whole object), and when `$0344` bit 7 is set the object Y is raised by `$03BC` (32 here).
 
-State 1 uses set 0 frame 0 for all four objects: strip of 4 tiles (`$C5 $C7 $C9 $D5`, attr `$02` → sprite palette 2) at offset (−32,−32). Parent flags `$20`; children `$60/$A0/$E0` (the script's FLG ops) produce the four flip combinations → a 64×32 pale disc (`emblem.png`, anchor at image (32,32) = the object's position, i.e. disc bottom-centre).
+State 1 uses set 0 frame 0 for all four objects: TWO strips of 4 tiles — (`$C5 $C7 $C9 $D5`) at offset (−32,−32) and (`$D7 $D9 $D9 $D9`) at offset (−32,−16), attr `$02` throughout (→ sprite palette 2), frame terminated by `$00`. Parent flags `$20`; children `$60/$A0/$E0` (the script's FLG ops) produce the four flip combinations, mirroring each strip across both axes → a 64×64 beaded disc (`emblem.png`, anchor at image (32,32) = the object's position = disc centre).
 
 Trajectory (from decoded script `$F2DB`, velocities via the nibble-packed format; see `state1_data.json`): start (192,−64); phases 128f (vy+2), 96f (−1.375,−1.375), 64f (+2,0), 48f (−1.375,+1.375), 128f (−2,0), then SETY 104 + 134f (+2,0), 16f (−4,0), WAIT 60 → state 2 (≈674 frames; button press skips). End anchor (70,104), inside the silhouette patch.
 
@@ -45,7 +45,7 @@ The per-frame bank-3 routine `$B508` (another `$C54E` dispatch, on `$98`) is **i
 
 ## Transfer #3 (beginner steps also given in chat)
 
-1. Create sprite `spr_spotlight1` from `extracted/screens/state1/emblem.png`, set **Origin X=32, Y=32** (type the numbers — do not use the Center button; the anchor is the disc's bottom-centre).
+1. Create sprite `spr_spotlight1` from `extracted/screens/state1/emblem.png`, set **Origin X=32, Y=32** (type the numbers; the anchor is the disc's centre, so for this 64×64 image the Center button happens to give the same result).
 2. Create sprite `spr_state1_bg` from `extracted/screens/state1/state1_bg.png`, Origin stays **0, 0**.
 3. Re-paste `gml/scripts/scr_nes_init.gml`, `gml/scripts/scr_game_state_step.gml`, and `gml/objects/obj_nes_core/Draw.gml` (double-click each in the tree, Ctrl+A, Delete, paste the new file, green ✓).
 4. Ctrl+S, F5. Expect: fade-in, then a pale spotlight disc swooping around the dark screen over faint silhouettes; pressing any button (or waiting ~11 s) ends it to STATE 2 (black placeholder).
