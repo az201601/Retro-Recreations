@@ -73,4 +73,4 @@ State 2 then starts with sound request `$01` and script `$F3B2` (spawns, `SOUND 
 
 ## Recreating state 1 — done in `docs/07_state1_graphics.md`
 
-Palettes, the `$C46A` nametable streams, CHR banks 31/29 and the child metasprite rendering are all extracted/decoded there (`tools/extract_state1.py`). State 1 is the **spotlight intro**: a pale mirrored-sprite disc moves behind a black silhouette background (brick wall + character silhouettes), implemented in GMS as disc sprite + black-ink overlay. Remaining: sound requests `$7F/$74/$73` in the bank-6 sound engine (audio milestone), and exact fade-out timing.
+Palettes, the `$C46A` nametable streams, CHR banks 31/29 and the child metasprite rendering are all extracted/decoded there (`tools/extract_state1.py`). State 1 is the **spotlight intro**: a pale mirrored-sprite disc moves behind a black silhouette background (brick wall + character silhouettes), implemented in GMS as disc sprite + black-ink overlay. Sounds: `$7F` is the engine reset (silence), `$74`/`$73` are rendered WAVs played at frames 464/614 — see `docs/08_sound_engine.md`. Remaining: exact fade-out timing.

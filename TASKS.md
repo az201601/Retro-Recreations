@@ -10,7 +10,7 @@
 - [x] Decode dispatcher `$C54E` and the inline state table after `JSR $C54E` at `$D07C` (boot state $00 → handler `$D0C3`).
 - [ ] Decode `$F001`/`$C576` inline-data helper used by the early state handlers.
 - [ ] Decode `$C23F`, `$EFCE`, `$F0C8`, `$D63D`, `$D624` (post-boot init chain).
-- [ ] Identify bank-6 `$8000` per-frame routine (suspected sound tick).
+- [x] Identify bank-6 `$8000` per-frame routine: the sound-engine tick (docs/08).
 
 ## M1 — Boot to second screen (state 0 copyright SKIPPED by decision)
 
@@ -20,7 +20,7 @@
 - [x] Decode `$C46A` nametable stream format; extract state-1 maps (loads to `$2000`, `$2400`, `$2144` from `$D74C`).
 - [x] Decode child render helpers: `$F191` metasprite renderer (bank 5), `$F37C` follow, `$E4C6/$E749` flag helpers → spotlight disc composite.
 - [x] GMS: state-1 screen rendered (disc + silhouette overlay, fade-in, trajectory phases, button skip → state 2). See `docs/07_state1_graphics.md`.
-- [ ] Identify sound requests `$7F/$74/$73` in the bank-6 sound engine (can defer to audio milestone).
+- [x] Sound for state 1: `$7F` = engine reset (silence), `$74`/`$73` rendered to WAV by executing the real engine (`tools/render_sound.py`) and played at frames 464/614 (docs/08).
 
 ## M2 — Rendering model
 
@@ -41,5 +41,5 @@
 ## Later
 
 - [ ] Bosses, cutscenes, stage flow, 2-player behaviour.
-- [ ] Music/SFX engine data and GMS playback model.
+- [ ] Music/SFX for the remaining screens (engine harness ready — docs/08; render per screen with `tools/render_sound.py --id ...` as each screen lands).
 - [ ] Full-game parity pass with recorded inputs.

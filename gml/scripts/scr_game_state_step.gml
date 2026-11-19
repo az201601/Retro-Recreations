@@ -19,12 +19,18 @@ switch (argument0) {
         // The script moves a spotlight (parent + 3 mirrored children) with
         // velocity phases; any pressed button skips to state 2.
         // Positions are 8.8 fixed point, like the ROM (docs/05).
+        // Sound (docs/08_sound_engine.md): the ROM's $7F request is the
+        // sound-engine reset/stop, so this screen starts silent; the
+        // script's SOUND $74 (frame 464) and SOUND $73 (frame 614) are
+        // WAVs rendered from the real bank-6 engine (extracted/sounds/).
         var t;
         t = global.game_state_timer;
         if (t == 0) {
             // Script start: SETX $C0,$00 / SETY $C0,$FF (signed Y = -64)
             global.s1_x = 192 * 256;
             global.s1_y = -64 * 256;
+            // $7F = engine reset at $8274: silence anything playing.
+            audio_stop_all();
         }
         if (global.pad_pressed != 0 && t < 614) {
             // PADJ in the ROM's $F352 subroutine: skip straight to state 2.
@@ -45,10 +51,20 @@ switch (argument0) {
         } else if (t < 464) {
             global.s1_x -= 512;                    // SETVX $E0 = -2
         } else if (t < 598) {
-            if (t == 464) global.s1_y = 104 * 256; // SETY $68,$00; SOUND $74 here
+            if (t == 464) {
+                global.s1_y = 104 * 256;           // SETY $68,$00
+                // SOUND $74 here in the script (spotlight whoosh).
+                audio_play_sound(snd_74, 10, false);
+            }
             global.s1_x += 512;                    // SETVX $20
         } else if (t < 614) {
-            global.s1_x -= 1024;                   // SETVX $C0 = -4; SOUND $73 at 614
+            global.s1_x -= 1024;                   // SETVX $C0 = -4
+        }
+        if (t == 614) {
+            // SOUND $73 here in the script (second whoosh, at the WAIT).
+            // On the NES the SFX channels are independent of the state
+            // change, so this is left to ring out into state 2.
+            audio_play_sound(snd_73, 10, false);
         }
         // t 614..673: WAIT 60. ROM then fades (20f) into state 2.
         if (t >= 674) {

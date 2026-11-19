@@ -1,0 +1,20 @@
+{
+ "snd_74": {
+  "id": 116,
+  "path": "extracted/sounds/snd_74.wav",
+  "seconds": 2.340453514739229,
+  "ticks": 157
+ },
+ "snd_73": {
+  "id": 115,
+  "path": "extracted/sounds/snd_73.wav",
+  "seconds": 3.6241269841269843,
+  "ticks": 235
+ },
+ "snd_7f": {
+  "id": 127,
+  "path": null,
+  "seconds": 0.0,
+  "ticks": 121
+ }
+}
