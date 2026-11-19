@@ -71,10 +71,6 @@ Button skip: `$F352` runs every frame of every phase — `PADJ idx4 mask$FF` tes
 
 State 2 then starts with sound request `$01` and script `$F3B2` (spawns, `SOUND $32`, input-wait `PADJ` on Start ($08 mask at `$F3BF`), a SWITCH at `$F3CF`) — likely the title/menu screen; decoding it fully is the next analysis step after state 1 renders.
 
-## What recreating state 1 still needs (next tasks)
+## Recreating state 1 — done in `docs/07_state1_graphics.md`
 
-1. Palette bytes: bank 3 `$B081-$B0A0` (32 bytes) → NES palette indices for this screen.
-2. Nametable data: decode the `$C46A` inline stream format used by `$D74C` (loads to `$2000`, `$2400`, `$2144`) and extract the tile/attribute maps.
-3. CHR banks 31 ($1F) and 29 ($1D) tile data — already extracted as `chr_4k_bank_31.png` / `chr_4k_bank_29.png` index sheets; will be recoloured with (1).
-4. Child-object rendering: native follow/render code at `$F37C`/`$E4C6`/`$E749` (metasprite selection for the 3 children) — needed to draw the moving pieces exactly.
-5. Sound requests `$7F/$74/$73`: identify in the sound engine (bank 6 `$8000`) — deferred to the audio milestone; log the request frames meanwhile.
+Palettes, the `$C46A` nametable streams, CHR banks 31/29 and the child metasprite rendering are all extracted/decoded there (`tools/extract_state1.py`). State 1 is the **spotlight intro**: a pale mirrored-sprite disc moves behind a black silhouette background (brick wall + character silhouettes), implemented in GMS as disc sprite + black-ink overlay. Remaining: sound requests `$7F/$74/$73` in the bank-6 sound engine (audio milestone), and exact fade-out timing.
