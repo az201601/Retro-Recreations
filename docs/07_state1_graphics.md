@@ -45,7 +45,7 @@ The per-frame bank-3 routine `$B508` (another `$C54E` dispatch, on `$98`) is **i
 
 ## Transfer #3 (beginner steps also given in chat)
 
-1. Create sprite `spr_spotlight1` from `extracted/screens/state1/emblem.png`, set **Origin X=32, Y=32** (type the numbers — do not use the Center button; the anchor is the disc's bottom-centre).
+1. Create sprite `spr_spotlight1` from `extracted/screens/state1/emblem.png`, set **Origin X=32, Y=32** (type the numbers; the anchor is the disc's centre, so for this 64×64 image the Center button happens to give the same result).
 2. Create sprite `spr_state1_bg` from `extracted/screens/state1/state1_bg.png`, Origin stays **0, 0**.
 3. Re-paste `gml/scripts/scr_nes_init.gml`, `gml/scripts/scr_game_state_step.gml`, and `gml/objects/obj_nes_core/Draw.gml` (double-click each in the tree, Ctrl+A, Delete, paste the new file, green ✓).
 4. Ctrl+S, F5. Expect: fade-in, then a pale spotlight disc swooping around the dark screen over faint silhouettes; pressing any button (or waiting ~11 s) ends it to STATE 2 (black placeholder).
