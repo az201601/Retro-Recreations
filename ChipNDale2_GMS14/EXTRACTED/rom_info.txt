@@ -1,0 +1,55 @@
+Chip 'n Dale - Rescue Rangers 2 (USA).nes  --  ROM analysis
+=============================================================
+File:        Chip 'n Dale - Rescue Rangers 2 (USA).nes
+Size:        262160 bytes (256 KB + 16-byte header)
+SHA-1:       a60ba28aca558fe3527d46b0df33bdd038d4c635
+CRC32:       91E4A289
+             (matches the No-Intro "Nintendo Entertainment System" USA dump)
+
+iNES header
+-----------
+PRG ROM:     128 KB  (8 x 16 KB)
+CHR ROM:     128 KB  (16 x 8 KB)  -> 8192 tiles of 8x8, 2bpp
+Mapper:      1  (Nintendo MMC1)
+Battery:     no
+Trainer:     no
+Four-screen: no
+VS / NES2.0: no
+
+CPU vectors (last 16 KB PRG bank, fixed at $C000-$FFFF)
+-------------------------------------------------------
+NMI:         $C003
+RESET:       $FFE0
+IRQ:         $FFE0
+
+VRAM upload routine (writes 32 bytes to PPU palette via $2006/$2007)
+--------------------------------------------------------------------
+Located at CPU $C306 (PRG offset $1C306). Takes source pointer in (X,A)
+and PPU address high byte in Y. Used to upload palettes and pattern data.
+
+Palette data (32 bytes = 8 subpalettes of 4 colours)
+-----------------------------------------------------
+Located at PRG offset $0F146:
+  0F 22 31 20 | 0F 28 38 20 | 0F 00 10 20 | 0F 0A 26 20
+  0F 0A 1A 01 | 0F 01 11 1C | 0F 03 12 20 | 0F 17 27 20
+(More palette tables follow at $0F150-$0F1C0 for other scenes/levels.)
+Rendered as EXTRACTED/palette.png using the standard NES 64-colour palette.
+
+CHR layout (4 KB banks, 32 total)
+----------------------------------
+Banks 0-14 : repeated dithered background tiles (level graphics)
+Banks 15-19: clear level background tiles (industrial / water / Egypt themes)
+Banks 20-25: level graphics + Fat Cat boss art
+Banks 26-27: mech graphics, "THE END", character portraits
+Bank  28   : large round boss
+Banks 29-30: title screen ("CHIP 'N DALE", "RESCUE RANGERS 2", Disney logo)
+Bank  31   : font (0-9, A-Z, a-z, punctuation, heart)
+
+NOTE ON SPRITES
+---------------
+The small in-game character frames (Chip, Dale, enemies, items) are defined
+by OAM (sprite) data stored in PRG, which specifies how the 8x8 CHR tiles
+combine into each frame. They are not directly readable from the CHR tile
+order alone. To obtain pixel-perfect in-game sprite frames, use Mesen's
+PPU Viewer (see GUIDE_STEP_BY_STEP.md, Appendix B). The GML code is
+structured so sprites can be swapped in without changing any logic.
