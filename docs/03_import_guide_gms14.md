@@ -138,7 +138,7 @@ STATE 0
 | Right arrow | Right | 128 |
 
   Combinations add up (e.g. Right + X = 129). While you *first* press a key, `PRESS` briefly shows that key's value for one frame — you may only catch it flickering; that's expected.
-- `STATE` stays **0**.
+- `STATE` stays **1**. (State 0 was the ROM's first/copyright screen, which this project skips on purpose — we boot straight at the second screen, state 1.)
 
 4. To stop: close the game window (the X on the game window). If GameMaker says the game is still running, click the **red square stop button** in the GameMaker toolbar.
 

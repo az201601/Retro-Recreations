@@ -25,9 +25,12 @@ global.pad_prev = 0;
 global.pad_pressed = 0;
 global.pad_released = 0;
 
-// Game-state byte equivalent to RAM $40 in the ROM. The boot path at $D043
-// reaches the $C54E dispatcher with $40 = $00, so the recreation does too.
-global.game_state = 0;
+// Game-state byte equivalent to RAM $40 in the ROM.
+// PROJECT DECISION: skip ROM state 0 (the first/copyright screen: its whole
+// script is WAIT 120 frames, then state 1). We boot at state 1, the second
+// screen - exactly where the ROM arrives after state 0 fades out.
+// See docs/06_screens_sequence.md for the decoded scripts.
+global.game_state = 1;
 global.game_state_timer = 0;
 
 // Placeholder seed only. The ROM RNG routine has not been located yet;
