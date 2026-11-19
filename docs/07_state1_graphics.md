@@ -41,7 +41,7 @@ The per-frame bank-3 routine `$B508` (another `$C54E` dispatch, on `$98`) is **i
 - Fade-out into state 2 (shared exit ≈20f + fades) not yet applied in GMS; fade-in (≈16f) is approximated with a black alpha ramp in `obj_nes_core` Draw.
 - BG scroll Y=1 (config bytes) ignored — sub-1-tile shift, revisit with the M2 renderer.
 - Sprite-versus-BG priority is by draw order; per-pixel NES priority is equivalent for this screen's data but will be revisited for gameplay screens.
-- Sounds `$7F` (entry), `$74` (frame ≈464), `$73` (≈614) logged only; audio milestone later.
+- Sounds are implemented (docs/08): `$7F` (entry) is the engine reset/stop — mirrored in GML with `audio_stop_all()`; `$74` (frame 464) and `$73` (frame 614) were rendered to WAV by executing the real bank-6 engine (`tools/render_sound.py`) and are played as `snd_74`/`snd_73`.
 
 ## Transfer #3 (beginner steps also given in chat)
 
