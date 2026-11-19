@@ -170,32 +170,65 @@ def main():
 
     set0 = b5_16(0x8000)
     frame0 = b5_16(set0)
-    count = b5(frame0)
-    first = [b5(frame0 + 1 + i) for i in range(4)]  # dx, dy, tile, attr
-    tiles = [first[2]]
-    dx, dy, attr0 = (first[0] - 256 if first[0] >= 128 else first[0],
-                     first[1] - 256 if first[1] >= 128 else first[1], first[3])
-    p = frame0 + 5
-    for _ in range(count - 1):
-        tiles.append(b5(p))
-        p += 2  # attr of follow-ups read too (same palette assumed checked below)
     spr_palettes = spr_pal_idx
 
+    def s8(v):
+        return v - 256 if v >= 128 else v
+
+    def parse_frame(ptr):
+        """$F191 frame format: a sequence of strips ended by a $00 byte.
+
+        Strip: [count][dx][dy] then count x [tile, attr] (8x16 sprites).
+        count bit 7 = vertical strip (advance Y), bits 0-6 = sprite count.
+        After each strip the renderer loops back for another count byte;
+        $00 ends the frame. (An earlier version of this extractor read
+        only the first strip, which produced a wrong 64x32 sliver; the
+        real frame has two strips and composes a 64x64 disc.)
+        """
+        strips = []
+        sprites = []
+        p = ptr
+        while True:
+            cnt = b5(p)
+            p += 1
+            if cnt == 0:
+                break
+            vertical = bool(cnt & 0x80)
+            n = cnt & 0x7F
+            sdx, sdy = s8(b5(p)), s8(b5(p + 1))
+            p += 2
+            strip = []
+            for i in range(n):
+                t, at = b5(p), b5(p + 1)
+                p += 2
+                x = sdx if vertical else sdx + i * 8
+                y = sdy + i * 8 if vertical else sdy
+                strip.append((x, y, t, at))
+            strips.append({"count_byte": cnt, "dx": sdx, "dy": sdy,
+                           "vertical": vertical,
+                           "tiles": [s[2] for s in strip]})
+            sprites.extend(strip)
+        return strips, sprites
+
+    strips, frame_sprites = parse_frame(frame0)
+
     def render_emblem(objects):
-        """objects: list of $0344 flag bytes. Returns (image, origin)."""
+        """objects: list of $0344 flag bytes. Returns (image, origin).
+
+        Mirroring matches $F191: flipX tile i sits at -(x)-8, flipY at
+        -(y)-16 (8x16 cells), with the tile graphics flipped via the
+        attribute XOR. The children's +$03BC follow offset ($F37C) and
+        the renderer's -$03BC ($F191) cancel, so all four copies share
+        the parent's origin.
+        """
         placed = []  # (tile_byte, attr, obj_flags, x, y)
         for flags in objects:
             flip_x = bool(flags & 0x40)
             flip_y = bool(flags & 0x80)
-            for i, t in enumerate(tiles):
-                if flip_x:
-                    x = (-8 - dx) - i * 8
-                else:
-                    x = dx + i * 8
-                y = (-16 - dy) if flip_y else dy
-                if flip_y:
-                    y -= 32  # $03BC offset applied by $F191 when bit7 set
-                placed.append((t, attr0, flags, x, y))
+            for (sx, sy, t, at) in frame_sprites:
+                x = (-sx - 8) if flip_x else sx
+                y = (-sy - 16) if flip_y else sy
+                placed.append((t, at, flags, x, y))
         min_x = min(q[3] for q in placed)
         min_y = min(q[4] for q in placed)
         max_x = max(q[3] + 8 for q in placed)
@@ -249,9 +282,9 @@ def main():
                                 for g in range(4)],
         "chr_banks": {"bg_pattern_table": 31, "sprite_pattern_table": 29,
                       "sprite_size": "8x16"},
-        "metasprite": {"set": 0, "frame": 0, "count": count,
-                       "first_record_dx_dy_tile_attr": first,
-                       "strip_tiles": tiles,
+        "metasprite": {"set": 0, "frame": 0,
+                       "strips": strips,
+                       "sprites_xy_tile_attr": [list(s) for s in frame_sprites],
                        "emblem_origin": origin,
                        "emblem_size": [emblem.width, emblem.height]},
         "trajectory": [
