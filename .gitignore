@@ -1,0 +1,15 @@
+# Built emulator cores + downloaded sources (rebuilt by emulator/build.sh)
+emulator/.build/
+emulator/nesrun
+emulator/out/
+
+# Reference captures: reproducible from oracle/inputs/ + the pinned ROM/core,
+# so the bulk output (PNGs, WAVs, per-frame RAM dumps) stays out of git.
+oracle/out/
+
+# Local scratch
+*.pyc
+__pycache__/
+
+# Stray ./frames output from running nesrun without --dir
+frames/
