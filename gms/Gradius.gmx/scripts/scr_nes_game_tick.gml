@@ -16,8 +16,8 @@ if (global.ram_mode == 0) {
         global.obj_spr[0] = 0;
     } else {
         global.ram_ppu_active = 1;
-        if ((global.pad_pressed & $30) != 0) {
-            // sub_821A: Start/Select snaps scroll to 0 and enters menu
+        if ((global.pad_pressed & $3C) != 0) {
+            // sub_821A: Start/Select (plus Up/Down convenience) snaps scroll to 0 and enters menu
             global.ram_scroll_x = 0;
             global.ram_mode = 1;
         } else {
@@ -46,17 +46,26 @@ if (global.ram_mode == 0) {
     global.obj_y[0] = 134 + global.ram_player_sel * 16;
 
     if ((global.pad_pressed & $20) != 0) {
-        // Select: toggle 1P / 2P
+        // Select: toggle 1P / 2P (authentic NES $8239)
         global.ram_player_sel = 1 - global.ram_player_sel;
         global.obj_y[0] = 134 + global.ram_player_sel * 16;
+    } else if ((global.pad_pressed & $08) != 0) {
+        // Up: select 1 PLAYER
+        global.ram_player_sel = 0;
+        global.obj_y[0] = 134;
+    } else if ((global.pad_pressed & $04) != 0) {
+        // Down: select 2 PLAYERS
+        global.ram_player_sel = 1;
+        global.obj_y[0] = 150;
     } else if ((global.pad_pressed & $10) != 0) {
-        // Start: begin game flash ($8234)
+        // Start: begin game flash ($8140: $50 = 80 frames)
+        global.ram_num_players = global.ram_player_sel + 1;
         global.ram_mode = 3;
-        global.ram_timer = 32;
+        global.ram_timer = 80;
         global.apu_sfx_queue = 0;
     }
 } else if (global.ram_mode == 3) {
-    // Mode 3: Title Start transition timer ($8137)
+    // Mode 3: Title Start confirmation blink ($8137 / $814B..$815E)
     if (global.ram_timer > 0) {
         global.ram_timer -= 1;
     }

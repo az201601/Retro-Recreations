@@ -25,6 +25,7 @@ global.ram_mode = 0;          // $0000: 0=title scroll-in, 1=title menu, 3=start
 global.ram_substate = 0;      // $0001
 global.ram_frame_ctr = 0;     // $0002
 global.ram_player_sel = 0;    // $000F: 0=1P, 1=2P
+global.ram_num_players = 1;   // 1 or 2 players selected from Title
 global.ram_paused = 0;        // $0015
 global.ram_difficulty = 0;    // $0017
 global.ram_stage = 0;         // $0019 (0=Stage 1)
@@ -103,6 +104,8 @@ global.next_hud_power = 0;
 global.next_hud_lives = 3;
 global.next_hud_score = 0;
 global.next_hud_hiscore = 50000;
+global.next_title_blink = false;
+global.next_player_sel = 0;
 
 global.ppu_mode = 0;
 global.ppu_active = 0;
@@ -113,3 +116,5 @@ global.ppu_hud_power = 0;
 global.ppu_hud_lives = 3;
 global.ppu_hud_score = 0;
 global.ppu_hud_hiscore = 50000;
+global.ppu_title_blink = false;
+global.ppu_player_sel = 0;

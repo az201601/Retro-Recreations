@@ -23,12 +23,22 @@ four step/draw phases (see `docs/objects-and-oam.md` and `oracle/README.md`):
   python3 tools/extract_gms_assets.py
   ```
 
+## Title Screen
+
+- Built directly from `Gradius (USA).nes` (`$8895`/`$8C8C` RLE + `sub_85E8` commands
+  `1`, `2`, `3`, `6`) using `oracle/palette/nestopia.pal`, retaining only the
+  `GRADIUS` wing logo and `PLAY SELECT` / `1 PLAYER` / `2 PLAYERS` (Konami logo
+  and copyright lines stripped).
+- Slides in right-to-left (`ppu_scroll_x = 254 -> 0` at `2 px/frame`, snapped on
+  input), supports `Select` or `Up/Down` cursor movement at `(80, 134)/(80, 150)`,
+  and runs the 80-frame `$004C` selection blink + `sfx_title_start` on `Start`.
+
 ## Controls
 
-- **Arrows / WASD**: D-Pad
+- **Arrows / WASD**: D-Pad (also moves `1 PLAYER / 2 PLAYERS` cursor on Title)
 - **Z / Space**: A (Fire)
 - **X / Shift**: B (Activate Power-Up)
-- **C / Backspace**: Select (1P / 2P on Title)
+- **C / Backspace**: Select (toggle `1 PLAYER / 2 PLAYERS` on Title)
 - **Enter**: Start / Pause (Konami code `U U D D L R L R B A` works while paused)
 - **F1**: Toggle NES frame/RAM debug readout
 - **F2**: Dev helper to cycle power-up gauge (`$0042`) in Stage 1

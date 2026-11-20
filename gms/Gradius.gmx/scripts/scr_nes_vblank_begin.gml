@@ -24,6 +24,8 @@ global.ppu_hud_power = global.next_hud_power;
 global.ppu_hud_lives = global.next_hud_lives;
 global.ppu_hud_score = global.next_hud_score;
 global.ppu_hud_hiscore = global.next_hud_hiscore;
+global.ppu_title_blink = global.next_title_blink;
+global.ppu_player_sel = global.next_player_sel;
 
 // 3. Advance NES frame counter and NTSC reference clock
 global.nes_frame += 1;

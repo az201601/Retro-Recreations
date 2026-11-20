@@ -74,3 +74,5 @@ global.next_hud_power = global.p_power;
 global.next_hud_lives = global.p_lives;
 global.next_hud_score = global.p_score;
 global.next_hud_hiscore = global.p_hiscore;
+global.next_player_sel = global.ram_player_sel;
+global.next_title_blink = (global.ram_mode == 3) && ((global.ram_timer & 8) != 0);

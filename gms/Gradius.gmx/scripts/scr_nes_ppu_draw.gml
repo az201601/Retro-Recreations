@@ -27,6 +27,16 @@ if (global.ppu_active != 0) {
                 } else {
                     draw_background_part(bg_title_screen, sx, 0, 256 - sx, 240, 0, 0);
                 }
+                // Mode 3 Start confirmation: blink selected 1 PLAYER / 2 PLAYERS row ($814B..$815E)
+                if (global.ppu_mode == 3 && global.ppu_title_blink) {
+                    draw_set_colour(global.nes_pal[$0F]);
+                    if (global.ppu_player_sel == 0) {
+                        draw_rectangle(103, 135, 176, 144, false);
+                    } else {
+                        draw_rectangle(103, 151, 176, 160, false);
+                    }
+                    draw_set_colour(c_white);
+                }
             } else {
                 sx = global.ppu_scroll_x & 511;
                 sy = global.ppu_scroll_y;

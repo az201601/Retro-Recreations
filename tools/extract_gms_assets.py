@@ -53,8 +53,67 @@ def write_png_rgba(path: str, w: int, h: int, rgba_rows: list[bytes]) -> None:
         f.write(png)
 
 
-def capture_ppu_frames() -> tuple[tuple[list[int], list[int]], tuple[list[int], list[int]]]:
-    """Capture live PPUNTA + PPUPAL at frame 180 (title) and frame 300 (stage 1)."""
+def decode_title_from_rom(prg: bytes) -> tuple[list[int], list[int]]:
+    """Decode the Title Screen nametable ($8895 -> $8C8C) and palette (cmd 6)
+    directly from Gradius (USA).nes, keeping ONLY the GRADIUS logo (ty=8..12)
+    and PLAY SELECT / 1 PLAYER / 2 PLAYERS (ty=14,17,19) while stripping the
+    KONAMI logo (ty=4..6) and copyright block (ty=21..27).
+    """
+    def rb(a: int) -> int:
+        return prg[a - 0x8000]
+
+    def rw(a: int) -> int:
+        return rb(a) | (rb(a + 1) << 8)
+
+    tbl = rw(0x8895)
+    nt: list[int] = []
+    for i in range(6):
+        p = rw(tbl + i * 2)
+        while True:
+            b = rb(p)
+            p += 1
+            if b == 0x39:
+                break
+            if b == 0x34:
+                cnt = rb(p)
+                p += 1
+                val = rb(p)
+                p += 1
+                nt.extend([val] * (256 if cnt == 0 else cnt))
+            else:
+                nt.append(b)
+    if len(nt) != 1024:
+        raise RuntimeError(f"Expected 1024-byte title nametable, got {len(nt)}")
+
+    # Overlay sub_85E8 commands: 3 (PLAY SELECT), 1 (1 PLAYER), 2 (2 PLAYERS)
+    for cmd in (3, 1, 2):
+        p = rw(0x864E + cmd * 2)
+        hi, lo = rb(p), rb(p + 1)
+        p += 2
+        addr = ((hi << 8) | lo) - 0x2000
+        while True:
+            b = rb(p)
+            p += 1
+            if b in (0xFE, 0xFF):
+                break
+            nt[addr] = b
+            addr += 1
+
+    # Strip KONAMI logo (ty < 8) and copyright notice (ty >= 21)
+    for ty in list(range(0, 8)) + list(range(21, 30)):
+        for tx in range(32):
+            nt[ty * 32 + tx] = 0
+
+    # Decode Title BG+SPR palette from sub_85E8 cmd 6 ($87D8)
+    p = rw(0x864E + 6 * 2)
+    if rb(p) != 0x3F or rb(p + 1) != 0x00:
+        raise RuntimeError("Unexpected cmd 6 palette header in ROM")
+    pal32 = [rb(p + 2 + i) for i in range(32)]
+    return nt, pal32
+
+
+def capture_ppu_frames() -> list[tuple[list[int], list[int]]]:
+    """Capture live PPUNTA + PPUPAL at frame 300 (stage 1)."""
     with tempfile.TemporaryDirectory() as tmp:
         watch_out = os.path.join(tmp, "ppu.txt")
         cmd = [
@@ -75,7 +134,7 @@ def capture_ppu_frames() -> tuple[tuple[list[int], list[int]], tuple[list[int], 
             vals = [int(x, 16) for x in lines[f].split()[2:]]
             return vals[:2048], vals[2048:2080]
 
-        return parse(180), parse(300)
+        return [parse(300)]
 
 
 def decode_chr_tile(chr_rom: bytes, bank: int, table_offset: int, tile_idx: int) -> list[list[int]]:
@@ -215,15 +274,16 @@ def main() -> int:
     prg = rom[16:16 + 32768]
     chr_rom = rom[16 + 32768:]
 
-    (nta180, pal180), (nta300, pal300) = capture_ppu_frames()
-    title_spr_pal = pal180[16:32]
+    nta_title, pal_title = decode_title_from_rom(prg)
+    (nta300, pal300), = capture_ppu_frames()
+    title_spr_pal = pal_title[16:32]
     stage1_spr_pal = pal300[16:32]
 
     generated: list[str] = []
 
     # 1. Backgrounds
-    # bg_title_screen: 256x240 from NT0 in bank 3
-    title_rows = render_bg_nt(nes_pal, chr_rom, 3, nta180[:1024], pal180, 0, 240)
+    # bg_title_screen: 256x240 from decoded ROM NT0 in bank 3 (no Konami logo or copyright)
+    title_rows = render_bg_nt(nes_pal, chr_rom, 3, nta_title, pal_title, 0, 240)
     p = os.path.join(GMS_DIR, "background", "images", "bg_title_screen.png")
     write_png_rgba(p, 256, 240, title_rows)
     generated.append(p)
