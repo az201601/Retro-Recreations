@@ -1,5 +1,0 @@
-# background palettes (frame 1150)
-BG0: 0F 17 37 20
-BG1: 0F 17 05 20
-BG2: 0F 15 32 05
-BG3: 0F 17 27 20
