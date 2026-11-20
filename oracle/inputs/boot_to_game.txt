@@ -1,5 +1,0 @@
-# Power-on -> title screen -> start a 1-player game.
-# Buttons: U D L R A B S(select) T(start). Frames are 60.0988 Hz.
-0-179   -
-180-183 T
-184-400 -
