@@ -115,6 +115,37 @@ nestopia_nospritelimit=disabled        hardware 8-sprites/scanline behaviour
 nestopia_audio_filter=disabled         raw APU mixer output
 ```
 
+## APU register logging
+
+The Nestopia core is built with an APU write logger
+(`emulator/patches/nestopia-apulog.py` splices it into `NstApu.cpp` before the
+build; `emulator/build.sh` applies it automatically and it is inert unless
+asked for).  Set `NES_APULOG` and every write to `$4000-$4015` is appended:
+
+```
+3 298572 4015 1F
+182 13896 4003 08
+```
+
+`<frame> <cpu-cycle-within-frame> <addr-in-hex> <data-in-hex>`.  The frame
+counter advances in `Apu::BeginFrame()`, so a line's frame is the frame whose
+VBlank just started and the cycle is counted from the start of that frame -
+the same time base as `--hash` and `--watch`.
+
+```sh
+NES_APULOG=apu.log ./emulator/out/nesrun --core emulator/out/cores/nestopia_libretro.so \
+   --rom "Gradius (USA).nes" --var-file oracle/out/attract/vars.txt \
+   --frames 1200 --input oracle/inputs/boot_to_game.txt --quiet
+./tools/apumap.py apu.log --out docs/audio.md --csv notes.csv
+```
+
+`tools/apumap.py` turns the stream into a score the port can be checked
+against: note onsets per channel with period/Hz/nearest note, the software
+envelope ramps, length/linear-counter values, tempo, and sound-effect windows.
+The logging patch does not change emulation: frames and WAV output are
+byte-identical to an unpatched build (`oracle.sh selftest` plus
+`oracle.sh check attract --frames 1200 --input inputs/boot_to_game.txt`).
+
 ## Known limits
 
 * The oracle gives *behaviour*, not source. Reading game state out of the
@@ -137,3 +168,6 @@ nestopia_audio_filter=disabled         raw APU mixer output
 | `emulator/oracle.sh` | capture / re-check / diff reference runs, self-test |
 | `tools/pngcmp.py` | exact and palette-normalised PNG comparison |
 | `tools/palette_probe.py` | recover a core's 64-entry palette as `.pal`/`.c`/`.json` |
+| `tools/apumap.py` | APU write log -> per-channel score, envelopes, SFX windows |
+| `tools/nesdis.py` | recursive-descent 6502 disassembler over a live trace |
+| `tools/rammap.py` | classify RAM addresses/arrays from a disassembly trace |

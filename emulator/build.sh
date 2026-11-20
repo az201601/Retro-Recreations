@@ -7,13 +7,20 @@
 #
 # Produces:
 #   emulator/out/nesrun                          the headless libretro host
-#   emulator/out/cores/nestopia_libretro.so      Nestopia core (pixel oracle)
+#   emulator/out/cores/nestopia_libretro.so      Nestopia core (pixel+audio oracle,
+#                                                APU register logging compiled in)
 #   emulator/out/cores/fceumm_libretro.so        FCEUmm core   (cross-check)
 #   emulator/out/palette.md                      palette probe results
 #
 # Nothing here is vendored into the repo: cores are cloned at pinned commits
 # and built from source, so a rebuild years from now still gives the same
-# emulator.  Requires git, gcc/g++, make and curl.  No root needed.
+# emulator.  Requires git, gcc/g++, make, curl and python3.  No root needed.
+#
+# The Nestopia source is patched (emulator/patches/nestopia-apulog.py) so that
+# every $4000-$4015 write is logged when NES_APULOG names a file:
+#     NES_APULOG=apu.log ./emulator/out/nesrun ... --rom ROM.nes --frames 900
+# The patch is inert otherwise - frames and audio are byte-identical to an
+# unpatched build (verified by oracle.sh selftest).
 #
 set -euo pipefail
 
@@ -37,7 +44,7 @@ fi
 mkdir -p "$OUT/cores" "$SRC"
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "missing build tool: $1" >&2; exit 1; }; }
-need git; need gcc; need g++; need make; need curl
+need git; need gcc; need g++; need make; need curl; need python3
 
 # ---------------------------------------------------------------- host ----
 echo "== building nesrun"
@@ -68,7 +75,11 @@ echo "== cores"
 fetch nestopia "$NSTOPIA_URL" "$NSTOPIA_REV"
 fetch fceumm   "$FCEUMM_URL"   "$FCEUMM_REV"
 
-echo "== building nestopia (pixel oracle)"
+echo "== building nestopia (pixel + audio oracle)"
+# Instrumentation is applied to the build tree, never to the repository, and
+# is idempotent: --check tells us whether a previous build already did it.
+python3 "$ROOT/patches/nestopia-apulog.py" "$SRC/nestopia" >/dev/null \
+   || { echo "nestopia-apulog patch failed" >&2; exit 1; }
 if [ ! -f "$OUT/cores/nestopia_libretro.so" ]; then
    make -C "$SRC/nestopia/libretro" -j"$JOBS" >"$OUT/cores/nestopia.build.log" 2>&1 \
       || { echo "nestopia build failed - see $OUT/cores/nestopia.build.log" >&2; exit 1; }

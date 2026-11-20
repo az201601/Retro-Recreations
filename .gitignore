@@ -7,6 +7,10 @@ emulator/out/
 # so the bulk output (PNGs, WAVs, per-frame RAM dumps) stays out of git.
 oracle/out/
 
+# Generated disassembly (rebuild: see docs/rammap.md header).  Listings are
+# ~1 MB and fully reproducible from the ROM, so only the summaries are tracked.
+docs/disassembly/
+
 # Local scratch
 *.pyc
 __pycache__/
