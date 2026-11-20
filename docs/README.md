@@ -7,6 +7,7 @@ it, so nothing has to be taken on trust.
 | file | what it answers |
 |---|---|
 | `rammap.md` | which RAM addresses the code touches, and which are arrays/records (`tools/rammap.py`) |
+| `objects-and-oam.md` | 32-slot SoA object layout (`$0100-$04FF`), player fields, and `$0200` OAM staging |
 | `audio.md` | what the sound driver did frame by frame: notes, envelopes, tempo, SFX windows (`tools/apumap.py`) |
 | `sound-driver.md` | how the sound engine is built — registers, tick, envelopes (hand-written from the trace) |
 | `disassembly/` | generated 6502 listings + `instructions.json` (git-ignored, ~1 MB) |
