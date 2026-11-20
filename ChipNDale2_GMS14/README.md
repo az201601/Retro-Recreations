@@ -22,6 +22,7 @@ gravity and animation timing** preserved.
 | `tools/` | Python scripts used to extract the graphics (so you can re-run / extend them). |
 | `GUIDE_STEP_BY_STEP.md` | **Start here if you're new to GMS 1.4** — full beginner walkthrough. |
 | `PHYSICS_REFERENCE.md` | Original NES movement values + how to verify them in Mesen. |
+| `SPOTLIGHT_SCENE.md` | The title attract scene: how it really works, measured timings, and the GMS 1.4 implementation. |
 
 ## Quick start (short version)
 
@@ -59,6 +60,19 @@ To get tiles in their exact original colours, use **Mesen** (see the guide's
 Appendix B): its PPU Viewer shows the tiles exactly as the game renders
 them, with the correct sub-palette applied. Screenshot or export from there
 for pixel-perfect coloured art.
+
+### Fully-coloured, scene-accurate art
+
+For scenes that are actually *assembled* (rather than just tile dumps), the art
+is extracted by **running the ROM**, not by guessing at data offsets.
+`tools/nes_emu.py` is a small headless NES (6502 + MMC1 + PPU register model)
+that boots the ROM, runs it to an exact video frame, and reads back the real PPU
+state — nametables, palette RAM, OAM and bank registers. That gives
+pixel-perfect, fully-coloured output with no emulator GUI involved.
+
+The first scene done this way is the title attract sequence; see
+`SPOTLIGHT_SCENE.md`. Everything it produces lands in
+`EXTRACTED/spotlight/`.
 
 The included `Mesen.exe` is used throughout the guide's **verification
 appendix** to double-check sprite frames, palette colours and physics values
