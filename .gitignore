@@ -1,0 +1,19 @@
+# local tooling environment
+.venv/
+__pycache__/
+
+# GameMaker build output
+*.gmz
+*.win
+*.app
+Cache/
+
+# ROM-derived material - stays on your machine, never in this repo
+/extracted/
+/Assets/drop-in/
+palette_log.txt
+oam_dump.txt
+
+# OS junk
+Thumbs.db
+.DS_Store
