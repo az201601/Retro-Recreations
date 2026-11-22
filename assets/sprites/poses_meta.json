@@ -1,0 +1,296 @@
+{
+ "chip_poses": [
+  {
+   "file": "pose_chip_00.png",
+   "bbox": [
+    16,
+    167,
+    17,
+    32
+   ],
+   "frames_seen": 138
+  },
+  {
+   "file": "pose_chip_01.png",
+   "bbox": [
+    16,
+    167,
+    17,
+    32
+   ],
+   "frames_seen": 136
+  },
+  {
+   "file": "pose_chip_02.png",
+   "bbox": [
+    36,
+    166,
+    21,
+    40
+   ],
+   "frames_seen": 46
+  },
+  {
+   "file": "pose_chip_03.png",
+   "bbox": [
+    34,
+    166,
+    21,
+    40
+   ],
+   "frames_seen": 45
+  },
+  {
+   "file": "pose_chip_04.png",
+   "bbox": [
+    50,
+    166,
+    25,
+    32
+   ],
+   "frames_seen": 38
+  },
+  {
+   "file": "pose_chip_05.png",
+   "bbox": [
+    50,
+    159,
+    25,
+    32
+   ],
+   "frames_seen": 34
+  },
+  {
+   "file": "pose_chip_06.png",
+   "bbox": [
+    20,
+    167,
+    21,
+    32
+   ],
+   "frames_seen": 33
+  },
+  {
+   "file": "pose_chip_07.png",
+   "bbox": [
+    18,
+    167,
+    21,
+    32
+   ],
+   "frames_seen": 32
+  },
+  {
+   "file": "pose_chip_08.png",
+   "bbox": [
+    55,
+    102,
+    25,
+    32
+   ],
+   "frames_seen": 26
+  },
+  {
+   "file": "pose_chip_09.png",
+   "bbox": [
+    53,
+    102,
+    25,
+    32
+   ],
+   "frames_seen": 25
+  },
+  {
+   "file": "pose_chip_10.png",
+   "bbox": [
+    25,
+    167,
+    17,
+    32
+   ],
+   "frames_seen": 22
+  },
+  {
+   "file": "pose_chip_11.png",
+   "bbox": [
+    9,
+    135,
+    17,
+    32
+   ],
+   "frames_seen": 21
+  },
+  {
+   "file": "pose_chip_12.png",
+   "bbox": [
+    50,
+    167,
+    21,
+    32
+   ],
+   "frames_seen": 20
+  },
+  {
+   "file": "pose_chip_13.png",
+   "bbox": [
+    50,
+    167,
+    21,
+    32
+   ],
+   "frames_seen": 20
+  },
+  {
+   "file": "pose_chip_14.png",
+   "bbox": [
+    5,
+    166,
+    21,
+    40
+   ],
+   "frames_seen": 12
+  },
+  {
+   "file": "pose_chip_15.png",
+   "bbox": [
+    5,
+    166,
+    21,
+    40
+   ],
+   "frames_seen": 12
+  },
+  {
+   "file": "pose_chip_16.png",
+   "bbox": [
+    71,
+    103,
+    21,
+    32
+   ],
+   "frames_seen": 11
+  },
+  {
+   "file": "pose_chip_17.png",
+   "bbox": [
+    69,
+    103,
+    21,
+    32
+   ],
+   "frames_seen": 11
+  },
+  {
+   "file": "pose_chip_18.png",
+   "bbox": [
+    78,
+    109,
+    24,
+    26
+   ],
+   "frames_seen": 8
+  },
+  {
+   "file": "pose_chip_19.png",
+   "bbox": [
+    118,
+    135,
+    17,
+    32
+   ],
+   "frames_seen": 8
+  },
+  {
+   "file": "pose_chip_20.png",
+   "bbox": [
+    118,
+    135,
+    17,
+    32
+   ],
+   "frames_seen": 8
+  },
+  {
+   "file": "pose_chip_21.png",
+   "bbox": [
+    5,
+    167,
+    21,
+    32
+   ],
+   "frames_seen": 7
+  },
+  {
+   "file": "pose_chip_22.png",
+   "bbox": [
+    5,
+    167,
+    21,
+    32
+   ],
+   "frames_seen": 7
+  },
+  {
+   "file": "pose_chip_23.png",
+   "bbox": [
+    78,
+    109,
+    24,
+    26
+   ],
+   "frames_seen": 4
+  },
+  {
+   "file": "pose_chip_24.png",
+   "bbox": [
+    20,
+    173,
+    24,
+    26
+   ],
+   "frames_seen": 3
+  },
+  {
+   "file": "pose_chip_25.png",
+   "bbox": [
+    2,
+    141,
+    24,
+    26
+   ],
+   "frames_seen": 3
+  }
+ ],
+ "objects": [
+  {
+   "file": "obj_00.png",
+   "bbox": [
+    16,
+    200,
+    24,
+    24
+   ],
+   "frames_seen": 365
+  },
+  {
+   "file": "obj_01.png",
+   "bbox": [
+    16,
+    200,
+    24,
+    24
+   ],
+   "frames_seen": 365
+  },
+  {
+   "file": "obj_02.png",
+   "bbox": [
+    126,
+    143,
+    9,
+    16
+   ],
+   "frames_seen": 16
+  }
+ ]
+}

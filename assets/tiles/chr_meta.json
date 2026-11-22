@@ -1,0 +1,8 @@
+{
+  "rom": "Chip 'n Dale - Rescue Rangers 2 (USA).nes",
+  "chr_bytes": 131072,
+  "banks_4kb": 32,
+  "tiles_per_bank": 512,
+  "total_tiles": 16384,
+  "format": "NES 2bpp, 16 bytes/tile, bank_XX.png = 16x32 tiles"
+}
