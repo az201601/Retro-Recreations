@@ -17,7 +17,8 @@ gameplay (Stage 1 — the giant kitchen).
 | `assets/sprites/` | `pose_chip_00…25.png` — full composed Chip poses (idle/walk/jump/throw, both facings), `spr_XX_*.png` — individual 8×16 sprite cells, `obj_*.png` — HUD hearts/counter, `poses_meta.json` |
 | `assets/sprites2/` | The fly enemy ("Randy") animation frames (`obj_*.png`), more pose captures |
 | `assets/stage1/` | `screen_00.png` (pixel-exact NES render of the kitchen start screen), `screen_01/02.png` (further camera positions), `stage_full.png` (raw nametable render), `tilemap.json`/`tilemap.csv` (tile indices + palettes), `collision.csv` (64×30 collision grid), `panorama.json` (screen scroll offsets) |
-| `audio/` | `title_theme.ogg`, `character_select.ogg`, `stage_intro.ogg`, `stage1_theme.ogg`, `jingle_pause.ogg`, `jingle_unpause.ogg`, `sfx_jump.ogg` |
+| `assets/ui/` | `title.png`, `character_select.png`, `stage_intro.png` — full-screen NES renders for the menu flow |
+| `audio/` | `title_theme.ogg`, `character_select.ogg`, `stage_intro.ogg`, `stage1_theme.ogg`, `jingle_pause.ogg`, `jingle_unpause.ogg`, `sfx_jump.ogg`, `sfx_hurt.ogg` |
 | `gml/` | One `.gml` file per GMS 1.4 script/object event — paste contents into the matching event |
 | `tools/` | The extraction/verification toolchain (see §7) |
 
@@ -90,11 +91,15 @@ Import the `.ogg` files in `audio/` as background sounds / sounds:
 | `mus_stage` | `stage1_theme.ogg` | background (loop) |
 | `mus_intro` | `stage_intro.ogg` | background |
 | `snd_jump` | `sfx_jump.ogg` | sound |
+| `snd_hurt` | `sfx_hurt.ogg` | sound |
 | `snd_pause` | `jingle_pause.ogg` | sound |
 | `snd_unpause` | `jingle_unpause.ogg` | sound |
 
 (Then hook them: `sound_loop(mus_stage)` in `obj_game` Create, `sound_play(snd_jump)`
-in the jump-start branch of `obj_player_step.gml`, etc.)
+in the jump-start branch of `obj_player_step.gml`, `sound_play(snd_hurt)` in the
+damage branch of `obj_enemy_fly_step.gml`, etc. Both SFX were isolated by
+differential capture — the method is documented in §6 and works for any event
+you can script.)
 
 ### 3.4 Scripts (paste each `gml/*.gml` as a script resource of the same name)
 
@@ -110,6 +115,8 @@ in the jump-start branch of `obj_player_step.gml`, etc.)
 
 | Object | Events | File(s) |
 |---|---|---|
+| `obj_title` | Create, Step, Draw | `gml/obj_title_*.gml` (room `rm_title`) |
+| `obj_charsel` | Create, Step, Draw | `gml/obj_charsel_*.gml` (room `rm_charsel`) |
 | `obj_game` | Create, Step | `gml/obj_game_create.gml`, `gml/obj_game_step.gml` |
 | `obj_level` | Create, Draw | `gml/obj_level_create.gml`, `gml/obj_level_draw.gml` |
 | `obj_player` | Create, Step, Draw | `gml/obj_player_create.gml`, `gml/obj_player_step.gml`, `gml/obj_player_draw.gml` |
@@ -130,9 +137,11 @@ Room instance order (Create event order matters — `obj_game` first):
 
 Copy `assets/stage1/collision.csv` into the **Included Files** of your project
 (so `file_text_open_read("collision.csv")` finds it). It is a 64×30 grid of
-0/1 (8 px cells): 0–31 = screen 1, 32–63 = screen 2. The platform rows were
-derived from measured rest heights (left table 184, mug 136, burger 120,
-mid table 160, window shelf 88, floor 216) — nudge rows in the CSV to taste.
+0/1 (8 px cells): cols 0–31 = screen 1, cols 32–63 = screen 2. Screen 1's
+surfaces are **measured** — each platform row is a live rest height recorded
+from the NES game (left table 192, mug 128, window sill 80 / ceiling 32,
+mid table 160, bottom floor 237, right table 192); screen 2 is derived from
+the extracted screen art (tune while play-testing).
 
 ### 3.7 Controls
 
@@ -142,6 +151,19 @@ mid table 160, window shelf 88, floor 216) — nudge rows in the CSV to taste.
 | Z / Space / ↑ (tap for short hop, hold for full) | A (jump) |
 | X | B (pick up / throw boxes) |
 
+### 3.8 Menu rooms (title & character select)
+
+Create two more 256×240 rooms before the stage room, in this order:
+`rm_title` → `rm_charsel` → `rm_stage` (set `rm_title` as the first room).
+
+1. `rm_title`: background `bg_title` (from `assets/ui/title.png`), one
+   `obj_title` instance. START/Z/Space advances.
+2. `rm_charsel`: background `bg_charsel` (`assets/ui/character_select.png`),
+   one `obj_charsel` instance. Left/Right picks Chip or Dale (Dale gets a tan
+   tint via `global.play_dale` in `obj_player_draw.gml`), START confirms.
+3. Optional: a `rm_intro` using `assets/ui/stage_intro.png` + `mus_intro`
+   (START skips to `rm_stage`) — the airship cutscene screen.
+
 ---
 
 ## 4. How faithful is it?
@@ -149,7 +171,13 @@ mid table 160, window shelf 88, floor 216) — nudge rows in the CSV to taste.
 * Physics: measured from the original to sub-pixel level (see §2) — tap/full
   jump, variable jump height, terminal velocity and walk speed match.
 * Art & audio: extracted/recording from the ROM — pixel-exact.
-* Collision grid: approximate (platform tops measured, extents hand-placed).
+* Collision (screen 1): **measured**, not guessed — every platform height is a
+  live rest position from the NES game (left table y=192, mug top y=128,
+  window sill y=80 with ceiling y=32, mid table y=160 whose front wall blocks
+  at x=64, bottom floor y=237, right table y=192). Platform extents match the
+  tile art. Screen 2 is derived from the extracted screen art.
+* Menus: title / character-select / stage-intro screens and music are the real
+  game's; the flow (START → select → stage) is recreated in GML.
 * Enemy AI: approximated from observation (patrol + sine bob + contact damage).
 * The NES rotates OAM sprite order every frame to hide the 8-sprites-per-line
   flicker; GMS has no such limit, so the recreation omits it.
@@ -175,11 +203,25 @@ Savestates used by the guide scripts live in `work/ss/` (`frozen.state` is the
 kitchen stage entry point; press START ≥10 frames to unpause — the kitchen
 starts PAUSED, exactly like the real game).
 
-## 6. Known gaps
+## 6. Extending coverage (SFX method & remaining gaps)
 
-* Stage 1 beyond the first two screens is captured only partially
-  (`screen_01/02.png`); run `capture_panorama.py` while playing to fill in more.
-* Pickup/throw SFX were not cleanly isolatable (B makes no sound unless
-  carrying a box); use `sfx_jump.ogg`'s differential method to grab more.
-* Title/menu flows are not recreated (assets are provided: `mus_title`,
-  `mus_charsel`, and the CHR banks contain all logo/font tiles).
+**Differential SFX capture** (used for `sfx_jump.ogg` and `sfx_hurt.ogg`): the
+game is frame-deterministic, so record the same input timeline twice — once
+with the event (jump / enemy hit) and once without — and subtract the two
+recordings. The music cancels exactly and the isolated event sound remains.
+`sfx_jump.ogg` = jump-input run minus idle run; `sfx_hurt.ogg` = walking into
+the fly-enemy run minus walking-short run. Use the same recipe for any other
+event (box throw, pickup, boss hits) once you can script the trigger.
+
+Remaining gaps:
+
+* **Box pickup/throw SFX**: the checkered boxes activate as sprites near the
+  player but the carry/throw trigger needs deeper mechanic RE (B alone made no
+  sound in capture tests). The box art is delivered (`spr_box` in §3.1) and the
+  throw behaviour is implemented in `obj_box`; grab the SFX later with the
+  differential recipe once the exact trigger is known.
+* **Stage 1 beyond screen 2** is not captured; `tools/capture_panorama.py`
+  records a screen PNG at every new camera position as you play through — run
+  it and raise `global.screens` in `scr_init.gml` as you import more.
+* **Screen 2 collision** is derived from the screen art (screen 1 is fully
+  measured); nudge rows in `collision.csv` when play-testing.

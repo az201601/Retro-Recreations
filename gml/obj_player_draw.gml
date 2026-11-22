@@ -34,4 +34,9 @@ if (spr == -1) spr = asset_get_index("pose_chip_00");
 // blink during invulnerability (hit feedback)
 if (invuln > 0 && (invuln mod 4) < 2) exit;
 
-draw_sprite_ext(spr, 0, x, y, facing, 1, 0, c_white, 1);
+// Dale = lighter tan tint (chosen on the character-select screen)
+var col;
+col = c_white;
+if (variable_global_exists("play_dale") && global.play_dale) col = make_color_rgb(255, 205, 170);
+
+draw_sprite_ext(spr, 0, x, y, facing, 1, 0, col, 1);
