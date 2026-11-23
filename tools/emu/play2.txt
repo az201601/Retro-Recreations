@@ -1,0 +1,14 @@
+2400 tap A 6
+2460 shot h2460
+2540 shot h2540
+2640 shot h2640
+2760 shot h2760
+2900 shot h2900
+3060 shot h3060
+3250 shot h3250
+3500 shot h3500
+3800 shot h3800
+4200 shot h4200
+4600 shot h4600
+5000 shot h5000
+5400 quit

@@ -1,0 +1,16 @@
+1000 tap START 6
+1100 shot i1100
+2400 tap A 6
+2460 shot i2460
+2540 shot i2540
+2640 shot i2640
+2760 shot i2760
+2900 shot i2900
+3060 shot i3060
+3250 shot i3250
+3500 shot i3500
+3800 shot i3800
+4200 shot i4200
+4600 shot i4600
+5000 shot i5000
+5500 quit

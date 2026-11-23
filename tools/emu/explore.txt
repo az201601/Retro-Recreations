@@ -1,0 +1,19 @@
+# explore boot flow, no input
+60 shot f060
+150 shot f150
+240 shot f240
+330 shot f330
+420 shot f420
+510 shot f510
+600 shot f600
+690 shot f690
+780 shot f780
+870 shot f870
+960 shot f960
+1050 shot f1050
+1140 shot f1140
+1230 shot f1230
+1320 shot f1320
+1410 shot f1410
+1500 shot f1500
+1560 quit

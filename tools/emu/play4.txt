@@ -1,0 +1,18 @@
+1000 tap START 6
+2400 tap A 6
+3200 tap A 6
+3260 shot j3260
+3340 shot j3340
+3440 shot j3440
+3600 shot j3600
+3800 shot j3800
+4000 tap START 6
+4060 shot j4060
+4200 shot j4200
+4500 shot j4500
+4900 shot j4900
+5400 shot j5400
+6000 shot j6000
+6600 shot j6600
+7200 shot j7200
+8000 quit
