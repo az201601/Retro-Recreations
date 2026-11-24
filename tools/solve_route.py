@@ -184,7 +184,8 @@ def expand(emu: Retroshot, parent: Node, workdir: Path, rom: Path,
         # Either signal counts: the camera only moves forward when the player
         # has really gone right, and it can catch up after a jump in a way that
         # briefly shrinks cam + player-screen-x.
-        advanced = world_x >= parent.world_x + 2 or cam_abs >= parent.cam + 2
+        advanced = (cam_abs >= parent.cam + 2 or
+                    world_x >= parent.world_x + 96)
         climbed = py <= parent.player_y - 8
         if not died and (advanced or climbed):
             node = Node(state=name, cam=cam_abs, depth=parent.depth + 1,
@@ -241,7 +242,11 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
             if not pending:
                 print("frontier exhausted")
                 break
-            parent = max(pending, key=lambda n: (n.world_x, n.cam, -n.player_y))
+            # Rank on the camera: it is exact within a room and its wrap is
+            # 512 px, so a mis-read costs at most one room's worth. Summing
+            # per-macro player displacements (the "odometer") drifts instead --
+            # it ranked a state still in the first room as the furthest of all.
+            parent = max(pending, key=lambda n: (n.cam, -n.player_y, n.world_x))
             parent.expanded = True
             bookkeeping = {"checkpoints": checkpoints, "next_ckpt": next_ckpt,
                            "step": checkpoint_step,
@@ -254,22 +259,22 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
                 print(f"iter {it:03d}: dead end at wx={parent.world_x} "
                       f"y={parent.player_y}", flush=True)
             for node in children:
-                if (node.world_x, node.cam) > (best.world_x, best.cam):
+                if (node.cam, -node.player_y) > (best.cam, -best.player_y):
                     best = node
-                    print(f"  new best cam={node.cam} wx={node.world_x} "
-                          f"y={node.player_y} (depth {node.depth})", flush=True)
+                    print(f"  new best cam={node.cam} y={node.player_y} "
+                          f"(depth {node.depth})", flush=True)
             # Keep the frontier bounded by score, but never drop the leader.
             pending = [n for n in nodes if n.alive and not n.expanded]
             if len(pending) > beam * 12:
-                cut = sorted(pending, key=lambda n: (n.world_x, n.cam,
-                                                     -n.player_y), reverse=True)
+                cut = sorted(pending, key=lambda n: (n.cam, -n.player_y,
+                                                     n.world_x), reverse=True)
                 for stale in cut[beam * 12:]:
                     if stale is not best:
                         stale.alive = False
             log.append({"iter": it, "parent": parent.state,
                         "parent_wx": parent.world_x,
                         "children": parent.children, "best": best.world_x})
-            if target is not None and best.world_x >= target:
+            if target is not None and best.cam >= target:
                 print("target reached")
                 break
         (workdir / "route.json").write_text(json.dumps({
@@ -280,7 +285,7 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
             "checkpoint_cams": checkpoint_cams,
             "log": log,
         }, indent=2))
-        return {"best_cam": best.world_x, "state": str(workdir / f"{best.state}.fcs"),
+        return {"best_cam": best.cam, "state": str(workdir / f"{best.state}.fcs"),
                 "checkpoints": len(list(checkpoints.glob("*.fcs")))}
     finally:
         emu.close()

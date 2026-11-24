@@ -1,10 +1,13 @@
 {
-  "source_workdir": "/home/user/Retro-Recreations/tools/emu/out/solve20",
+  "source_workdir": "/home/user/Retro-Recreations/tools/emu/out/solve22",
   "windows": [
     {
       "name": "start_s10954",
       "cam": 0,
       "camy": 0,
+      "room": 0,
+      "join": "start",
+      "overlap_agreement": null,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
@@ -12,6 +15,9 @@
       "name": "cam_00064",
       "cam": 186,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
@@ -19,76 +25,109 @@
       "name": "cam_00128",
       "cam": 186,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00192",
-      "cam": 274,
+      "cam": 284,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 0.987,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00256",
-      "cam": 274,
+      "cam": 284,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00320",
-      "cam": 384,
+      "cam": 402,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00384",
-      "cam": 384,
+      "cam": 402,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00448",
-      "cam": 536,
+      "cam": 528,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00512",
-      "cam": 536,
+      "cam": 528,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00576",
-      "cam": 614,
+      "cam": 682,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00640",
-      "cam": 640,
+      "cam": 682,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00704",
-      "cam": 780,
+      "cam": 818,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00768",
-      "cam": 780,
+      "cam": 818,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
@@ -96,6 +135,9 @@
       "name": "cam_00832",
       "cam": 924,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
@@ -103,6 +145,9 @@
       "name": "cam_00896",
       "cam": 924,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
@@ -110,6 +155,9 @@
       "name": "cam_00960",
       "cam": 1042,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
@@ -117,38 +165,413 @@
       "name": "cam_01024",
       "cam": 1042,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_01088",
-      "cam": 1142,
+      "cam": 1184,
       "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 0.986,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01152",
+      "cam": 1184,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01216",
+      "cam": 1244,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01280",
+      "cam": 1322,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01344",
+      "cam": 1464,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 0.981,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01408",
+      "cam": 1464,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01472",
+      "cam": 1500,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01536",
+      "cam": 1580,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01600",
+      "cam": 1676,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01664",
+      "cam": 1676,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01728",
+      "cam": 1732,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 0.997,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01792",
+      "cam": 1792,
+      "camy": 0,
+      "room": 0,
+      "join": "overlap",
+      "overlap_agreement": 0.992,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01856",
+      "cam": 2048,
+      "camy": 0,
+      "room": 1,
+      "join": "new-room",
+      "overlap_agreement": null,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01920",
+      "cam": 2048,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01984",
+      "cam": 2048,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02048",
+      "cam": 2048,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02112",
+      "cam": 2228,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02176",
+      "cam": 2228,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02240",
+      "cam": 2368,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02304",
+      "cam": 2368,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02368",
+      "cam": 2368,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02432",
+      "cam": 2450,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02496",
+      "cam": 2596,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02560",
+      "cam": 2596,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02624",
+      "cam": 2758,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 0.997,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02688",
+      "cam": 2758,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02752",
+      "cam": 2758,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02816",
+      "cam": 2898,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02880",
+      "cam": 2898,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_02944",
+      "cam": 3038,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_03008",
+      "cam": 3038,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_03072",
+      "cam": 3178,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_03136",
+      "cam": 3178,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_03200",
+      "cam": 3322,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_03264",
+      "cam": 3322,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_03328",
+      "cam": 3328,
+      "camy": 0,
+      "room": 1,
+      "join": "overlap",
+      "overlap_agreement": 1.0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     }
   ],
-  "width_px": 1392,
+  "width_px": 3584,
   "height_px": 240,
   "vertical_scroll_used": false,
-  "uncovered_before_fill": 3576,
-  "filled_from_nearest_window": 3576,
+  "uncovered_before_fill": 7832,
+  "filled_from_nearest_window": 7592,
   "max_background_pixel_error": 0,
   "palette_conflicts": {},
-  "unique_tiles": 194,
+  "unique_tiles": 337,
   "tilemap": {
-    "cols": 174,
+    "cols": 448,
     "rows": 30
   },
   "tileset_size": [
     128,
-    104
+    176
+  ],
+  "pages": [
+    {
+      "index": 0,
+      "file": "page_00.png",
+      "tilemap": "tilemap_00.csv",
+      "first_column": 0,
+      "columns": 256,
+      "width_px": 2048
+    },
+    {
+      "index": 1,
+      "file": "page_01.png",
+      "tilemap": "tilemap_01.csv",
+      "first_column": 256,
+      "columns": 192,
+      "width_px": 1536
+    }
   ],
   "notes": [
     "level.png is the background layer only (no sprites), 1:1 NES pixels.",
     "tilemap.csv indexes 8x8 cells in tileset.png, 16 cells per row.",
     "-1 means empty (transparent / backdrop).",
     "Overlaps prefer pixels outside the PPU's clipped left 8-pixel column.",
-    "Windows were re-captured from their savestates, so picture and state agree."
+    "Windows were re-captured from their savestates, so picture and state agree.",
+    "Written as page_00/page_01 because GMS 1.4 texture pages cap at 2048 px."
   ]
 }

@@ -6,38 +6,49 @@ strip from `tileset.png` + `tilemap.csv` with **0 differing pixels**.
 
 | File | What it is |
 |---|---|
-| `level.png` | 1392 × 240, background layer only (no sprites), 1:1 NES pixels |
-| `tileset.png` | 194 unique 8×8 cells, 16 per row |
-| `tileset_strip.png` | the same 194 cells in a single 1552 × 8 row (for Add from Strip) |
-| `tilemap.csv` | 174 columns × 30 rows, comma separated, `-1` = empty |
+| `level.png` | 3584 × 240, background layer only (no sprites), 1:1 NES pixels |
+| `page_00.png`, `page_01.png` | the same strip cut at 2048 px, for GMS texture pages |
+| `tileset.png` | 337 unique 8×8 cells, 16 per row (a valid GMS tileset grid) |
+| `tilemap.csv` | 448 columns × 30 rows, comma separated, `-1` = empty |
+| `tilemap_00.csv`, `tilemap_01.csv` | the same grid, one file per page |
 | `tiles.csv` | cell → position in `tileset.png` + how often the cell is used |
-| `level.json` | window list with real camera positions and per-window checks |
+| `level.json` | window list, room assignment, camera x and per-window checks |
 | `gml/scr_level_tiles.gml` | GMS 1.4 script that builds the tile layer from the CSV |
 
-This covers the opening restaurant interior of the stage: tables, food, the
-window with the skyline, and the climbable pillar at the right-hand end
-(camera x 0–1142). It is one *room*: stage 1 continues into further rooms, each
-of which restarts the camera at 0, so rooms have to be joined end to end rather
-than by camera arithmetic (see `docs/levels.md`).
+This covers the opening restaurant interior (camera 0–1792) and the blue-tiled
+kitchen that follows it. The two are separate rooms: **each room restarts the
+camera at 0**, so the stitcher places windows from their camera delta and then
+checks them against the pixels already stitched — a window that lands on content
+it disagrees with starts a new room at the right-hand edge instead. `level.json`
+records the room number and the join type for every window.
 
 ## Importing into GameMaker Studio 1.4
 
-1. **Background resource** `bg_stage1_downtown`
-   - *Create Background* → Load `level.png` → tick *Use as texture* off,
-     *Smooth* off (this is pixel art).
-   - Give it a depth of `10000` so sprites draw in front.
+1. **Background resources** `bg_stage1_downtown_0`, `_1`
+   - *Create Background* → Load `page_00.png` (then `page_01.png`) → *Use as
+     texture* off, *Smooth* off (this is pixel art).
+   - Give them depth `10000`. Two pages because GMS 1.4 caps a texture page at
+     2048 px and the strip is 3584 wide.
 2. **Tileset background** `bg_ts_stage1_downtown`
    - *Create Background* → Load `tileset.png` → tick **Use as tileset**,
      tile width **8**, tile height **8**, separation 0, offset 0.
    - Do **not** tick "Use as texture"; tilesets are their own texture page.
+   - 337 cells at 16 per row is 128 × 176, so it fits a texture page easily. It
+     is a normal tileset grid — every multiple of 8 is a tile — which is why no
+     single-row strip ships here (that would be 2696 px wide).
 3. **Room** `rm_stage1_downtown`
-   - Size 1392 × 240.
-   - Backgrounds tab: assign `bg_stage1_downtown` at depth 10000,
-     *Stretch* off, *Horizontal tile* off.
+   - Size 3584 × 240.
+   - Backgrounds tab: `bg_stage1_downtown_0` at (0, 0) and
+     `bg_stage1_downtown_1` at (2048, 0), depth 10000, *Stretch* off and
+     *Horizontal tile* off on both.
    - Add a **Tile layer** at depth 5000 and pick `bg_ts_stage1_downtown`.
-   - Drop a controller instance at (0, 0) whose Create event calls
-     `scr_level_tiles("tilemap.csv", bg_ts_stage1_downtown, 0, 0, 8, 5000);`
-4. **Included files** tab: add `tilemap.csv` so the script can read it.
+   - Drop a controller instance at (0, 0) whose Create event calls the importer
+     once per page:
+     ```gml
+     scr_level_tiles("tilemap_00.csv", bg_ts_stage1_downtown,    0, 0, 8, 5000);
+     scr_level_tiles("tilemap_01.csv", bg_ts_stage1_downtown, 2048, 0, 8, 5000);
+     ```
+4. **Included files** tab: add `tilemap_00.csv` and `tilemap_01.csv`.
 
 If you would rather paint the layer by hand, open `tilemap.csv` in a
 spreadsheet alongside `tiles.csv`; each number is the cell index in
@@ -52,11 +63,11 @@ from the same capture, so they cannot drift apart.
 
 ### Texture pages
 
-GMS 1.4 caps a texture page at 2048 × 2048. This strip is 1392 × 240, so it
-fits in one background with room to spare. As more of the stage arrives the
-strip will exceed 2048 px wide; it will then be split into consecutive
-`level_00.png`, `level_01.png` pages of at most 2048 px, each with its own
-tile layer, and the room widened to match.
+GMS 1.4 caps a texture page at 2048 × 2048. The strip is 3584 px wide, so it
+ships as `page_00.png` (2048) + `page_01.png` (1536), each with its own tilemap
+and its own tile layer in the same room. `level.png` is the unsplit strip, handy
+for reference and for the build script. Both pages rebuild from the shared
+tileset with **0 differing pixels**.
 
 ## How it was produced
 

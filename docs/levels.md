@@ -173,19 +173,27 @@ being blamed for:
    they are keyed to camera distance and the search records the absolute camera
    for each one in `route.json`; deriving the wrap afterwards is guesswork.
 
-With those fixed, the same macro set reaches world x **5904** (odometer) instead
-of 1339, and the one macro that was genuinely missing — `climb_over`, found by
+With those fixed the search reaches camera **3328** — two full rooms — instead
+of stalling at 1792, and the delivered strip grew from 1392 to 3584 px, and the one macro that was genuinely missing — `climb_over`, found by
 randomised search from the beam where everything stalled — is in the set.
 
 ## Rooms, not one long strip
 
-Stage 1 is a sequence of rooms and **each room restarts the camera at 0**. So
-camera arithmetic alone cannot place a window in one long world strip; rooms
-have to be segmented and concatenated. `stitch_level.py --max-cam` cuts a strip
-at the end of the current room, which is how the delivered
-`extracted/levels/stage1_downtown/wide/` (camera 0–1142) is produced. The next
-step is automatic room detection: a window whose content matches nothing in the
-accumulated canvas starts a new room instead of being unwrapped.
+Stage 1 is a sequence of rooms and **each room restarts the camera at 0**, so
+camera arithmetic alone cannot place a window in one long strip. The stitcher
+therefore places each window from its camera delta and then *checks it against
+the pixels already stitched*: agreement below 80% means the window is not in the
+same room, so it starts a new room at the right-hand edge of everything captured
+so far. `level.json` records the room and join type per window. The delivered
+strip (3584 × 240) is two rooms — restaurant interior, then blue kitchen — and
+lands at 0 differing pixels per page.
+
+Ranking the search is the flip side of the same problem: the camera is exact
+within a room but wraps every 512 px, and a per-macro *odometer* over camera +
+player x drifts badly (it ranked a state still in the first room as the
+furthest of all, which sent the search chasing inflation). Ranking on the camera
+with the player's screen y as a tie-break is what actually extends reach, and
+the checkpoint cursor advances on camera distance rather than player distance.
 
 ## Collision: what the ROM shows
 

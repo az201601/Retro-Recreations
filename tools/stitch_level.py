@@ -139,6 +139,83 @@ def known_cameras(work: Path) -> dict[str, int]:
         return {}
 
 
+def step_delta(new: int, old: int, wrap: int, back: int) -> int:
+    """Shortest signed displacement between two wrapped positions."""
+    d = (new - old) % wrap
+    return d - wrap if d >= wrap - back else d
+
+
+def sample_agreement(canvas, covered, w, x) -> float | None:
+    """How well a window's pixels match what is already on the canvas at x."""
+    px, valid = w["px"], w["valid"]
+    x0 = 8 if w["left_clipped"] else 0
+    same = total = 0
+    width = canvas.width
+    for sy in range(0, SCREEN_H, 4):
+        vrow, crow = valid[sy], covered[sy]
+        for sx in range(x0, SCREEN_W):
+            cx = x + sx
+            if cx < 0 or cx >= width or not vrow[sx] or not crow[cx]:
+                continue
+            total += 1
+            if px[sx, sy] == canvas.load()[cx, sy]:
+                same += 1
+    return (same / total) if total else None
+
+
+def place_windows(windows: list[dict]) -> list[dict]:
+    """Assign every window a world x, splitting the route into rooms.
+
+    Camera arithmetic alone cannot do this: each room restarts the camera at 0,
+    so the register gives position *within* a room and nothing across rooms.
+    Windows are therefore placed from their camera delta and then checked
+    against the pixels already stitched. A window that lands on content it
+    disagrees with is not in the same room, so it starts a new one at the right
+    edge of everything captured so far.
+    """
+    width = 320 * len(windows) + 512
+    canvas = Image.new("RGB", (width, SCREEN_H), (0, 0, 0))
+    cpx = canvas.load()
+    covered = [[False] * width for _ in range(SCREEN_H)]
+    placed: list[dict] = []
+    frontier = 0
+    room = 0
+    prev = None
+    for w in windows:
+        if prev is None:
+            x, join, agreement = 0, "start", None
+        else:
+            delta = step_delta(w["cam_x_mod"], prev["cam_x_mod"], 512, 128)
+            cand = max(0, prev["x"] + delta)
+            agreement = sample_agreement(canvas, covered, w, cand)
+            if agreement is not None and agreement >= 0.80:
+                x, join = cand, "overlap"
+            elif 0 < delta <= 128:
+                # Small step with nothing to compare against (a gap): trust the
+                # camera, which is exact within a room.
+                x, join = cand, "camera"
+            else:
+                x, join = frontier, "new-room"
+                room += 1
+        entry = {"x": x, "y": 0, "room": room, "join": join,
+                 "agreement": round(agreement, 3) if agreement is not None else None}
+        placed.append(entry)
+        prev = {"x": x, "cam_x_mod": w["cam_x_mod"]}
+        frontier = max(frontier, x + SCREEN_W)
+
+        px, valid = w["px"], w["valid"]
+        x0 = 8 if w["left_clipped"] else 0
+        for sy in range(SCREEN_H):
+            vrow, crow = valid[sy], covered[sy]
+            for sx in range(x0, SCREEN_W):
+                cx = x + sx
+                if cx < 0 or cx >= width or not vrow[sx]:
+                    continue
+                cpx[cx, sy] = px[sx, sy]
+                crow[cx] = True
+    return placed
+
+
 def stitch(items, rom: Path, work: Path) -> tuple[Image.Image, list, dict]:
     emu = Retroshot(rom, work)
     norm_dir = work / "normalised"
@@ -157,61 +234,48 @@ def stitch(items, rom: Path, work: Path) -> tuple[Image.Image, list, dict]:
         emu.close()
     palette, palette_conflicts = palette_from(tally)
 
-    # Absolute X where the search recorded one (it knows the true wrap); fall
-    # back to chaining for states captured by hand. Y always chains: it wraps
-    # every 240 px and no capture records an absolute value.
-    known = known_cameras(work)
-    prev_x = prev_y = None
     for w in windows:
-        cam_x, cam_y = w["cam_x_mod"], w["cam_y_mod"]
-        fixed = known.get(w["name"])
-        if fixed is not None:
-            w["cam"] = fixed - (w["cam_x_mod"] - cam_x)
-            w["camy"] = 0
-            prev_x, prev_y = w["cam"], w["camy"]
-            continue
-        if prev_x is not None:
-            while cam_x < prev_x - 128:
-                cam_x += 512
-            while cam_x > prev_x + 384:
-                cam_x -= 512
-        if prev_y is not None:
-            while cam_y < prev_y - 60:
-                cam_y += 240
-            while cam_y > prev_y + 180:
-                cam_y -= 240
-        w["cam"], w["camy"] = cam_x, cam_y
-        prev_x, prev_y = cam_x, cam_y
-
-    min_y = min(0, min(w["camy"] for w in windows))
-    total_w = max(w["cam"] for w in windows) + SCREEN_W
-    total_h = max(w["camy"] for w in windows) + SCREEN_H - min_y
-    canvas = Image.new("RGB", (total_w, total_h), (0, 0, 0))
-    covered = [[False] * total_w for _ in range(total_h)]
-    reports = []
-    for w in windows:
+        # Render every window once, before placement: placement needs the
+        # pictures, not just the camera.
         st = w["st"]
         img = render_window(st, palette)
         diff, valid = verify_window(img, st, w["frame"])
-        w["img"], w["valid"] = img, valid
+        w["img"], w["valid"], w["px"], w["diff"] = img, valid, img.load(), diff
         w["img_full"] = render_window(st, palette, show_clipped=True)
-        left_clipped = not (st.ppumask & 0x02)
-        reports.append({"name": w["name"], "cam": w["cam"], "camy": w["camy"],
-                        "left_column_clipped": left_clipped,
-                        "bg_pixel_differences_outside_sprites": diff})
-        px = img.load()
-        x0 = 8 if left_clipped else 0
-        for y in range(SCREEN_H):
-            dy = w["camy"] - min_y + y
-            if not (0 <= dy < total_h):
-                continue
+        w["left_clipped"] = not (st.ppumask & 0x02)
+
+    placements = place_windows(windows)
+    min_x = min(p["x"] for p in placements)
+    max_x = max(p["x"] + SCREEN_W for p in placements)
+    min_y = min(0, min(p["y"] for p in placements))
+    total_h = max(p["y"] for p in placements) + SCREEN_H - min_y
+    total_w = max_x - min_x
+    canvas = Image.new("RGB", (total_w, total_h), (0, 0, 0))
+    covered = [[False] * total_w for _ in range(total_h)]
+    reports = []
+    for w, p in zip(windows, placements):
+        x, y = p["x"] - min_x, p["y"] - min_y
+        reports.append({"name": w["name"], "cam": p["x"], "camy": p["y"],
+                        "room": p["room"],
+                        "join": p["join"],
+                        "overlap_agreement": p["agreement"],
+                        "left_column_clipped": w["left_clipped"],
+                        "bg_pixel_differences_outside_sprites": w["diff"]})
+        px, valid = w["px"], w["valid"]
+        x0 = 8 if w["left_clipped"] else 0
+        for sy in range(SCREEN_H):
+            dy = y + sy
             for sx in range(x0, SCREEN_W):
-                if not valid[y][sx]:
+                if not valid[sy][sx]:
                     continue
-                x = w["cam"] + sx
-                if 0 <= x < total_w:
-                    canvas.putpixel((x, dy), px[sx, y])
-                    covered[dy][x] = True
+                xx = x + sx
+                if 0 <= xx < total_w and 0 <= dy < total_h:
+                    canvas.putpixel((xx, dy), px[sx, sy])
+                    covered[dy][xx] = True
+
+    # Re-point windows at their final canvas coordinates for the fill pass.
+    for w, p in zip(windows, placements):
+        w["cam"], w["camy"] = p["x"] - min_x, p["y"] - min_y
 
     # Anything still unset sits under a sprite in every window that covers it.
     # Fall back to the nearest window: the level itself is static, so the
@@ -241,7 +305,7 @@ def stitch(items, rom: Path, work: Path) -> tuple[Image.Image, list, dict]:
 
 
 def build_tileset(level: Image.Image, tileset_path: Path, tilemap_path: Path,
-                  tiles_csv: Path):
+                  tiles_csv: Path, page_width: int = 2048):
     w, h = level.size
     cols, rows = w // 8, h // 8
     px = level.load()
@@ -287,7 +351,29 @@ def build_tileset(level: Image.Image, tileset_path: Path, tilemap_path: Path,
         wr.writerow(["cell", "cell_x", "cell_y", "count"])
         for idx in range(len(raws)):
             wr.writerow([idx, idx % per_row, idx // per_row, counts[idx]])
-    return len(raws), cols, rows, sheet.size
+    # GMS 1.4 caps a texture page at 2048 px, so a longer strip is also written
+    # as consecutive pages sharing one tileset.
+    out_dir = tileset_path.parent
+    pages = []
+    if cols * 8 > page_width:
+        per_page = page_width // 8
+        for start_col in range(0, cols, per_page):
+            index = len(pages)
+            end_col = min(cols, start_col + per_page)
+            page_img = level.crop((start_col * 8, 0, end_col * 8, rows * 8))
+            page_img.save(out_dir / f"page_{index:02d}.png", optimize=True)
+            with (out_dir / f"tilemap_{index:02d}.csv").open("w", newline="",
+                                                            encoding="utf-8") as f:
+                wr = csv.writer(f, lineterminator="\n")
+                wr.writerow([f"c{start_col + i}" for i in range(end_col - start_col)])
+                for row in grid:
+                    wr.writerow(row[start_col:end_col])
+            pages.append({"index": index, "file": f"page_{index:02d}.png",
+                          "tilemap": f"tilemap_{index:02d}.csv",
+                          "first_column": start_col,
+                          "columns": end_col - start_col,
+                          "width_px": (end_col - start_col) * 8})
+    return len(raws), cols, rows, sheet.size, pages
 
 
 def main() -> None:
@@ -313,8 +399,7 @@ def main() -> None:
         raise SystemExit(f"no cam_*.fcs in {work / 'checkpoints'}")
     items = [("start_" + Path(p).stem, Path(p).resolve()) for p in args.start]
     if args.max_cam is not None:
-        known = known_cameras(work)
-        states = [p for p in states
+            states = [p for p in states
                   if known.get(p.stem, 0) <= args.max_cam]
     items += [(p.stem, p) for p in states]
 
@@ -325,7 +410,7 @@ def main() -> None:
     if aligned != level.width:
         level = level.crop((0, 0, aligned, level.height))
     level.save(out / "level.png", optimize=True)
-    unique, cols, rows, sheet_size = build_tileset(
+    unique, cols, rows, sheet_size, pages = build_tileset(
         level, out / "tileset.png", out / "tilemap.csv", out / "tiles.csv")
 
     worst = max((r["bg_pixel_differences_outside_sprites"] for r in reports),
@@ -343,6 +428,7 @@ def main() -> None:
         "unique_tiles": unique,
         "tilemap": {"cols": cols, "rows": rows},
         "tileset_size": list(sheet_size),
+        "pages": pages,
         "notes": [
             "level.png is the background layer only (no sprites), 1:1 NES pixels.",
             "tilemap.csv indexes 8x8 cells in tileset.png, 16 cells per row.",
@@ -354,6 +440,11 @@ def main() -> None:
     (out / "level.json").write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     print(f"{out}: {level.width}x{level.height} from {len(reports)} windows, "
           f"{unique} unique tiles, {meta['uncovered_before_fill']} uncovered pixels")
+    if pages:
+        print(f"  split into {len(pages)} texture pages of at most 2048 px")
+    if unique * 8 > 2048:
+        print("  tileset exceeds 2048 px in one row; use tileset.png (16 per row) "
+              "as a tileset background")
     print(f"  max background pixel error per window: {worst}; "
           f"{meta['filled_from_nearest_window']} pixels taken from a neighbour")
     if worst:
