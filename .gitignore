@@ -1,9 +1,0 @@
-# third-party emulator sources & builds (rebuild: see tools/README.md)
-tools/emu/libretro-fceumm/
-tools/emu/libretro-common/
-tools/ref/
-tools/node_modules/
-tools/emu/retroshot
-# raw capture scratch (regenerable via retroshot timelines)
-tools/out/
-*.ppm
