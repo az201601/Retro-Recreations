@@ -3,7 +3,11 @@ tools/emu/libretro-fceumm/
 tools/emu/libretro-common/
 tools/emu/retroshot
 tools/out/
+tools/emu/out/
 
 # Python cache
 __pycache__/
 *.py[cod]
+
+# Local Python environment (extraction tools)
+.venv/

@@ -1,0 +1,168 @@
+{
+  "source_state": "tools/emu/out/scrollcap/s10954.fcs",
+  "source_frame": "tools/emu/out/scrollcap/s10954.ppm",
+  "rom_sha256": "34ca559b733ed910b0a493a0cb1f5d64e5cd9e7e4796032d986c08079573e047",
+  "ppuctrl": "0x88",
+  "ppumask": "0x18",
+  "scroll": {
+    "coarse_x": 0,
+    "fine_x": 0,
+    "coarse_y": 0
+  },
+  "camera_x_px": 0,
+  "screen_aligned": true,
+  "mmc1_dregs": "1e0f0005",
+  "chr_mode": "4k",
+  "chr_bank_bg": 15,
+  "chr_bank_sprites": 0,
+  "mirroring": "vertical",
+  "backdrop_rgb": [
+    16,
+    16,
+    16
+  ],
+  "unique_bg_tiles": 148,
+  "sprites": [
+    {
+      "slot": 1,
+      "x": 39,
+      "y": 160,
+      "tile": "0x11",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 2,
+      "x": 31,
+      "y": 160,
+      "tile": "0x13",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 3,
+      "x": 23,
+      "y": 160,
+      "tile": "0x15",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 4,
+      "x": 34,
+      "y": 152,
+      "tile": "0x02",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 5,
+      "x": 26,
+      "y": 152,
+      "tile": "0x04",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 6,
+      "x": 22,
+      "y": 152,
+      "tile": "0x0F",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 7,
+      "x": 33,
+      "y": 160,
+      "tile": "0x0D",
+      "palette": 5,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 8,
+      "x": 31,
+      "y": 168,
+      "tile": "0x17",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 9,
+      "x": 23,
+      "y": 168,
+      "tile": "0x19",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 10,
+      "x": 16,
+      "y": 200,
+      "tile": "0x87",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 11,
+      "x": 16,
+      "y": 208,
+      "tile": "0x88",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 12,
+      "x": 24,
+      "y": 208,
+      "tile": "0x88",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 13,
+      "x": 32,
+      "y": 208,
+      "tile": "0x88",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    }
+  ],
+  "palette_learning": {
+    "source": "emulator frame",
+    "indices": 11,
+    "conflicts": {}
+  },
+  "render_check": "pixel-exact",
+  "notes": [
+    "tilemap.csv is page-aligned: cell (0,0) is nametable tile (0,0) of the page selected by PPUCTRL, not necessarily the top-left pixel on screen.",
+    "background.png is exactly what the player saw, including the camera scroll.",
+    "When screen_aligned is false the screen shows a horizontal sub-tile offset; use camera_x_px with a stitched map rather than this page alone."
+  ]
+}

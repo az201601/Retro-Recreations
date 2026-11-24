@@ -4,6 +4,18 @@
 
 `python3 tools/extract_one_player_menu.py` continues from power-on, presses START at frame 1000, extracts the static menu screen at frame 1006 with the 2-player row removed, and writes separate menu-music and selection-SFX WAVs. The menu music comes from a matching no-input run; subtracting that audio from the START run over frames 1000–1015 isolates the one-shot selection sound. See [`docs/title_menu_1p.md`](../docs/title_menu_1p.md) for GMS resources and the one-player-only input flow.
 
+## Level extraction
+
+`tools/nes_state.py` parses FCEUmm savestates and re-renders the PPU from CHR
+ROM, nametables, palette and OAM. `tools/extract_room.py` writes the GMS
+handoff folder for one captured window and `tools/verify_room.py` proves the
+tileset + tilemap rebuild it exactly. `tools/autoplay.py` drives the emulator
+interactively for scripted capture. See [`docs/levels.md`](../docs/levels.md).
+
+The headless frontend now also supports savestates (`state`/`load`), RAM dumps
+(`ram`), RAM guards for survivable capture (`guard`/`unguard`), `poke`, and an
+interactive stdin protocol (`-i`).
+
 ## Build the capture frontend
 
 The build products and downloaded emulator sources are ignored by Git. From the repository root:

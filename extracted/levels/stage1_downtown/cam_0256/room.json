@@ -1,0 +1,238 @@
+{
+  "source_state": "tools/emu/out/scrollcap/s15146.fcs",
+  "source_frame": "tools/emu/out/scrollcap/s15146.ppm",
+  "rom_sha256": "34ca559b733ed910b0a493a0cb1f5d64e5cd9e7e4796032d986c08079573e047",
+  "ppuctrl": "0x89",
+  "ppumask": "0x18",
+  "scroll": {
+    "coarse_x": 0,
+    "fine_x": 0,
+    "coarse_y": 0
+  },
+  "camera_x_px": 256,
+  "screen_aligned": true,
+  "mmc1_dregs": "1e0f0005",
+  "chr_mode": "4k",
+  "chr_bank_bg": 15,
+  "chr_bank_sprites": 0,
+  "mirroring": "vertical",
+  "backdrop_rgb": [
+    16,
+    16,
+    16
+  ],
+  "unique_bg_tiles": 115,
+  "sprites": [
+    {
+      "slot": 1,
+      "x": 239,
+      "y": 6,
+      "tile": "0x17",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 2,
+      "x": 231,
+      "y": 6,
+      "tile": "0x19",
+      "palette": 4,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 3,
+      "x": 144,
+      "y": 159,
+      "tile": "0xC1",
+      "palette": 5,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 4,
+      "x": 136,
+      "y": 159,
+      "tile": "0xC3",
+      "palette": 5,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 5,
+      "x": 123,
+      "y": 159,
+      "tile": "0xC5",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 6,
+      "x": 136,
+      "y": 167,
+      "tile": "0xC9",
+      "palette": 5,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 7,
+      "x": 131,
+      "y": 175,
+      "tile": "0xD1",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 8,
+      "x": 123,
+      "y": 175,
+      "tile": "0xD3",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 9,
+      "x": 115,
+      "y": 175,
+      "tile": "0xD5",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 10,
+      "x": 131,
+      "y": 183,
+      "tile": "0xD7",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 11,
+      "x": 123,
+      "y": 183,
+      "tile": "0xE8",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 12,
+      "x": 115,
+      "y": 183,
+      "tile": "0xEA",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 13,
+      "x": 127,
+      "y": 167,
+      "tile": "0xCB",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 14,
+      "x": 119,
+      "y": 167,
+      "tile": "0xCD",
+      "palette": 6,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 15,
+      "x": 124,
+      "y": 167,
+      "tile": "0xC7",
+      "palette": 7,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 16,
+      "x": 121,
+      "y": 177,
+      "tile": "0xCF",
+      "palette": 7,
+      "flip_h": true,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 17,
+      "x": 16,
+      "y": 200,
+      "tile": "0x87",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 18,
+      "x": 16,
+      "y": 208,
+      "tile": "0x88",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 19,
+      "x": 24,
+      "y": 208,
+      "tile": "0x88",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    },
+    {
+      "slot": 20,
+      "x": 32,
+      "y": 208,
+      "tile": "0x88",
+      "palette": 4,
+      "flip_h": false,
+      "flip_v": false,
+      "behind_bg": false
+    }
+  ],
+  "palette_learning": {
+    "source": "emulator frame",
+    "indices": 13,
+    "conflicts": {}
+  },
+  "render_check": "pixel-exact",
+  "notes": [
+    "tilemap.csv is page-aligned: cell (0,0) is nametable tile (0,0) of the page selected by PPUCTRL, not necessarily the top-left pixel on screen.",
+    "background.png is exactly what the player saw, including the camera scroll.",
+    "When screen_aligned is false the screen shows a horizontal sub-tile offset; use camera_x_px with a stitched map rather than this page alone."
+  ]
+}

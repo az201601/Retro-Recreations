@@ -75,7 +75,7 @@ def main() -> None:
     subprocess.run(
         [
             str(EMU / "retroshot"),
-            "-c", "libretro-fceumm/libfceumm_libretro.so",
+            "-c", "libretro-fceumm/fceumm_libretro.so",
             "-r", str(ROM),
             "-t", str(baseline_timeline),
             "-o", str(baseline_out),

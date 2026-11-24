@@ -161,7 +161,7 @@ static bool env_cb(unsigned cmd, void *data) {
 }
 
 /* ---- timeline ---- */
-enum ev_type { EV_PRESS, EV_RELEASE, EV_SHOT, EV_QUIT, EV_RESET, EV_RAM, EV_RAMPRE };
+enum ev_type { EV_PRESS, EV_RELEASE, EV_SHOT, EV_QUIT, EV_RESET, EV_RAM, EV_RAMPRE, EV_STATE };
 struct event { int frame; enum ev_type type; char name[64]; };
 static struct event events[512];
 static int nevents = 0;
@@ -209,6 +209,10 @@ static void load_timeline(const char *path) {
             struct event *e = &events[nevents++];
             e->frame = frame; e->type = EV_RAM;
             snprintf(e->name, sizeof e->name, "%s", b);
+        } else if (!strcmp(a, "state")) {
+            struct event *e = &events[nevents++];
+            e->frame = frame; e->type = EV_STATE;
+            snprintf(e->name, sizeof e->name, "%s", b);
         } else if (!strcmp(a, "rampre")) {
             struct event *e = &events[nevents++];
             e->frame = frame; e->type = EV_RAMPRE;
@@ -234,6 +238,21 @@ static void load_timeline(const char *path) {
 }
 
 static bool quit_flag = false;
+static int framecount = 0;
+
+/* Per-frame RAM guards: {address, value, active}. Applied after every
+ * retro_run() so the next frame's logic never observes the old value. */
+static struct { unsigned addr; unsigned val; int active; } guards[16];
+static int nguards = 0;
+
+static void apply_guards(void) {
+    if (!nguards) return;
+    uint8_t *ram = retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+    if (!ram) return;
+    for (int i = 0; i < nguards; i++)
+        if (guards[i].active && guards[i].addr < 0x800)
+            ram[guards[i].addr] = (uint8_t)guards[i].val;
+}
 
 static void dump_ram(const char *name) {
     uint8_t *ram = retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
@@ -244,6 +263,28 @@ static void dump_ram(const char *name) {
     if (!f) { perror(p); return; }
     fwrite(ram, 1, 2048, f);
     fclose(f);
+}
+
+/* Dump a full libretro savestate. FCEUmm's state carries the PPU nametables
+ * (NTAR), palette (PRAM), OAM (SPRA), PPU scroll/mask registers, CPU RAM and
+ * mapper registers, which is everything needed to reconstruct a level. */
+static void dump_state(const char *name) {
+    size_t size = retro_serialize_size();
+    if (!size) { fprintf(stderr, "core has no state size\n"); return; }
+    void *buf = malloc(size);
+    if (!buf || !retro_serialize(buf, size)) {
+        fprintf(stderr, "retro_serialize failed\n");
+        free(buf);
+        return;
+    }
+    char p[512];
+    snprintf(p, sizeof p, "%s/%s.fcs", outdir, name);
+    FILE *f = fopen(p, "wb");
+    if (!f) { perror(p); free(buf); return; }
+    fwrite(buf, 1, size, f);
+    fclose(f);
+    free(buf);
+    fprintf(stderr, "state %s (%zu bytes)\n", p, size);
 }
 
 /* EV_RAMPRE: snapshot $0200 page BEFORE the frame runs (the OAM image the
@@ -263,6 +304,9 @@ static void process_events(int frame) {
         switch (e->type) {
         case EV_RAM:
             dump_ram(e->name);
+            break;
+        case EV_STATE:
+            dump_state(e->name);
             break;
         case EV_PRESS: {
             int b = btn_from_name(e->name);
@@ -286,9 +330,101 @@ static void process_events(int frame) {
     }
 }
 
+/* ---- interactive mode -------------------------------------------------
+ * Reads one command per line from stdin so external scripts can steer the
+ * game frame-by-frame (used by tools/autoplay.py):
+ *   run N | press BTN | release BTN | tap BTN N
+ *   shot NAME | state NAME | ram NAME | frame | quit
+ * After every command a single status line "OK <frame>" is printed.
+ */
+static void interactive_loop(void) {
+    char line[256];
+    fprintf(stderr, "interactive: ready at frame 0\n");
+    printf("OK 0\n");
+    fflush(stdout);
+    while (fgets(line, sizeof line, stdin)) {
+        char cmd[64] = {0}, arg[128] = {0};
+        int n = sscanf(line, "%63s %127s", cmd, arg);
+        if (n <= 0) { printf("OK %d\n", framecount); fflush(stdout); continue; }
+        if (!strcmp(cmd, "quit")) { quit_flag = true; break; }
+        else if (!strcmp(cmd, "run")) {
+            int want = arg[0] ? atoi(arg) : 1;
+            for (int i = 0; i < want && !quit_flag && framecount < max_frame; i++) {
+                process_pre(framecount + 1);
+                retro_run();
+                framecount++;
+                process_events(framecount);
+                apply_guards();
+            }
+        } else if (!strcmp(cmd, "press") || !strcmp(cmd, "release")) {
+            int b = btn_from_name(arg);
+            if (b >= 0) {
+                if (cmd[0] == 'p') buttons |= (uint16_t)(1 << b);
+                else buttons &= (uint16_t)~(1 << b);
+            }
+        } else if (!strcmp(cmd, "tap")) {
+            char bname[64]; int hold = 6;
+            sscanf(line, "%*s %63s %d", bname, &hold);
+            int b = btn_from_name(bname);
+            if (b >= 0) {
+                buttons |= (uint16_t)(1 << b);
+                for (int i = 0; i < hold && !quit_flag; i++) {
+                    process_pre(framecount + 1);
+                    retro_run(); framecount++;
+                    process_events(framecount);
+                    apply_guards();
+                }
+                buttons &= (uint16_t)~(1 << b);
+            }
+        } else if (!strcmp(cmd, "shot")) {
+            char path[512];
+            snprintf(path, sizeof path, "%s/%s.ppm", outdir, arg);
+            write_ppm(path);
+        } else if (!strcmp(cmd, "load")) {
+            char path[512];
+            snprintf(path, sizeof path, "%s/%s.fcs", outdir, arg);
+            FILE *f = fopen(path, "rb");
+            if (f) {
+                fseek(f, 0, SEEK_END); long sz = ftell(f); fseek(f, 0, SEEK_SET);
+                void *buf = malloc(sz);
+                if (buf && fread(buf, 1, sz, f) == (size_t)sz) {
+                    if (retro_unserialize(buf, (size_t)sz))
+                        fprintf(stderr, "loaded %s\n", path);
+                    else
+                        fprintf(stderr, "unserialize failed: %s\n", path);
+                }
+                free(buf);
+                fclose(f);
+            } else perror(path);
+        } else if (!strcmp(cmd, "state")) {
+            dump_state(arg);
+        } else if (!strcmp(cmd, "ram")) {
+            dump_ram(arg);
+        } else if (!strcmp(cmd, "guard")) {
+            unsigned addr = 0, val = 0;
+            if (sscanf(line, "%*s %x %x", &addr, &val) == 2 && nguards < 16) {
+                guards[nguards].addr = addr; guards[nguards].val = val;
+                guards[nguards].active = 1; nguards++;
+            }
+        } else if (!strcmp(cmd, "unguard")) {
+            nguards = 0;
+        } else if (!strcmp(cmd, "poke")) {
+            unsigned addr = 0, val = 0;
+            if (sscanf(line, "%*s %x %x", &addr, &val) == 2) {
+                uint8_t *ram = retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+                if (ram && addr < 0x800) ram[addr] = (uint8_t)val;
+            }
+        }
+        printf("OK %d\n", framecount);
+        fflush(stdout);
+    }
+}
+
 int main(int argc, char **argv) {
     const char *core_path = NULL, *rom_path = NULL, *tl_path = NULL;
+    int interactive = 0;
     for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-i")) { interactive = 1; continue; }
         if (!strcmp(argv[i], "-c") && i + 1 < argc) core_path = argv[++i];
         else if (!strcmp(argv[i], "-r") && i + 1 < argc) rom_path = argv[++i];
         else if (!strcmp(argv[i], "-t") && i + 1 < argc) tl_path = argv[++i];
@@ -296,11 +432,12 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "-m") && i + 1 < argc) max_frame = atoi(argv[++i]);
         else { fprintf(stderr, "unknown arg %s\n", argv[i]); return 1; }
     }
-    if (!core_path || !rom_path || !tl_path) {
-        fprintf(stderr, "usage: retroshot -c core.so -r rom.nes -t timeline.txt [-o outdir] [-m maxframes]\n");
+    if (!core_path || !rom_path || (!tl_path && !interactive)) {
+        fprintf(stderr, "usage: retroshot -c core.so -r rom.nes -t timeline.txt [-o outdir] [-m maxframes]\n"
+                        "       retroshot -c core.so -r rom.nes -i [-o outdir] [-m maxframes]\n");
         return 1;
     }
-    load_timeline(tl_path);
+    if (tl_path) load_timeline(tl_path);
 
     if (retro_api_version() != RETRO_API_VERSION) fprintf(stderr, "warn: api version mismatch\n");
     fprintf(stderr, "core arg: %s (linked statically at build time)\n", core_path);
@@ -337,14 +474,18 @@ int main(int argc, char **argv) {
     fprintf(stderr, "av: %ux%u fps=%.3f sr=%.0f\n", av.geometry.base_width, av.geometry.base_height,
             av.timing.fps, av.timing.sample_rate);
 
-    int framecount = 0;
+    framecount = 0;
     process_pre(0);
     process_events(0);
-    while (!quit_flag && framecount < max_frame) {
-        process_pre(framecount + 1);
-        retro_run();
-        framecount++;
-        process_events(framecount);
+    if (interactive) {
+        interactive_loop();
+    } else {
+        while (!quit_flag && framecount < max_frame) {
+            process_pre(framecount + 1);
+            retro_run();
+            framecount++;
+            process_events(framecount);
+        }
     }
     fprintf(stderr, "ran %d frames\n", framecount);
 
