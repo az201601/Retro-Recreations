@@ -28,8 +28,8 @@ START_FRAME = 1000
 END_FRAME = 3200
 SFX_FIRST_AUDIO_FRAME = START_FRAME
 SFX_LAST_AUDIO_FRAME = 1015  # exclusive; difference isolates the short START transient
-MENU_FIRST_AUDIO_FRAME = START_FRAME
-MENU_LAST_AUDIO_FRAME = 3140  # exclusive: 2140 source frames (~35.6 s)
+MENU_FIRST_AUDIO_FRAME = 900  # title screen appears before the later START press
+MENU_LAST_AUDIO_FRAME = 3140  # exclusive: 2240 source frames (~37.3 s)
 
 
 def main() -> None:
