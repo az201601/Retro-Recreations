@@ -102,23 +102,31 @@ def camera_of(state_path: Path, rom: str | Path) -> int:
     return (st.ppuctrl & 1) * 256 + cx * 8 + fx
 
 
-PLAYER_OAM = 47   # first of the ten player sprites; the rest follow it
+PLAYER_TILE_MIN, PLAYER_TILE_MAX = 168, 203
+PLAYER_Y_MIN, PLAYER_Y_MAX = 32, 190
 
 
 def player_of(state_path: Path, rom: str | Path) -> tuple[int, int, int]:
-    """Return (world_x, screen_y, cam) for the player.
+    """Return (camera + screen_x, screen_y, cam) for the player.
 
-    The camera alone cannot tell a climb from standing still, and it lags the
-    player during a jump, so progress is measured on the player instead.
+    Finding the player used to mean reading a fixed OAM index. That is a trap:
+    the sprite block moves between OAM slots as the character changes state, so
+    a fixed index latches onto an enemy, a hidden sprite (y = 240) or the HUD,
+    and then reports "no movement" no matter what is pressed. All of the
+    character's tiles sit in a known range, and the HUD copy of them lives in
+    the bottom strip, so select by tile and exclude the HUD band.
     """
     st = load_state(state_path, rom)
     cx, fx, _ = st.scroll()
     cam = (st.ppuctrl & 1) * 256 + cx * 8 + fx
     oam = st.oam
-    base = PLAYER_OAM * 4
-    sx, sy = oam[base + 3], oam[base]
-    if sy >= 240:  # player hidden (respawn/death frames)
+    hits = [i for i in range(64)
+            if PLAYER_Y_MIN <= oam[i * 4] < PLAYER_Y_MAX
+            and PLAYER_TILE_MIN <= oam[i * 4 + 1] <= PLAYER_TILE_MAX]
+    if not hits:
         return cam, 240, cam
+    sx = sum(oam[i * 4 + 3] for i in hits) // len(hits)
+    sy = min(oam[i * 4] for i in hits)
     # Keep the sum inside the 512-px wrap the caller measures differences in;
     # cam + sx can reach 767 and would be read as a large spurious jump.
     return (cam + sx) % 512, sy, cam
@@ -160,6 +168,36 @@ def settle(emu: Retroshot, frames: int = 30) -> None:
     emu.run(frames)
 
 
+def reacts_to_input(emu: Retroshot, rom: Path, probe: Path) -> bool:
+    """Does the player move horizontally in this state?
+
+    A jump can wedge the character inside a platform, and the engine then keeps
+    animating him -- bobbing on the spot -- while ignoring left and right
+    entirely. The camera is pinned and the sprite is on screen, so such a state
+    looks like a fine frontier. It is not: nothing can be done from it, and a
+    whole search was spent expanding one. Nudge both ways and require a real
+    change in position.
+    """
+    probe = probe if probe.suffix == ".fcs" else probe.with_suffix(".fcs")
+    emu.save(probe)
+    before = player_of(probe, rom)[0]
+    for button in ("RIGHT", "LEFT"):
+        emu.press(button)
+        emu.run(20)
+        emu.release(button)
+        emu.save(probe)
+        after = player_of(probe, rom)[0]
+        # 6 px was too generous: a character stuck in the hurt/spin animation
+        # still drifts a few pixels, and those states were accepted as progress.
+        # A walking character covers 20+ px in 20 frames.
+        if abs(step_delta(after, before, 512, 128)) >= 20:
+            emu.run(4)
+            return True
+        before = after          # second nudge is measured from the first
+    emu.run(4)
+    return False
+
+
 def expand(emu: Retroshot, parent: Node, workdir: Path, rom: Path,
            nodes: list[Node], bookkeeping: dict) -> list[Node]:
     """Try every macro from one state and return the states that made progress."""
@@ -188,6 +226,12 @@ def expand(emu: Retroshot, parent: Node, workdir: Path, rom: Path,
                     world_x >= parent.world_x + 96)
         climbed = py <= parent.player_y - 8
         if not died and (advanced or climbed):
+            if not reacts_to_input(emu, rom, workdir / "probe"):
+                # Wedged: keep the state file for inspection, but do not spend
+                # expansions on it.
+                (workdir / "wedged").mkdir(exist_ok=True)
+                path.replace(workdir / "wedged" / path.name)
+                continue
             node = Node(state=name, cam=cam_abs, depth=parent.depth + 1,
                         world_x=world_x, player_y=py, player_px=pos,
                         cam_raw=cam)
