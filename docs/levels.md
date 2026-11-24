@@ -146,39 +146,66 @@ and frame were not from the same frame (or the screen was mid-effect).
 - Sprite tiles use the sprite CHR bank recorded as `chr_bank_sprites`; the
   sprite list in `room.json` has screen positions, tile ids and flips.
 
-## Traversal: what the solver can and cannot do
+## Traversal: the measurement was the bug
 
-The solver expands a frontier of savestates with ~90-frame input macros, keeps
-the best beam, and measures progress on the *player* (`cam + player screen x`,
-plus screen y) because the camera alone cannot distinguish climbing from
-standing still. Health `$03D4` is guarded; a run that loses a life or falls
-back is rejected.
+The search expands frontier states best-first: every state is expanded exactly
+once, in order of how far it got, and dead ends are retired. The earlier shape
+(re-expand the leader until it dies, prune with a beam) burned whole runs on one
+branch, and — worse — adding macros made runs *shorter*.
 
-It currently reaches player world x **1339** on stage 1 (camera 1142). Two
-obstacles needed extra thinking and will need more:
+Four separate measurement faults explained the "walls" that the macros were
+being blamed for:
 
-- **Pits.** A greedy route died at camera 726; the frontier/beam search plus a
-  wider macro set (delayed jumps, double jumps, stand-and-commit) clears them.
-- **Climbing.** The pillar at the end of the restaurant interior is climbed
-  with `UP`, which no horizontal macro ever presses. Macro set now includes
-  `climb_up`, `climb_far`, `up_right` and `climb_jump`.
-- **The next wall** is at world x≈1339 (camera 1142), on the beam at the top of
-  the restaurant interior: from there `RIGHT` advances the camera by ~100 px but
-  does not move the player forward, and nothing else moves him at all. With the
-  ROM's collision table the solver can path-find instead of guessing.
-- **Search shape matters more than the macro list.** Expanding only the single
-  frontier leader wastes iterations on a node that cannot move, and widening
-  the macro set from 13 to 17 made the run *worse* (world x 604 instead of
-  1339) because the same iteration budget then starves the deep path. The next
-  change is a real priority queue with a per-node retry count, not more macros.
+1. **Unwrapping the camera against its parent caps apparent progress at 256 px.**
+   The register only holds 0–511, so the code picked the ±512 candidate nearest
+   the parent. Every state more than 256 px past its parent got silently folded
+   back, which is why every run stalled "around camera 1000" no matter what was
+   changed. Progress is now an odometer: the *change* in `camera + player x`
+   between parent and child, mapped into a signed window.
+2. **`cam + player_x` reached 767 without wrapping**, so the odometer invented
+   jumps.
+3. **Palette learned from the first window only.** A window only reveals the few
+   palette entries it uses, and the fallback NES palette is *not* what the core
+   outputs (it is ~16 off on several entries), so later windows rendered in the
+   wrong colours — 50k-pixel errors. The palette is now fitted across every
+   window at once.
+4. **Checkpoints keyed to player progress.** A checkpoint names a *window*, so
+   they are keyed to camera distance and the search records the absolute camera
+   for each one in `route.json`; deriving the wrap afterwards is guesswork.
 
-## Collision
+With those fixed, the same macro set reaches world x **5904** (odometer) instead
+of 1339, and the one macro that was genuinely missing — `climb_over`, found by
+randomised search from the beam where everything stalled — is in the set.
 
-Collision must come from the ROM, not from hand-classifying tiles or probing
-the player (both were rejected). Status: the level is streamed straight to VRAM
-with no intermediate tile buffer in RAM, so the tile→solid table has to be
-found in the ROM image. The plan is to locate the 256-entry table indexed by
-tile id and validate candidates against observed standing positions collected
-from the captured states — a first pass over 138 states gave only 13 usable
-labels, so the labelling (identifying the player's feet against the correct
-page) needs tightening before the search is meaningful.
+## Rooms, not one long strip
+
+Stage 1 is a sequence of rooms and **each room restarts the camera at 0**. So
+camera arithmetic alone cannot place a window in one long world strip; rooms
+have to be segmented and concatenated. `stitch_level.py --max-cam` cuts a strip
+at the end of the current room, which is how the delivered
+`extracted/levels/stage1_downtown/wide/` (camera 0–1142) is produced. The next
+step is automatic room detection: a window whose content matches nothing in the
+accumulated canvas starts a new room instead of being unwrapped.
+
+## Collision: what the ROM shows
+
+No RAM mirror of the nametable exists — searching 138 captured states for
+nametable columns, rows and metatile downsamples found nothing, and the visible
+level map is written straight to VRAM. The streaming code is in the fixed bank:
+
+| CPU address | What it is |
+|---|---|
+| `$83BE` | blit loop: `LDA ($00),Y` → `STA $2007`, `$03` = byte count, bit 7 of `$02` = direction |
+| `$8390` | prepares that call: fetches flags/`$03`, turns `$02` into a PPUCTRL value |
+| `$8384` | flushes a prepared column from the RAM buffer at `$053B` |
+| `$83C4` | entry that sets the VRAM address from `$44/$45` and runs the blit |
+
+While the restaurant room scrolls, `$00/$01` walks from `$8ABD` upward at about
+20 bytes per 8-px column (PRG file offset `0x0ABD`, data not code), so the level
+stream for this room lives there. The stream is not a plain tile list: none of
+the nametable's columns, rows or 2×2 blocks appear verbatim in PRG, and the
+data-resident blocks do not form a definition table.
+
+So the collision table has to come from following that stream (or from the
+collision routine that consumes it) rather than from pattern-matching the ROM.
+That is the open thread; the addresses above are the entry points.

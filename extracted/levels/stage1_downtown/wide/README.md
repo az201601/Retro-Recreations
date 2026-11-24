@@ -16,7 +16,9 @@ strip from `tileset.png` + `tilemap.csv` with **0 differing pixels**.
 
 This covers the opening restaurant interior of the stage: tables, food, the
 window with the skyline, and the climbable pillar at the right-hand end
-(camera x 0–1142, player world x 0–1339).
+(camera x 0–1142). It is one *room*: stage 1 continues into further rooms, each
+of which restarts the camera at 0, so rooms have to be joined end to end rather
+than by camera arithmetic (see `docs/levels.md`).
 
 ## Importing into GameMaker Studio 1.4
 
@@ -62,13 +64,13 @@ tile layer, and the room widened to match.
 .venv/bin/python tools/solve_route.py \
   --state tools/emu/out/scrollcap/s10954.fcs \
   --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
-  --workdir tools/emu/out/solve11 --iterations 80 --beam 5 --checkpoint-step 64
+  --workdir tools/emu/out/solve20 --iterations 200 --beam 8 --checkpoint-step 64
 
 .venv/bin/python tools/stitch_level.py \
-  --workdir tools/emu/out/solve11 \
+  --workdir tools/emu/out/solve20 \
   --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
-  --out tools/emu/out/stage11 \
-  --start tools/emu/out/scrollcap/s10954.fcs
+  --out tools/emu/out/stage20 \
+  --start tools/emu/out/scrollcap/s10954.fcs --max-cam 1200
 ```
 
 `level.json` records every window's true camera x and confirms that the

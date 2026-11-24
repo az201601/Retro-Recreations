@@ -1,5 +1,5 @@
 {
-  "source_workdir": "/home/user/Retro-Recreations/tools/emu/out/solve11",
+  "source_workdir": "/home/user/Retro-Recreations/tools/emu/out/solve20",
   "windows": [
     {
       "name": "start_s10954",
@@ -9,63 +9,119 @@
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_00186",
+      "name": "cam_00064",
       "cam": 186,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_00284",
-      "cam": 284,
+      "name": "cam_00128",
+      "cam": 186,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_00404",
-      "cam": 404,
+      "name": "cam_00192",
+      "cam": 274,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_00538",
-      "cam": 538,
+      "name": "cam_00256",
+      "cam": 274,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00320",
+      "cam": 384,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00384",
+      "cam": 384,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00448",
+      "cam": 536,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00512",
+      "cam": 536,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00576",
+      "cam": 614,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00640",
+      "cam": 640,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
       "name": "cam_00704",
-      "cam": 704,
+      "cam": 780,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_00844",
-      "cam": 844,
+      "name": "cam_00768",
+      "cam": 780,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_00995",
+      "name": "cam_00832",
       "cam": 924,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_01224",
-      "cam": 1002,
+      "name": "cam_00896",
+      "cam": 924,
       "camy": 0,
       "left_column_clipped": true,
       "bg_pixel_differences_outside_sprites": 0
     },
     {
-      "name": "cam_01339",
+      "name": "cam_00960",
+      "cam": 1042,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01024",
+      "cam": 1042,
+      "camy": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01088",
       "cam": 1142,
       "camy": 0,
       "left_column_clipped": true,
@@ -75,8 +131,8 @@
   "width_px": 1392,
   "height_px": 240,
   "vertical_scroll_used": false,
-  "uncovered_before_fill": 3867,
-  "filled_from_nearest_window": 3867,
+  "uncovered_before_fill": 3576,
+  "filled_from_nearest_window": 3576,
   "max_background_pixel_error": 0,
   "unique_tiles": 194,
   "tilemap": {

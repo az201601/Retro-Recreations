@@ -19,14 +19,14 @@ For whole stages use the two-stage pipeline:
 .venv/bin/python tools/solve_route.py \
   --state tools/emu/out/scrollcap/s10954.fcs \
   --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
-  --workdir tools/emu/out/solve11 --iterations 80 --beam 5 --checkpoint-step 64
+  --workdir tools/emu/out/solve20 --iterations 200 --beam 8 --checkpoint-step 64
 
 # 2. stitch those checkpoints into one wide strip + tileset + tilemap
 .venv/bin/python tools/stitch_level.py \
-  --workdir tools/emu/out/solve11 \
+  --workdir tools/emu/out/solve20 \
   --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
-  --out tools/emu/out/stage11 \
-  --start tools/emu/out/scrollcap/s10954.fcs
+  --out tools/emu/out/stage20 \
+  --start tools/emu/out/scrollcap/s10954.fcs --max-cam 1200
 ```
 
 `stitch_level.py` re-enters every checkpoint, advances one frame, and captures

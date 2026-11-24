@@ -202,7 +202,7 @@ def write_outputs(args) -> dict:
         "ppuctrl": f"0x{state.ppuctrl:02X}",
         "ppumask": f"0x{state.ppumask:02X}",
         "scroll": dict(zip(("coarse_x", "fine_x", "coarse_y"), state.scroll())),
-        "camera_x_px": (state.ppuctrl & 3) * 256 + state.scroll()[0] * 8 + state.scroll()[1],
+        "camera_x_px": (state.ppuctrl & 1) * 256 + state.scroll()[0] * 8 + state.scroll()[1],
         "screen_aligned": state.scroll()[1] == 0,
         "mmc1_dregs": state.dregs.hex(),
         "chr_mode": "4k" if state.chr_mode_4k else "8k",

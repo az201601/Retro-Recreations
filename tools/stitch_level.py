@@ -39,37 +39,45 @@ from nes_state import FCEUMM_CLASSIC_PALETTE, SCREEN_H, SCREEN_W, load_state
 def camera_xy(st) -> tuple[int, int]:
     """Camera position in pixels.
 
-    X uses both nametable pages (``ppuctrl & 3`` selects the base page and wraps
-    every 512 px). Y is a single 240-px page, because the cartridge uses
-    vertical mirroring, so a stage that is taller than one screen scrolls Y
-    round in a loop and the caller must unwrap it against its neighbour.
+    X uses both nametable pages and wraps every 512 px. The cartridge uses
+    vertical mirroring, so only two physical pages exist and PPUCTRL bit 1 is a
+    *mirror* of bit 0, not a third page: masking with ``& 3`` added a phantom
+    512 px to every window whose bit 1 happened to be set. Y is a single 240-px
+    page, so a taller stage wraps Y and the caller unwraps it against its
+    neighbour.
     """
     cx, fx, cy = st.scroll()
-    return ((st.ppuctrl & 3) * 256 + cx * 8 + fx, cy * 8)
+    return ((st.ppuctrl & 1) * 256 + cx * 8 + fx, cy * 8)
 
 
-def learn_palette(st, frame: Path) -> dict[int, tuple[int, int, int]]:
-    """Index -> RGB, fitted only on background pixels of a matched frame.
+def sample_colours(st, frame: Path, tally: dict) -> None:
+    """Add one window's background colours to a running index -> RGB tally.
 
-    Sprites are excluded because they can move between the state and the
-    capture; the background cannot, so it pins the palette exactly.
+    Every window is sampled, not just the first: a window only reveals the
+    handful of palette entries it happens to use, and the fallback NES palette
+    is *not* the emulator's (it differs by ~16 on several entries). Sampling
+    only the first window left every later window's unseen colours wrong.
     """
-    palette = {i: FCEUMM_CLASSIC_PALETTE[i] for i in range(64)}
-    indices, _, _ = st.frame_indices(with_sprites=True)
-    mask = st.sprite_mask()
+    indices, mask, _ = st.frame_indices(with_sprites=True)
     fpx = Image.open(frame).convert("RGB").load()
-    seen: dict[int, dict[tuple[int, int, int], int]] = {}
     for y in range(SCREEN_H):
         mrow, irow = mask[y], indices[y]
         for x in range(SCREEN_W):
             if mrow[x]:
                 continue
             colour = irow[x] & 0x3F
-            bucket = seen.setdefault(colour, {})
+            bucket = tally.setdefault(colour, {})
             bucket[fpx[x, y]] = bucket.get(fpx[x, y], 0) + 1
-    for colour, vals in seen.items():
+
+
+def palette_from(tally: dict) -> tuple[dict[int, tuple[int, int, int]], dict]:
+    palette = {i: FCEUMM_CLASSIC_PALETTE[i] for i in range(64)}
+    conflicts = {}
+    for colour, vals in tally.items():
         palette[colour] = max(vals.items(), key=lambda kv: kv[1])[0]
-    return palette
+        if len(vals) > 1:
+            conflicts[colour] = vals
+    return palette, conflicts
 
 
 def normalise(emu: Retroshot, state: Path, out: Path) -> tuple[Path, Path]:
@@ -120,29 +128,48 @@ def verify_window(img: Image.Image, st, frame: Path) -> tuple[int, list[list[boo
     return diff, valid
 
 
+def known_cameras(work: Path) -> dict[str, int]:
+    """Absolute camera x per checkpoint, as recorded by the route search."""
+    route = work / "route.json"
+    if not route.exists():
+        return {}
+    try:
+        return json.loads(route.read_text()).get("checkpoint_cams", {}) or {}
+    except (ValueError, OSError):
+        return {}
+
+
 def stitch(items, rom: Path, work: Path) -> tuple[Image.Image, list, dict]:
     emu = Retroshot(rom, work)
     norm_dir = work / "normalised"
     norm_dir.mkdir(exist_ok=True)
     windows = []
-    palette = None
+    tally: dict = {}
     try:
         for cam_name, state in items:
             fcs, ppm = normalise(emu, state, norm_dir / f"norm_{cam_name}")
             st = load_state(fcs, rom)
-            if palette is None:
-                palette = learn_palette(st, ppm)
+            sample_colours(st, ppm, tally)
             cam_x, cam_y = camera_xy(st)
             windows.append({"name": cam_name, "state": fcs, "frame": ppm,
                             "cam_x_mod": cam_x, "cam_y_mod": cam_y, "st": st})
     finally:
         emu.close()
+    palette, palette_conflicts = palette_from(tally)
 
-    # Both axes wrap; unwrap along the capture order so the windows line up in
-    # one world map. X wraps every 512 px, Y every 240.
+    # Absolute X where the search recorded one (it knows the true wrap); fall
+    # back to chaining for states captured by hand. Y always chains: it wraps
+    # every 240 px and no capture records an absolute value.
+    known = known_cameras(work)
     prev_x = prev_y = None
     for w in windows:
         cam_x, cam_y = w["cam_x_mod"], w["cam_y_mod"]
+        fixed = known.get(w["name"])
+        if fixed is not None:
+            w["cam"] = fixed - (w["cam_x_mod"] - cam_x)
+            w["camy"] = 0
+            prev_x, prev_y = w["cam"], w["camy"]
+            continue
         if prev_x is not None:
             while cam_x < prev_x - 128:
                 cam_x += 512
@@ -207,7 +234,9 @@ def stitch(items, rom: Path, work: Path) -> tuple[Image.Image, list, dict]:
     gaps = sum(1 for y in range(total_h) for x in range(total_w) if not covered[y][x])
     meta = {"windows": reports, "uncovered_before_fill": gaps,
             "filled_from_nearest_window": filled,
-            "palette": {str(k): list(v) for k, v in (palette or {}).items()}}
+            "palette_conflicts": {str(k): {str(c): n for c, n in v.items()}
+                                  for k, v in palette_conflicts.items()},
+            "palette": {str(k): list(v) for k, v in palette.items()}}
     return canvas, reports, meta
 
 
@@ -268,6 +297,8 @@ def main() -> None:
                     help="solver work directory containing checkpoints/")
     ap.add_argument("--rom", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--max-cam", type=int, default=None,
+                    help="ignore windows at or beyond this camera x (room cut)")
     ap.add_argument("--start", action="append", default=[],
                     help="extra savestate to include, e.g. the level entrance")
     args = ap.parse_args()
@@ -281,6 +312,10 @@ def main() -> None:
     if not states:
         raise SystemExit(f"no cam_*.fcs in {work / 'checkpoints'}")
     items = [("start_" + Path(p).stem, Path(p).resolve()) for p in args.start]
+    if args.max_cam is not None:
+        known = known_cameras(work)
+        states = [p for p in states
+                  if known.get(p.stem, 0) <= args.max_cam]
     items += [(p.stem, p) for p in states]
 
     level, reports, meta = stitch(items, rom, work)

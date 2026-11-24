@@ -73,6 +73,11 @@ MACROS = [
     Macro("climb_far", [("UP", 70), ("RIGHT", 20)]),
     Macro("up_right", [("UP+RIGHT", 50), ("RIGHT", 20)]),
     Macro("climb_jump", [("UP", 35), ("UP+RIGHT+A", 14), ("RIGHT", 30)]),
+    # Found by randomised local search from the beam at the top of the
+    # restaurant interior, where every simpler macro had stalled: jump right,
+    # walk, climb right past the pillar, then hold B.
+    Macro("climb_over", [("RIGHT+A", 24), ("RIGHT", 25), ("UP+RIGHT", 21),
+                         ("B", 19)]),
 ]
 
 
@@ -81,8 +86,11 @@ class Node:
     state: str
     cam: int
     depth: int
-    world_x: int = 0   # cam + player screen x, unwrapped
+    world_x: int = 0   # odometer: sum of per-macro player displacements
     player_y: int = 0
+    player_px: int = 0  # camera + player screen x, wrapped; the odometer input
+    cam_raw: int = 0    # camera as the hardware reports it, 0..511
+    expanded: bool = False
     alive: bool = True
     children: int = 0
     history: list = field(default_factory=list)
@@ -91,7 +99,7 @@ class Node:
 def camera_of(state_path: Path, rom: str | Path) -> int:
     st = load_state(state_path, rom)
     cx, fx, _ = st.scroll()
-    return (st.ppuctrl & 3) * 256 + cx * 8 + fx
+    return (st.ppuctrl & 1) * 256 + cx * 8 + fx
 
 
 PLAYER_OAM = 47   # first of the ten player sprites; the rest follow it
@@ -105,21 +113,32 @@ def player_of(state_path: Path, rom: str | Path) -> tuple[int, int, int]:
     """
     st = load_state(state_path, rom)
     cx, fx, _ = st.scroll()
-    cam = (st.ppuctrl & 3) * 256 + cx * 8 + fx
+    cam = (st.ppuctrl & 1) * 256 + cx * 8 + fx
     oam = st.oam
     base = PLAYER_OAM * 4
     sx, sy = oam[base + 3], oam[base]
     if sy >= 240:  # player hidden (respawn/death frames)
         return cam, 240, cam
-    return cam + sx, sy, cam
+    # Keep the sum inside the 512-px wrap the caller measures differences in;
+    # cam + sx can reach 767 and would be read as a large spurious jump.
+    return (cam + sx) % 512, sy, cam
 
 
-def unwrap(cam: int, reference: int) -> int:
-    best = cam
-    for candidate in (cam - 512, cam, cam + 512):
-        if abs(candidate - reference) < abs(best - reference):
-            best = candidate
-    return best
+def step_delta(new: int, old: int, wrap: int, back: int) -> int:
+    """Shortest signed displacement between two wrapped positions.
+
+    The camera register only holds 0..511 and the player's screen x only
+    0..255, so neither is a world position. Unwrapping one against the other
+    (picking the +-512 candidate nearest the parent) silently caps apparent
+    progress at 256 px -- which is exactly why every earlier search appeared to
+    stall near camera 1000 no matter how the macros were changed. Measuring the
+    *change* instead cannot drift, as long as a single macro cannot move the
+    player more than ``wrap - back`` pixels.
+    """
+    d = (new - old) % wrap
+    if d >= wrap - back:
+        d -= wrap
+    return d
 
 
 def run_macro(emu: Retroshot, macro: Macro) -> None:
@@ -141,6 +160,55 @@ def settle(emu: Retroshot, frames: int = 30) -> None:
     emu.run(frames)
 
 
+def expand(emu: Retroshot, parent: Node, workdir: Path, rom: Path,
+           nodes: list[Node], bookkeeping: dict) -> list[Node]:
+    """Try every macro from one state and return the states that made progress."""
+    children: list[Node] = []
+    for macro in MACROS:
+        emu.load(workdir / f"{parent.state}.fcs")
+        base_lives = emu.ram("lives")[LIVES_ADDR]
+        run_macro(emu, macro)
+        settle(emu)
+        lives = emu.ram("lives")[LIVES_ADDR]
+        name = f"n{len(nodes)}_{macro.name}"
+        path = workdir / f"{name}.fcs"
+        emu.save(path)
+        cam = camera_of(path, rom)
+        pos, py, _ = player_of(path, rom)   # pos = camera + player screen x
+        # Displacement of (camera + player) between parent and child: an
+        # odometer, not an absolute position.
+        delta = step_delta(pos, parent.player_px, 512, 128)
+        world_x = parent.world_x + delta
+        cam_abs = parent.cam + step_delta(cam, parent.cam_raw, 512, 128)
+        died = lives < base_lives or delta < -64
+        # Either signal counts: the camera only moves forward when the player
+        # has really gone right, and it can catch up after a jump in a way that
+        # briefly shrinks cam + player-screen-x.
+        advanced = world_x >= parent.world_x + 2 or cam_abs >= parent.cam + 2
+        climbed = py <= parent.player_y - 8
+        if not died and (advanced or climbed):
+            node = Node(state=name, cam=cam_abs, depth=parent.depth + 1,
+                        world_x=world_x, player_y=py, player_px=pos,
+                        cam_raw=cam)
+            children.append(node)
+            nodes.append(node)
+            # Capture the moment the route first reaches each camera step, so
+            # windows are evenly spaced along the path that actually exists.
+            # Capturing at the frontier leader instead skipped 100+ px whenever
+            # one jump carried it past several thresholds at once.
+            while cam_abs >= bookkeeping["next_ckpt"]:
+                emu.load(path)
+                emu.run(1)
+                ck_name = f"cam_{bookkeeping['next_ckpt']:05d}"
+                emu.save(bookkeeping["checkpoints"] / ck_name)
+                emu.screenshot(bookkeeping["checkpoints"] / ck_name)
+                bookkeeping["cams"][ck_name] = cam_abs
+                bookkeeping["next_ckpt"] += bookkeeping["step"]
+        else:
+            path.unlink(missing_ok=True)
+    return children
+
+
 def solve(start: Path, rom: Path, workdir: Path, iterations: int,
           beam: int, checkpoint_step: int, target: int | None) -> dict:
     workdir.mkdir(parents=True, exist_ok=True)
@@ -148,6 +216,10 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
     checkpoints = workdir / "checkpoints"
     checkpoints.mkdir(exist_ok=True)
     next_ckpt = checkpoint_step
+    # Checkpoint name -> absolute camera x. The camera register only holds
+    # 0..511, so a stitcher that re-derives position from the state alone has to
+    # guess each 512-px wrap; the search already knows the answer.
+    checkpoint_cams: dict[str, int] = {}
     nodes: list[Node] = []
     try:
         emu.load(start)
@@ -155,86 +227,48 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
         start_cam = camera_of(start, rom)
         start_wx, start_py, _ = player_of(start, rom)
         nodes.append(Node(state=start.stem, cam=start_cam, depth=0,
-                          world_x=start_wx, player_y=start_py))
+                          world_x=0, player_y=start_py, player_px=start_wx,
+                          cam_raw=start_cam))
         best = nodes[0]
         log = []
         for it in range(iterations):
-            alive = [n for n in nodes if n.alive]
-            if not alive:
+            # Best-first: every state is expanded exactly once, in order of
+            # how far it got. Re-expanding the leader until it dies (the old
+            # shape) burned the whole budget on one branch, and pruning by beam
+            # threw away the deep path whenever a macro made the frontier
+            # wider -- which is why adding macros used to make runs *worse*.
+            pending = [n for n in nodes if n.alive and not n.expanded]
+            if not pending:
                 print("frontier exhausted")
                 break
-            # Rank by the player, not the camera: the camera stops advancing
-            # while the player climbs a pillar or crosses a rope, and a
-            # camera-ranked frontier prunes exactly those branches.
-            parent = max(alive, key=lambda n: (n.world_x, n.cam, -n.player_y))
-            base_lives = None
-            new_nodes = []
-            for macro in MACROS:
-                emu.load(workdir / f"{parent.state}.fcs")
-                base_lives = emu.ram("lives")[LIVES_ADDR]
-                run_macro(emu, macro)
-                settle(emu)
-                lives = emu.ram("lives")[LIVES_ADDR]
-                name = f"n{len(nodes)}_{macro.name}"
-                path = workdir / f"{name}.fcs"
-                emu.save(path)
-                cam = unwrap(camera_of(path, rom), parent.cam)
-                wx, py, _ = player_of(path, rom)
-                wx = cam + (wx - cam)
-                # Same 512-pixel world wrap as the camera; normalise against
-                # the parent so a wrap does not look like a huge leap back.
-                while wx - parent.world_x > 256:
-                    wx -= 512
-                while parent.world_x - wx > 256:
-                    wx += 512
-                died = lives < base_lives or wx < parent.world_x - 64
-                # Either signal counts. The camera only moves forward when the
-                # player has really gone right, and it can catch up after a jump
-                # in a way that briefly shrinks cam + player-screen-x, so
-                # requiring both would reject genuine progress.
-                advanced = (wx >= parent.world_x + 2 or
-                            cam >= parent.cam + 2)
-                climbed = py <= parent.player_y - 8
-                if not died and (advanced or climbed):
-                    node = Node(state=name, cam=cam, depth=parent.depth + 1,
-                                world_x=wx, player_y=py)
-                    new_nodes.append(node)
-                    nodes.append(node)
-                    if (wx, cam) > (best.world_x, best.cam):
-                        best = node
-                        kind = "climb" if climbed and not advanced else "walk"
-                        print(f"  new best cam={cam} wx={wx} y={py} via "
-                              f"{macro.name} ({kind}, depth {node.depth})",
-                              flush=True)
-                else:
-                    path.unlink(missing_ok=True)
-            parent.children = len(new_nodes)
-            if not new_nodes:
+            parent = max(pending, key=lambda n: (n.world_x, n.cam, -n.player_y))
+            parent.expanded = True
+            bookkeeping = {"checkpoints": checkpoints, "next_ckpt": next_ckpt,
+                           "step": checkpoint_step,
+                           "cams": checkpoint_cams}
+            children = expand(emu, parent, workdir, rom, nodes, bookkeeping)
+            next_ckpt = bookkeeping["next_ckpt"]
+            parent.children = len(children)
+            if not children:
                 parent.alive = False
-                print(f"iter {it:03d}: dead end at wx={parent.world_x} y={parent.player_y}", flush=True)
-            else:
-                # Keep the search narrow: prune the worst branches.
-                alive = sorted([n for n in nodes if n.alive],
-                               key=lambda n: (n.world_x, n.cam, -n.player_y),
-                               reverse=True)
-                for stale in alive[beam:]:
-                    # Never prune the frontier leader: it is the only path the
-                    # search has actually proven, and dropping it is how a run
-                    # loses reach it had already found.
+                print(f"iter {it:03d}: dead end at wx={parent.world_x} "
+                      f"y={parent.player_y}", flush=True)
+            for node in children:
+                if (node.world_x, node.cam) > (best.world_x, best.cam):
+                    best = node
+                    print(f"  new best cam={node.cam} wx={node.world_x} "
+                          f"y={node.player_y} (depth {node.depth})", flush=True)
+            # Keep the frontier bounded by score, but never drop the leader.
+            pending = [n for n in nodes if n.alive and not n.expanded]
+            if len(pending) > beam * 12:
+                cut = sorted(pending, key=lambda n: (n.world_x, n.cam,
+                                                     -n.player_y), reverse=True)
+                for stale in cut[beam * 12:]:
                     if stale is not best:
                         stale.alive = False
-            while best.world_x >= next_ckpt:
-                # Re-enter the best state so the saved state and the captured
-                # frame are the same frame: a shot taken after a bare load
-                # shows whatever was last rendered, not the loaded state.
-                emu.load(workdir / f"{best.state}.fcs")
-                emu.run(1)
-                ck_name = f"cam_{best.world_x:05d}"
-                emu.save(checkpoints / ck_name)
-                emu.screenshot(checkpoints / ck_name)
-                next_ckpt = best.world_x + checkpoint_step
-            log.append({"iter": it, "parent": parent.state, "parent_cam": parent.cam,
-                        "children": len(new_nodes), "best": best.cam})
+            log.append({"iter": it, "parent": parent.state,
+                        "parent_wx": parent.world_x,
+                        "children": parent.children, "best": best.world_x})
             if target is not None and best.world_x >= target:
                 print("target reached")
                 break
@@ -243,6 +277,7 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
             "best_world_x": best.world_x, "best_state": best.state,
             "checkpoints": sorted(p.name for p in checkpoints.glob("*.fcs")),
             "checkpoint_step": checkpoint_step,
+            "checkpoint_cams": checkpoint_cams,
             "log": log,
         }, indent=2))
         return {"best_cam": best.world_x, "state": str(workdir / f"{best.state}.fcs"),
