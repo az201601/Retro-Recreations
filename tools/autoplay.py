@@ -30,6 +30,8 @@ class Retroshot:
         if not line:
             raise RuntimeError("emulator exited unexpectedly")
         parts = line.split()
+        if parts[0] == "ERR":
+            raise RuntimeError(f"emulator rejected command: {' '.join(parts[1:])}")
         if parts[0] != "OK":
             raise RuntimeError(f"unexpected emulator response: {line!r}")
         return int(parts[1])
@@ -53,6 +55,34 @@ class Retroshot:
 
     def tap(self, button: str, hold: int = 6) -> int:
         return self.cmd(f"tap {button} {hold}")
+
+    def load(self, state: str | Path) -> int:
+        """Restore a savestate.
+
+        Paths are resolved here because the emulator process runs with its own
+        working directory; passing a relative path used to fail silently and
+        leave the previous state running.
+        """
+        path = Path(state)
+        if not path.is_absolute():
+            path = path.resolve()
+        if self.frame == 0:
+            # The core has not produced a frame yet; unserialize is a no-op
+            # before that, so prime it and then restore.
+            self.cmd("run 1")
+        return self.cmd(f"load {path}")
+
+    def save(self, name: str | Path) -> int:
+        path = Path(name)
+        if not path.is_absolute():
+            path = self.outdir / path.name
+        return self.cmd(f"state {path.with_suffix('')}")
+
+    def screenshot(self, name: str | Path) -> int:
+        path = Path(name)
+        if not path.is_absolute():
+            path = self.outdir / path.name
+        return self.cmd(f"shot {path.with_suffix('')}")
 
     def ram(self, name: str) -> bytes:
         self.cmd(f"ram {name}")

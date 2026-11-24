@@ -214,7 +214,7 @@ class NesState:
             rows.append(row)
         return rows
 
-    def frame_indices(self, with_sprites: bool = True):
+    def frame_indices(self, with_sprites: bool = True, show_clipped: bool = False):
         """Render the visible frame.
 
         Returns ``(indices, sprite_mask, bg_pixel)`` where
@@ -259,7 +259,7 @@ class NesState:
                 row = sy // 8
                 fy = sy % 8
                 for px in range(SCREEN_W):
-                    if px < 8 and not (mask & 0x02):
+                    if px < 8 and not (mask & 0x02) and not show_clipped:
                         continue  # leftmost 8 background pixels are masked
                     sx = px + coarse_x * 8 + fine_x
                     col = sx // 8
@@ -298,7 +298,7 @@ class NesState:
                         x = sx + dx
                         if not (0 <= x < SCREEN_W):
                             continue
-                        if x < 8 and not (mask & 0x04):
+                        if x < 8 and not (mask & 0x04) and not show_clipped:
                             continue  # leftmost sprites are masked
                         pix = pattern[7 - dx] if (attr & 0x40) else pattern[dx]
                         if not pix:
@@ -321,10 +321,11 @@ class NesState:
 
     def render_rgb(self, palette: list[tuple[int, int, int]] | None = None,
                    background: tuple[int, int, int] = (0, 0, 0),
-                   sprites: bool = True):
+                   sprites: bool = True, show_clipped: bool = False):
         """Render to a flat list of RGB pixels, row-major."""
         palette = palette or FCEUMM_CLASSIC_PALETTE
-        indices, _, _ = self.frame_indices(with_sprites=sprites)
+        indices, _, _ = self.frame_indices(with_sprites=sprites,
+                                           show_clipped=show_clipped)
         return [palette[indices[y][x] & 0x3F]
                 for y in range(SCREEN_H) for x in range(SCREEN_W)]
 

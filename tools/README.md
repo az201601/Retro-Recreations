@@ -12,6 +12,28 @@ handoff folder for one captured window and `tools/verify_room.py` proves the
 tileset + tilemap rebuild it exactly. `tools/autoplay.py` drives the emulator
 interactively for scripted capture. See [`docs/levels.md`](../docs/levels.md).
 
+For whole stages use the two-stage pipeline:
+
+```bash
+# 1. walk the stage, dropping a savestate every 64 pixels of progress
+.venv/bin/python tools/solve_route.py \
+  --state tools/emu/out/scrollcap/s10954.fcs \
+  --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
+  --workdir tools/emu/out/solve5 --iterations 80 --beam 5 --checkpoint-step 64
+
+# 2. stitch those checkpoints into one wide strip + tileset + tilemap
+.venv/bin/python tools/stitch_level.py \
+  --workdir tools/emu/out/solve5 \
+  --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
+  --out tools/emu/out/stage5 \
+  --start tools/emu/out/scrollcap/s10954.fcs
+```
+
+`stitch_level.py` re-enters every checkpoint, advances one frame, and captures
+the savestate and the frame together, so a window's picture always matches its
+state. It reports the background pixel error per window and how many pixels had
+to be taken from a neighbouring window (sprites covering them).
+
 The headless frontend now also supports savestates (`state`/`load`), RAM dumps
 (`ram`), RAM guards for survivable capture (`guard`/`unguard`), `poke`, and an
 interactive stdin protocol (`-i`).

@@ -42,10 +42,10 @@ static void video_cb(const void *data, unsigned width, unsigned height, size_t p
     have_frame = true;
 }
 
-static void write_ppm(const char *path) {
-    if (!have_frame) { fprintf(stderr, "no frame to save\n"); return; }
+static int write_ppm(const char *path) {
+    if (!have_frame) { fprintf(stderr, "no frame to save\n"); return 0; }
     FILE *f = fopen(path, "wb");
-    if (!f) { perror(path); return; }
+    if (!f) { perror(path); return 0; }
     fprintf(f, "P6\n%u %u\n255\n", fw, fh);
     for (unsigned y = 0; y < fh; y++) {
         const uint8_t *row = raw + y * fpitch;
@@ -68,6 +68,7 @@ static void write_ppm(const char *path) {
     }
     fclose(f);
     fprintf(stderr, "shot %s (%ux%u fmt=%d)\n", path, fw, fh, (int)pixfmt);
+    return 1;
 }
 
 /* ---- audio ---- */
@@ -254,37 +255,45 @@ static void apply_guards(void) {
             ram[guards[i].addr] = (uint8_t)guards[i].val;
 }
 
-static void dump_ram(const char *name) {
+static int dump_ram(const char *name) {
     uint8_t *ram = retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
-    if (!ram) { fprintf(stderr, "no system ram\n"); return; }
+    if (!ram) { fprintf(stderr, "no system ram\n"); return 0; }
     char p[512];
-    snprintf(p, sizeof p, "%s/%s.bin", outdir, name);
+    if (name[0] == '/')
+        snprintf(p, sizeof p, "%s%s", name, strstr(name, ".bin") ? "" : ".bin");
+    else
+        snprintf(p, sizeof p, "%s/%s.bin", outdir, name);
     FILE *f = fopen(p, "wb");
-    if (!f) { perror(p); return; }
+    if (!f) { perror(p); return 0; }
     fwrite(ram, 1, 2048, f);
     fclose(f);
+    return 1;
 }
 
 /* Dump a full libretro savestate. FCEUmm's state carries the PPU nametables
  * (NTAR), palette (PRAM), OAM (SPRA), PPU scroll/mask registers, CPU RAM and
  * mapper registers, which is everything needed to reconstruct a level. */
-static void dump_state(const char *name) {
+static int dump_state(const char *name) {
     size_t size = retro_serialize_size();
-    if (!size) { fprintf(stderr, "core has no state size\n"); return; }
+    if (!size) { fprintf(stderr, "core has no state size\n"); return 0; }
     void *buf = malloc(size);
     if (!buf || !retro_serialize(buf, size)) {
         fprintf(stderr, "retro_serialize failed\n");
         free(buf);
-        return;
+        return 0;
     }
     char p[512];
-    snprintf(p, sizeof p, "%s/%s.fcs", outdir, name);
+    if (name[0] == '/')
+        snprintf(p, sizeof p, "%s%s", name, strstr(name, ".fcs") ? "" : ".fcs");
+    else
+        snprintf(p, sizeof p, "%s/%s.fcs", outdir, name);
     FILE *f = fopen(p, "wb");
-    if (!f) { perror(p); free(buf); return; }
+    if (!f) { perror(p); free(buf); return 0; }
     fwrite(buf, 1, size, f);
     fclose(f);
     free(buf);
     fprintf(stderr, "state %s (%zu bytes)\n", p, size);
+    return 1;
 }
 
 /* EV_RAMPRE: snapshot $0200 page BEFORE the frame runs (the OAM image the
@@ -344,6 +353,7 @@ static void interactive_loop(void) {
     fflush(stdout);
     while (fgets(line, sizeof line, stdin)) {
         char cmd[64] = {0}, arg[128] = {0};
+        const char *err = NULL;
         int n = sscanf(line, "%63s %127s", cmd, arg);
         if (n <= 0) { printf("OK %d\n", framecount); fflush(stdout); continue; }
         if (!strcmp(cmd, "quit")) { quit_flag = true; break; }
@@ -358,15 +368,15 @@ static void interactive_loop(void) {
             }
         } else if (!strcmp(cmd, "press") || !strcmp(cmd, "release")) {
             int b = btn_from_name(arg);
-            if (b >= 0) {
-                if (cmd[0] == 'p') buttons |= (uint16_t)(1 << b);
-                else buttons &= (uint16_t)~(1 << b);
-            }
+            if (b < 0) err = "unknown button";
+            else if (cmd[0] == 'p') buttons |= (uint16_t)(1 << b);
+            else buttons &= (uint16_t)~(1 << b);
         } else if (!strcmp(cmd, "tap")) {
             char bname[64]; int hold = 6;
             sscanf(line, "%*s %63s %d", bname, &hold);
             int b = btn_from_name(bname);
-            if (b >= 0) {
+            if (b < 0) err = "unknown button";
+            else {
                 buttons |= (uint16_t)(1 << b);
                 for (int i = 0; i < hold && !quit_flag; i++) {
                     process_pre(framecount + 1);
@@ -378,28 +388,38 @@ static void interactive_loop(void) {
             }
         } else if (!strcmp(cmd, "shot")) {
             char path[512];
-            snprintf(path, sizeof path, "%s/%s.ppm", outdir, arg);
-            write_ppm(path);
+            /* A name lives in outdir; an explicit path is used as given so a
+             * capture can be written outside the working directory. */
+            if (arg[0] == '/')
+                snprintf(path, sizeof path, "%s%s", arg,
+                         strstr(arg, ".ppm") ? "" : ".ppm");
+            else
+                snprintf(path, sizeof path, "%s/%s.ppm", outdir, arg);
+            if (!write_ppm(path)) err = "shot failed";
         } else if (!strcmp(cmd, "load")) {
             char path[512];
-            snprintf(path, sizeof path, "%s/%s.fcs", outdir, arg);
+            /* Accept either a bare name (resolved against outdir) or a full
+             * path; silently appending .fcs to a path was a footgun. */
+            if (arg[0] == '/')
+                snprintf(path, sizeof path, "%s%s", arg,
+                         strstr(arg, ".fcs") ? "" : ".fcs");
+            else
+                snprintf(path, sizeof path, "%s/%s.fcs", outdir, arg);
             FILE *f = fopen(path, "rb");
-            if (f) {
+            if (!f) err = "cannot open state";
+            else {
                 fseek(f, 0, SEEK_END); long sz = ftell(f); fseek(f, 0, SEEK_SET);
                 void *buf = malloc(sz);
-                if (buf && fread(buf, 1, sz, f) == (size_t)sz) {
-                    if (retro_unserialize(buf, (size_t)sz))
-                        fprintf(stderr, "loaded %s\n", path);
-                    else
-                        fprintf(stderr, "unserialize failed: %s\n", path);
-                }
+                if (!buf || fread(buf, 1, sz, f) != (size_t)sz) err = "state read failed";
+                else if (!retro_unserialize(buf, (size_t)sz)) err = "unserialize failed";
+                else fprintf(stderr, "loaded %s\n", path);
                 free(buf);
                 fclose(f);
-            } else perror(path);
+            }
         } else if (!strcmp(cmd, "state")) {
-            dump_state(arg);
+            if (!dump_state(arg)) err = "state dump failed";
         } else if (!strcmp(cmd, "ram")) {
-            dump_ram(arg);
+            if (!dump_ram(arg)) err = "ram dump failed";
         } else if (!strcmp(cmd, "guard")) {
             unsigned addr = 0, val = 0;
             if (sscanf(line, "%*s %x %x", &addr, &val) == 2 && nguards < 16) {
@@ -414,8 +434,11 @@ static void interactive_loop(void) {
                 uint8_t *ram = retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
                 if (ram && addr < 0x800) ram[addr] = (uint8_t)val;
             }
+        } else {
+            err = "unknown command";
         }
-        printf("OK %d\n", framecount);
+        if (err) printf("ERR %s\n", err);
+        else printf("OK %d\n", framecount);
         fflush(stdout);
     }
 }

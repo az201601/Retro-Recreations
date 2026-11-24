@@ -1,0 +1,86 @@
+{
+  "source_workdir": "/home/user/Retro-Recreations/tools/emu/out/solve5",
+  "windows": [
+    {
+      "name": "start_s10954",
+      "cam": 0,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00186",
+      "cam": 186,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00284",
+      "cam": 284,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00404",
+      "cam": 404,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00538",
+      "cam": 538,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00704",
+      "cam": 704,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00844",
+      "cam": 844,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_00995",
+      "cam": 924,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01224",
+      "cam": 1002,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    },
+    {
+      "name": "cam_01339",
+      "cam": 1142,
+      "left_column_clipped": true,
+      "bg_pixel_differences_outside_sprites": 0
+    }
+  ],
+  "width_px": 1392,
+  "height_px": 240,
+  "uncovered_before_fill": 3867,
+  "filled_from_nearest_window": 3867,
+  "max_background_pixel_error": 0,
+  "unique_tiles": 194,
+  "tilemap": {
+    "cols": 174,
+    "rows": 30
+  },
+  "tileset_size": [
+    128,
+    104
+  ],
+  "notes": [
+    "level.png is the background layer only (no sprites), 1:1 NES pixels.",
+    "tilemap.csv indexes 8x8 cells in tileset.png, 16 cells per row.",
+    "-1 means empty (transparent / backdrop).",
+    "Overlaps prefer pixels outside the PPU's clipped left 8-pixel column.",
+    "Windows were re-captured from their savestates, so picture and state agree."
+  ]
+}
