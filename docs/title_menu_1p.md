@@ -5,13 +5,13 @@ This is the next boot-flow room after the spotlight intro. The original title me
 ## Files
 
 - `extracted/title_menu/title_1player.png` — full-screen title/menu image, with only the 1player choice visible.
-- `extracted/audio/music_menu.wav` — clean title-menu music from the no-input run, 48 kHz mono, 16-bit, 35.6 seconds.
+- `extracted/audio/music_menu.wav` — clean title-menu music from the no-input run, beginning with the title-screen appearance; 48 kHz mono, 16-bit, about 37.3 seconds.
 - `extracted/audio/sfx_menu_select.wav` — the separate 0.25-second selection sound isolated from the START transition, 48 kHz mono, 16-bit.
 - `code/06_obj_title_Create.gml` — starts the menu music loop.
 - `code/07_obj_title_Step.gml` — Enter/Space plays the selection sound and chooses the sole 1-player option.
 - `tools/extract_one_player_menu.py` — repeatable extraction/masking/audio capture script that writes separate music and SFX files.
 
-The reference was captured at NES frame 1006 after START was pressed at frame 1000. Consecutive reference frames 1006–1300 were identical. The music uses a no-input run, so no selection press is included. The separate 0.25-second selection SFX is isolated by subtracting that synchronized no-input audio from the START run over source frames 1000–1015. The 2player label alone is removed by filling its rectangle (x=96..175, y=204..220) with the sampled NES backdrop color; the rest of the title screen remains the original emulator image.
+The reference was captured at NES frame 1006 after START was pressed at frame 1000. The title screen is present by frame 900; the clean music capture now begins there instead of at the later START press, preserving the music's opening. The separate 0.25-second selection SFX is isolated by subtracting synchronized no-input audio from the START run over source frames 1000–1015. The 2player label alone is removed by filling its rectangle (x=96..175, y=204..220) with the sampled NES backdrop color; the rest of the title screen remains the original emulator image.
 
 ## Import/build in GMS
 
