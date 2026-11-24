@@ -1,4 +1,3 @@
 // obj_title Create event — single-player title menu.
-// Resource requirement: MUS_menu (extracted/audio/music_menu.wav).
-
+// Resource requirements: MUS_menu and SFX_menu_select.
 audio_play_sound(MUS_menu, 1, true);
