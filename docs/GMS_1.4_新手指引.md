@@ -3,6 +3,10 @@
 > 本文假设你完全没有用过 GameMaker Studio 1.4。按顺序做即可跑起来。
 > 你负责在 GMS 编辑器里操作；素材和代码我已经提取/写好，直接用。
 > 遇到任何一步和描述对不上，截图问我。
+>
+> **开场 spotlight / silhouette 场景：** 最新的 900 帧开场素材与导入步骤见
+> [`docs/spotlight_intro.md`](spotlight_intro.md)。如果要从开机动画开始，先按该文档创建 `rm_intro`
+> 并把它设为第一个房间；本文里的 `rm_title` 是开场动画结束后继续进入的标题房间。
 
 ---
 

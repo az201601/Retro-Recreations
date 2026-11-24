@@ -3,6 +3,16 @@
 用准确的 NES 模拟器（FCEUmm，libretro 核心）无头运行 ROM，
 按时间轴脚本截图/录音，并把 CHR 图形数据与游戏实际画面做逐格精确验证。
 
+## 开场 spotlight / silhouette 场景
+
+`python3 tools/capture_spotlight_intro.py` captures NES frames 1–900 at native
+256×240 and writes 15 row-major sprite-strip atlases to
+`extracted/spotlight_intro/`, plus `frame_map.csv`. The 900 cells have been
+verified pixel-for-pixel against emulator captures. For GMS import steps and
+playback GML, see [`docs/spotlight_intro.md`](../docs/spotlight_intro.md).
+The script needs Pillow and the emulator frontend built below; raw PPM captures
+are scratch data under ignored `tools/out/`.
+
 ## 重新构建模拟器前端
 
 ```bash
