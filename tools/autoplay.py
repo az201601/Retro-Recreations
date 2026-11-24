@@ -73,16 +73,20 @@ class Retroshot:
         return self.cmd(f"load {path}")
 
     def save(self, name: str | Path) -> int:
-        path = Path(name)
-        if not path.is_absolute():
-            path = self.outdir / path.name
-        return self.cmd(f"state {path.with_suffix('')}")
+        return self.cmd(f"state {self._resolve(name)}")
 
     def screenshot(self, name: str | Path) -> int:
+        return self.cmd(f"shot {self._resolve(name)}")
+
+    @staticmethod
+    def _resolve(name: str | Path) -> Path:
+        """Absolute path for a file the emulator should write.
+
+        The emulator process has its own working directory, so a relative path
+        would land somewhere unexpected; resolve it here against Python's cwd.
+        """
         path = Path(name)
-        if not path.is_absolute():
-            path = self.outdir / path.name
-        return self.cmd(f"shot {path.with_suffix('')}")
+        return path if path.is_absolute() else path.resolve()
 
     def ram(self, name: str) -> bytes:
         self.cmd(f"ram {name}")

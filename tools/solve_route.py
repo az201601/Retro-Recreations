@@ -163,7 +163,10 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
             if not alive:
                 print("frontier exhausted")
                 break
-            parent = max(alive, key=lambda n: (n.world_x, -n.player_y))
+            # Rank by the player, not the camera: the camera stops advancing
+            # while the player climbs a pillar or crosses a rope, and a
+            # camera-ranked frontier prunes exactly those branches.
+            parent = max(alive, key=lambda n: (n.world_x, n.cam, -n.player_y))
             base_lives = None
             new_nodes = []
             for macro in MACROS:
@@ -185,18 +188,24 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
                 while parent.world_x - wx > 256:
                     wx += 512
                 died = lives < base_lives or wx < parent.world_x - 64
-                advanced = wx >= parent.world_x + 2
+                # Either signal counts. The camera only moves forward when the
+                # player has really gone right, and it can catch up after a jump
+                # in a way that briefly shrinks cam + player-screen-x, so
+                # requiring both would reject genuine progress.
+                advanced = (wx >= parent.world_x + 2 or
+                            cam >= parent.cam + 2)
                 climbed = py <= parent.player_y - 8
                 if not died and (advanced or climbed):
                     node = Node(state=name, cam=cam, depth=parent.depth + 1,
                                 world_x=wx, player_y=py)
                     new_nodes.append(node)
                     nodes.append(node)
-                    if (wx, -py) > (best.world_x, -best.player_y):
+                    if (wx, cam) > (best.world_x, best.cam):
                         best = node
                         kind = "climb" if climbed and not advanced else "walk"
-                        print(f"  new best wx={wx} y={py} via {macro.name} "
-                              f"({kind}, depth {node.depth})", flush=True)
+                        print(f"  new best cam={cam} wx={wx} y={py} via "
+                              f"{macro.name} ({kind}, depth {node.depth})",
+                              flush=True)
                 else:
                     path.unlink(missing_ok=True)
             parent.children = len(new_nodes)
@@ -206,9 +215,14 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
             else:
                 # Keep the search narrow: prune the worst branches.
                 alive = sorted([n for n in nodes if n.alive],
-                               key=lambda n: (n.world_x, -n.player_y), reverse=True)
+                               key=lambda n: (n.world_x, n.cam, -n.player_y),
+                               reverse=True)
                 for stale in alive[beam:]:
-                    stale.alive = False
+                    # Never prune the frontier leader: it is the only path the
+                    # search has actually proven, and dropping it is how a run
+                    # loses reach it had already found.
+                    if stale is not best:
+                        stale.alive = False
             while best.world_x >= next_ckpt:
                 # Re-enter the best state so the saved state and the captured
                 # frame are the same frame: a shot taken after a bare load
@@ -225,7 +239,8 @@ def solve(start: Path, rom: Path, workdir: Path, iterations: int,
                 print("target reached")
                 break
         (workdir / "route.json").write_text(json.dumps({
-            "best_cam": best.world_x, "best_state": best.state,
+            "best_cam": camera_of(workdir / f"{best.state}.fcs", rom),
+            "best_world_x": best.world_x, "best_state": best.state,
             "checkpoints": sorted(p.name for p in checkpoints.glob("*.fcs")),
             "checkpoint_step": checkpoint_step,
             "log": log,

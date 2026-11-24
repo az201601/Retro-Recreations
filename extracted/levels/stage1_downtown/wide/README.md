@@ -62,12 +62,12 @@ tile layer, and the room widened to match.
 .venv/bin/python tools/solve_route.py \
   --state tools/emu/out/scrollcap/s10954.fcs \
   --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
-  --workdir tools/emu/out/solve5 --iterations 80 --beam 5 --checkpoint-step 64
+  --workdir tools/emu/out/solve11 --iterations 80 --beam 5 --checkpoint-step 64
 
 .venv/bin/python tools/stitch_level.py \
-  --workdir tools/emu/out/solve5 \
+  --workdir tools/emu/out/solve11 \
   --rom "Chip 'n Dale - Rescue Rangers 2 (USA).nes" \
-  --out tools/emu/out/stage5 \
+  --out tools/emu/out/stage11 \
   --start tools/emu/out/scrollcap/s10954.fcs
 ```
 

@@ -162,9 +162,15 @@ obstacles needed extra thinking and will need more:
 - **Climbing.** The pillar at the end of the restaurant interior is climbed
   with `UP`, which no horizontal macro ever presses. Macro set now includes
   `climb_up`, `climb_far`, `up_right` and `climb_jump`.
-- **The next wall** is at x≈1339, y≈95 (high up, mid-climb). More vertical
-  macros and a proper collision map are the intended unlock: with the ROM's
-  collision table, the solver can path-find instead of guessing.
+- **The next wall** is at world x≈1339 (camera 1142), on the beam at the top of
+  the restaurant interior: from there `RIGHT` advances the camera by ~100 px but
+  does not move the player forward, and nothing else moves him at all. With the
+  ROM's collision table the solver can path-find instead of guessing.
+- **Search shape matters more than the macro list.** Expanding only the single
+  frontier leader wastes iterations on a node that cannot move, and widening
+  the macro set from 13 to 17 made the run *worse* (world x 604 instead of
+  1339) because the same iteration budget then starves the deep path. The next
+  change is a real priority queue with a per-node retry count, not more macros.
 
 ## Collision
 
