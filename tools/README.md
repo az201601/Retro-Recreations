@@ -2,7 +2,7 @@
 
 `python3 tools/capture_spotlight_intro.py` replays the USA ROM from power-on, captures NES frames 1–900 at native 256×240, and writes the GMS sprite-strip atlases plus `extracted/spotlight_intro/frame_map.csv`. Every atlas cell was checked pixel-for-pixel against the corresponding emulator capture. GMS import and playback instructions are in [`docs/spotlight_intro.md`](../docs/spotlight_intro.md).
 
-`python3 tools/extract_one_player_menu.py` continues from power-on, presses START at frame 1000, extracts the static menu screen at frame 1006 with the 2-player row removed, and captures the 35.6-second menu-music loop. See [`docs/title_menu_1p.md`](../docs/title_menu_1p.md) for GMS resources and the one-player-only input flow.
+`python3 tools/extract_one_player_menu.py` continues from power-on, presses START at frame 1000, extracts the static menu screen at frame 1006 with the 2-player row removed, and writes separate menu-music and selection-SFX WAVs. The menu music comes from a matching no-input run; subtracting that audio from the START run over frames 1000–1015 isolates the one-shot selection sound. See [`docs/title_menu_1p.md`](../docs/title_menu_1p.md) for GMS resources and the one-player-only input flow.
 
 ## Build the capture frontend
 
@@ -26,4 +26,4 @@ python3 tools/capture_spotlight_intro.py
 python3 tools/extract_one_player_menu.py
 ```
 
-Raw PPM captures and intermediate full-run WAVs are temporary and written under `tools/out/` (ignored). Checked-in deliverables are the sprite strips, frame map, single-player title image, intro/menu WAVs, GML snippets, and editor instructions—not emulator build artifacts.
+Raw PPM captures and intermediate full-run WAVs are temporary and written under `tools/out/` (ignored). Checked-in deliverables are the sprite strips, frame map, single-player title image, intro/menu-music/selection-SFX WAVs, GML snippets, and editor instructions—not emulator build artifacts.
