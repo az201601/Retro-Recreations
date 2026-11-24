@@ -1,0 +1,9 @@
+# Local emulator build products and raw captures (regenerable)
+tools/emu/libretro-fceumm/
+tools/emu/libretro-common/
+tools/emu/retroshot
+tools/out/
+
+# Python cache
+__pycache__/
+*.py[cod]
