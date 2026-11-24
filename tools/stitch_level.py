@@ -339,6 +339,7 @@ def main() -> None:
         "uncovered_before_fill": meta["uncovered_before_fill"],
         "filled_from_nearest_window": meta["filled_from_nearest_window"],
         "max_background_pixel_error": worst,
+        "palette_conflicts": meta["palette_conflicts"],
         "unique_tiles": unique,
         "tilemap": {"cols": cols, "rows": rows},
         "tileset_size": list(sheet_size),

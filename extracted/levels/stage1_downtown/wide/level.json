@@ -134,6 +134,7 @@
   "uncovered_before_fill": 3576,
   "filled_from_nearest_window": 3576,
   "max_background_pixel_error": 0,
+  "palette_conflicts": {},
   "unique_tiles": 194,
   "tilemap": {
     "cols": 174,
