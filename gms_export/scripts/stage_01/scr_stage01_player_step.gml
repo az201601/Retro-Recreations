@@ -1,8 +1,13 @@
 /// scr_stage01_player_step() | bounded tile-grid movement, jump, carry, throw
 /// PROTOTYPE: coefficients/AI/contact boxes are not measured NES timings.
-var axis, i, nx, ny, step_y, ground, box, foe, boss;
+var axis, i, nx, ny, step_y, ground, box, box_x, box_y, box_top, foe, boss;
 if (global.stage01_clear || global.stage01_game_over) exit;
-if (global.stage01_part == 3) { image_speed = 0; exit; }
+if (global.stage01_part == 3) {
+    sprite_index = spr_chip_monterey;
+    image_speed = 0;
+    image_index = 0;
+    exit;
+}
 axis = keyboard_check(vk_right) - keyboard_check(vk_left);
 hsp = 2 * axis;
 if (axis != 0) facing = sign(axis);
@@ -25,8 +30,11 @@ if (invuln > 0 && (invuln div 4) mod 2 == 0) image_alpha = 0.45;
 ground = (scr_stage01_collision_at(x - 5, y + 1) > 0 ||
           scr_stage01_collision_at(x + 5, y + 1) > 0);
 box = instance_nearest(x, y + 1, obj_crate);
-if (box != noone && !box.carried && !box.flying &&
-    abs((box.x + 8) - x) < 13 && abs(box.y - y) <= 1) ground = true;
+if (box != noone && !box.carried && !box.flying) {
+    box_x = box.x + 8; box_top = box.y;
+    if (box.is_boss) { box_x = box.x; box_top = box.y - 16; }
+    if (abs(box_x - x) < 13 && abs(box_top - y) <= 1) ground = true;
+}
 if (ground && (keyboard_check_pressed(vk_space) || keyboard_check_pressed(ord("Z")))) {
     vsp = -5.6;
     y_fraction = 0;
@@ -44,13 +52,16 @@ if (keyboard_check_pressed(ord("X"))) {
         held_id = noone;
     } else {
         box = instance_nearest(x, y - 10, obj_crate);
-        if (box != noone && !box.carried && !box.flying &&
-            abs((box.x + 8) - x) < 22 && abs((box.y + 8) - (y - 10)) < 24) {
-            held_id = box;
-            box.carried = true;
-            box.flying = false;
-            box.falling = false;
-            box.holder = id;
+        if (box != noone && !box.carried && !box.flying) {
+            box_x = box.x + 8; box_y = box.y + 8;
+            if (box.is_boss) { box_x = box.x; box_y = box.y - 8; }
+            if (abs(box_x - x) < 22 && abs(box_y - (y - 10)) < 24) {
+                held_id = box;
+                box.carried = true;
+                box.flying = false;
+                box.falling = false;
+                box.holder = id;
+            }
         }
     }
 }
@@ -80,9 +91,12 @@ for (i = 0; i < 8 && abs(y_fraction) >= 1; i += 1) {
             vsp = 0; y_fraction = 0; break;
         }
         box = instance_nearest(x, ny, obj_crate);
-        if (box != noone && !box.carried && !box.flying &&
-            abs((box.x + 8) - x) < 13 && y <= box.y && ny >= box.y) {
-            vsp = 0; y_fraction = 0; break;
+        if (box != noone && !box.carried && !box.flying) {
+            box_x = box.x + 8; box_top = box.y;
+            if (box.is_boss) { box_x = box.x; box_top = box.y - 16; }
+            if (abs(box_x - x) < 13 && y <= box_top && ny >= box_top) {
+                vsp = 0; y_fraction = 0; break;
+            }
         }
     } else {
         if (scr_stage01_collision_at(x - 5, ny - 18) == 2 ||

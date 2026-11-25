@@ -1,8 +1,8 @@
-"""ROM-layout, layer-composition, GML-row and capture regression tests.
+"""ROM-layout, layer-composition, transfer-frame, GML and capture tests.
 
 Run: python3 -m unittest discover -s tools/extract/tests -v
-No emulator build is needed for static tests; optional tests use ignored captures
-when capture_stage_01.py has been run in the same workspace.
+No GameMaker project is built or required. Optional tests use ignored emulator
+captures when capture_stage_01.py has run in this workspace.
 """
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ import re
 import struct
 import sys
 import unittest
-import xml.etree.ElementTree as ET
 
 from PIL import Image
 
@@ -22,7 +21,7 @@ sys.path.insert(0, str(ROOT / "tools/extract"))
 import export_stage_01_rom as rom_export
 import export_stage_01_gml as gml_export
 import export_stage_01_audio as audio_export
-import export_stage_01_gmx as gmx_export
+import export_stage_01_import_frames as import_frames
 from nes_ppu import PpuCapture
 
 
@@ -51,8 +50,10 @@ class Stage01RomTest(unittest.TestCase):
         for name, region in self.data["regions"].items():
             with self.subTest(region=name):
                 ox, oy = region["origin_world_px"]
-                base = Image.open(rom_export.DEFAULT_OUT / region["background"]).convert("RGBA")
-                atlas = Image.open(rom_export.DEFAULT_OUT / region["tileset"]).convert("RGBA")
+                with Image.open(rom_export.DEFAULT_OUT / region["background"]) as img:
+                    base = img.convert("RGBA")
+                with Image.open(rom_export.DEFAULT_OUT / region["tileset"]) as img:
+                    atlas = img.convert("RGBA")
                 self.assertEqual(base.size, tuple(region["dimensions_px"]))
                 for x, y, tile, category in region["placed_tiles"]:
                     self.assertEqual(category, rom_export.collision(tile))
@@ -61,8 +62,9 @@ class Stage01RomTest(unittest.TestCase):
                     base.paste(cell, (x - ox, y - oy))
                 self.assertEqual(hashlib.sha256(base.tobytes()).hexdigest(),
                                  region["static_bg_sha256"])
-                composite = Image.open(rom_export.DEFAULT_OUT / "previews" /
-                                       f"rom_static_{name}.png").convert("RGBA")
+                with Image.open(rom_export.DEFAULT_OUT / "previews" /
+                                f"rom_static_{name}.png") as img:
+                    composite = img.convert("RGBA")
                 self.assertEqual(base.tobytes(), composite.tobytes())
 
     def test_prizes_are_objects_not_rom_static_tiles(self):
@@ -86,11 +88,69 @@ class Stage01RomTest(unittest.TestCase):
         self.assertIn("global.stage01_collision_grid = ds_grid_create(128, 128);", gml)
         for name, region in self.data["regions"].items():
             for row in gml_export.dense_rows(region):
-                # Each 16px grid cell is encoded exactly once, with FF for
-                # wallpaper/unmapped cells (not a palette or sprite index).
+                # Each 16px grid cell is encoded exactly once; FF marks
+                # wallpaper/unmapped cells (not a palette/sprite index).
                 self.assertEqual(len(row), region["dimensions_px"][0] // 8)
                 self.assertEqual(len(bytes.fromhex(row)), region["dimensions_px"][0] // 16)
             self.assertIn(f"tile_add(ts_restaurant_{name}", gml)
+
+    def test_manual_sprite_frames_match_extracted_oam(self):
+        root = import_frames.DEFAULT_OUT_FRAMES
+        exported = json.loads((root / "manifest.json").read_text())
+        source = json.loads((rom_export.DEFAULT_OUT / "sprites/stage_01_sprites.json").read_text())
+        self.assertEqual(exported["source_rom_sha256"], rom_export.ROM_SHA256)
+        names = {f"spr_{actor}" for actor in import_frames.FRAME_CAPS}
+        names.update(f"spr_prize_{kind}" for kind in import_frames.PRIZES)
+        self.assertEqual(set(exported["sprites"]), names)
+        count = 0
+        for actor, cap in import_frames.FRAME_CAPS.items():
+            item = source[actor]
+            entry = exported["sprites"][f"spr_{actor}"]
+            w, h = item["cell_size"]
+            self.assertEqual(entry["frames"], min(item["frames"], cap))
+            self.assertEqual(entry["origin"], item["origin"])
+            self.assertEqual(entry["cell_size"], [w, h])
+            count += entry["frames"]
+            for frame, pose in zip(entry["images"], item["poses"]):
+                self.assertEqual(frame["source_pose_id"], pose["id"])
+                path = root / frame["file"]
+                with Image.open(path) as im, Image.open(
+                        rom_export.DEFAULT_OUT / "sprites" /
+                        item["strips"][pose["atlas"]]) as strip:
+                    cell = pose["atlas_cell"]
+                    col, row = cell % item["columns"], cell // item["columns"]
+                    crop = strip.crop((col * w, row * h, (col + 1) * w, (row + 1) * h))
+                    self.assertEqual((im.mode, im.size), ("RGBA", (w, h)))
+                    self.assertEqual(im.tobytes(), crop.tobytes())
+                    self.assertEqual(hashlib.sha256(im.tobytes()).hexdigest(),
+                                     frame["rgba_sha256"])
+        with Image.open(rom_export.DEFAULT_OUT / "sprites/spr_prizes_seating_strip.png") as strip:
+            for i, kind in enumerate(import_frames.PRIZES):
+                frame = exported["sprites"][f"spr_prize_{kind}"]["images"][0]
+                with Image.open(root / frame["file"]) as im:
+                    self.assertEqual(im.tobytes(), strip.crop(
+                        (i * 16, 0, (i + 1) * 16, 16)).tobytes())
+        self.assertEqual(len(list(root.glob("spr_*/*.png"))), count + 4)
+        self.assertFalse(list(root.rglob("*.gmx")))
+
+    def test_manual_gml_scripts_are_complete_and_have_no_missing_references(self):
+        scripts = {path.stem: path.read_text() for path in
+                   gml_export.OUT.glob("scr_stage01_*.gml")}
+        self.assertEqual(len(scripts), 23)
+        self.assertIn("scr_stage01_controller_create", scripts)
+        self.assertIn("scr_stage01_player_step", scripts)
+        self.assertIn("scr_stage01_spawn_actors", scripts)
+        self.assertIn("scr_stage01_boss_step", scripts)
+        for name, content in scripts.items():
+            for reference in re.findall(r"\bscr_stage01_\w+\s*\(", content):
+                target = reference.split("(")[0].strip()
+                self.assertIn(target, scripts, f"{name} needs {target}")
+        self.assertIn("sprite_index = spr_chip_monterey;", scripts["scr_stage01_player_step"])
+        self.assertIn("if (box.is_boss)", scripts["scr_stage01_player_step"])
+        self.assertIn("if (is_boss) { cx = x; cy = y - 8; feet = y; }",
+                      scripts["scr_stage01_crate_step"])
+        self.assertNotIn("snd_stage_clear_mix", "\n".join(scripts.values()))
+        self.assertTrue((rom_export.DEFAULT_OUT / "audio/bgm_restaurant_stationary_excerpt.wav").is_file())
 
     def test_fceumm_palettes_and_stable_bg(self):
         test = {"seating": ("seating_opening", 11201),
@@ -113,110 +173,15 @@ class Stage01RomTest(unittest.TestCase):
             self.assertGreaterEqual(good, 750)
             if region.name in ("water_rabbit", "monterey"):
                 self.assertEqual(bad, 0)
-                # Every pixel of the top 256x208 region (53,248 pixels) is
-                # identical between independently decoded live PPU and ROM.
+                # All 53,248 pixels of top 256x208 match the live PPU.
                 bg = ppu.bg_image(region.page_x * 256, region.page_y * 256)
-                static = Image.open(rom_export.DEFAULT_OUT / "previews" /
-                                    f"rom_static_{region.name}.png").convert("RGBA")
+                with Image.open(rom_export.DEFAULT_OUT / "previews" /
+                                f"rom_static_{region.name}.png") as img:
+                    static = img.convert("RGBA")
                 self.assertEqual(bg.tobytes(), static.crop((0, 0, 256, 208)).tobytes())
 
-    def test_gmx_project_resources_and_references(self):
-        """Structural check only: this does not run the GameMaker compiler."""
-        root = gmx_export.DEFAULT_PROJECT
-        project = ET.parse(root / "Stage01Restaurant.project.gmx").getroot()
-        self.assertEqual(project.tag, "assets")
-        groups = {"sounds": ("sound", ".sound.gmx"),
-                  "sprites": ("sprite", ".sprite.gmx"),
-                  "backgrounds": ("background", ".background.gmx"),
-                  "scripts": ("script", ".gml"),
-                  "objects": ("object", ".object.gmx"),
-                  "rooms": ("room", ".room.gmx")}
-        resources = {}
-        for group, (child, suffix) in groups.items():
-            entries = project.findall(f"{group}/{child}")
-            self.assertTrue(entries, group)
-            for entry in entries:
-                relative = entry.text.replace("\\", "/")
-                name = Path(relative).stem if suffix == ".gml" else Path(relative).name
-                if suffix == ".gml":
-                    self.assertTrue(relative.endswith(".gml"), relative)
-                path = root / (relative + ("" if suffix == ".gml" else suffix))
-                self.assertTrue(path.is_file(), str(path))
-                if suffix != ".gml":
-                    ET.parse(path)
-                resources[name] = path
-        self.assertEqual(len(project.findall("rooms/room")), 1)
-        room = ET.parse(resources["rm_stage_01_restaurant"]).getroot()
-        self.assertEqual((room.findtext("width"), room.findtext("height")), ("2048", "2048"))
-        self.assertEqual(room.findtext("enableViews"), "-1")
-        view = room.find("views/view")
-        self.assertEqual((view.get("xview"), view.get("yview"),
-                          view.get("wview"), view.get("hview")),
-                         ("0", "512", "256", "240"))
-        self.assertEqual(room.find("instances/instance").get("objName"),
-                         "obj_stage01_controller")
-        self.assertEqual(len(project.findall("backgrounds/background")), 10)
-        for region in self.data["regions"].values():
-            for key in ("background", "tileset"):
-                source = rom_export.DEFAULT_OUT / region[key]
-                packaged = root / "background/images" / source.name
-                self.assertEqual(hashlib.sha256(packaged.read_bytes()).hexdigest(),
-                                 hashlib.sha256(source.read_bytes()).hexdigest())
-        self.assertEqual(len(project.findall("sounds/sound")), 3)
-        self.assertEqual(len(project.findall("sprites/sprite")), len(gmx_export.FRAME_CAPS) + 7)
-        manifest = json.loads((rom_export.DEFAULT_OUT / "sprites/stage_01_sprites.json").read_text())
-        selected_frames = 0
-        for name in gmx_export.FRAME_CAPS:
-            sprite = ET.parse(resources[f"spr_{name}"]).getroot()
-            frames = sprite.findall("frames/frame")
-            source = manifest[name]
-            w, h = source["cell_size"]
-            self.assertEqual(len(frames), min(gmx_export.FRAME_CAPS[name], source["frames"]))
-            selected_frames += len(frames)
-            for i, frame in enumerate(frames):
-                self.assertEqual(frame.get("index"), str(i))
-                pose = source["poses"][i]
-                cell, columns = pose["atlas_cell"], source["columns"]
-                with Image.open(rom_export.DEFAULT_OUT / "sprites" /
-                                source["strips"][pose["atlas"]]) as strip, \
-                     Image.open(root / "sprites" / frame.text.replace("\\", "/")) as image:
-                    self.assertEqual((image.size, image.mode), ((w, h), "RGBA"))
-                    expected = strip.crop(((cell % columns) * w, (cell // columns) * h,
-                                           (cell % columns + 1) * w, (cell // columns + 1) * h))
-                    self.assertEqual(image.tobytes(), expected.tobytes())
-        self.assertEqual(len(list((root / "sprites/images").glob("*.png"))),
-                         selected_frames + 7)  # four prize cutouts and three placeholders
-        for name, filename in gmx_export.SOUNDS.items():
-            sound = ET.parse(resources[name]).getroot()
-            packaged = root / "sound/audio" / sound.findtext("data")
-            original = rom_export.DEFAULT_OUT / "audio" / filename
-            self.assertEqual(hashlib.sha256(packaged.read_bytes()).hexdigest(),
-                             hashlib.sha256(original.read_bytes()).hexdigest())
-        for entry in project.findall("objects/object"):
-            obj = ET.parse(resources[Path(entry.text).name.replace("objects\\", "")]).getroot()
-            sprite = obj.findtext("spriteName")
-            if sprite != "<undefined>":
-                self.assertIn(sprite, resources)
-            parent = obj.findtext("parentName")
-            if parent != "<undefined>":
-                self.assertIn(parent, resources)
-            for script in re.findall(r"scr_stage01_\w+",
-                                     " ".join(n.text or "" for n in obj.findall(
-                                         "events/event/action/arguments/argument/string"))):
-                self.assertIn(script, resources)
-        for script in project.findall("scripts/script"):
-            name = Path(script.text.replace("\\", "/")).stem
-            compiled = resources[name].read_text()
-            source = (gmx_export.SCRIPT_DIR / f"{name}.gml").read_text()
-            self.assertEqual(compiled, source, f"stale packaged script {name}")
-            for referenced in re.findall(r"\bscr_stage01_\w+\s*\(", compiled):
-                target = referenced.split("(")[0].strip()
-                self.assertIn(target, resources, f"{name} refers to missing {target}")
-        self.assertIn("global.stage01_part = 5;",
-                      resources["scr_stage01_controller_step"].read_text())
-
     def test_boss_box_contacts_on_six_hits_if_capture_present(self):
-        """OAM box/boss contact is evidence, not proof of the ROM hit routine."""
+        """OAM contact is evidence, not proof of the ROM's hit routine."""
         parent = rom_export.CAPTURE / "water_rabbit"
         ram_path = parent / "ram_trace.dat"
         oam_path = parent / "oam_trace.dat"

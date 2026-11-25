@@ -18,8 +18,8 @@ if (global.stage01_part == 4 && instance_exists(obj_boss_water_rabbit)) {
         global.stage01_part = 5;
         global.stage01_clear = true;
         clear_timer = 0;
-        // A gameplay mix, NOT an isolated victory jingle; once only.
-        audio_play_sound(snd_stage_clear_mix, 0, false);
+        // The captured clear WAV includes gameplay SFX; do not mislabel or
+        // auto-play it as an isolated victory jingle.
     }
 }
 if (global.stage01_part == 5) clear_timer += 1;
