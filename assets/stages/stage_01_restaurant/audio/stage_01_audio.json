@@ -1,0 +1,60 @@
+{
+  "source": "USA ROM / pinned fceumm AFI1 + WAV captures",
+  "caution": "Only the stationary Seating excerpt approaches an isolated BGM. Boss and clear clips are mixed sound references, not clean SFX or loops.",
+  "clips": [
+    {
+      "file": "bgm_restaurant_stationary_excerpt.wav",
+      "type": "music_excerpt",
+      "description": "Stationary Seating music reference; no player movement/attack SFX observed. Not loop-point verified or proven free of off-screen SFX.",
+      "source_capture": "music_idle",
+      "frames_inclusive": [
+        11800,
+        13200
+      ],
+      "samples_in_source": [
+        478383,
+        1597274
+      ],
+      "rate_hz": 48000,
+      "duration_seconds": 23.31023,
+      "loop_verified": false,
+      "sha256": "d99a8e0e41802f4975257b1d47330b31763bcb8656c1af69a6483231cdaae210"
+    },
+    {
+      "file": "boss_water_rabbit_gameplay_mix.wav",
+      "type": "mixed_reference",
+      "description": "Water Rabbit combat music WITH in-game water/box sounds; not isolated music.",
+      "source_capture": "water_rabbit",
+      "frames_inclusive": [
+        20900,
+        22000
+      ],
+      "samples_in_source": [
+        438451,
+        1317751
+      ],
+      "rate_hz": 48000,
+      "duration_seconds": 18.31875,
+      "loop_verified": false,
+      "sha256": "ce2cc07b9c568fa1877d83c2e8388aac14e28e6280e094ce0e20a96256a320df"
+    },
+    {
+      "file": "stage_clear_gameplay_mix.wav",
+      "type": "mixed_reference",
+      "description": "Cheat-assisted boss defeat/clear cue WITH gameplay and score sounds.",
+      "source_capture": "water_rabbit",
+      "frames_inclusive": [
+        29730,
+        30099
+      ],
+      "samples_in_source": [
+        7490416,
+        7785912
+      ],
+      "rate_hz": 48000,
+      "duration_seconds": 6.15617,
+      "loop_verified": false,
+      "sha256": "82f1128993d7c90b70ec76a3f5b4dc1f08a0eb9654d98bb52371a662df032de2"
+    }
+  ]
+}

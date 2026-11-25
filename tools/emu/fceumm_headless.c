@@ -19,9 +19,20 @@ static int pixel_format = RETRO_PIXEL_FORMAT_XRGB8888;
 static int16_t input_state[16];
 static unsigned current_frame = 0;
 
-typedef struct { unsigned frame; int btn; int down; } InputEvent;
+typedef struct { unsigned frame; int btn; int down; size_t order; } InputEvent;
 static InputEvent *events;
 static size_t nevents, capevents;
+
+/* Preserve input-file order for simultaneous presses/releases while allowing
+ * a checkpoint script to append new (earlier) events after an existing run. */
+static int compare_events(const void *a, const void *b) {
+    const InputEvent *left = a, *right = b;
+    if (left->frame < right->frame) return -1;
+    if (left->frame > right->frame) return 1;
+    if (left->order < right->order) return -1;
+    if (left->order > right->order) return 1;
+    return 0;
+}
 
 static void (*fn_retro_init)(void);
 static void (*fn_retro_deinit)(void);
@@ -173,9 +184,11 @@ static void load_inputs(const char *path) {
         int b = btn_from_name(btn);
         if (b < 0) continue;
         if (nevents == capevents) { capevents = capevents?capevents*2:128; events = realloc(events, capevents*sizeof(*events)); }
-        events[nevents++] = (InputEvent){frame, b, !strcmp(action,"down")};
+        events[nevents] = (InputEvent){frame, b, !strcmp(action,"down"), nevents};
+        nevents++;
     }
     fclose(f);
+    qsort(events, nevents, sizeof(*events), compare_events);
 }
 
 static int shot_wanted(unsigned f, unsigned *shots, size_t nshots) {
@@ -207,6 +220,27 @@ static void save_ram(const char *path) {
     printf("RAM %u %s %zu\n", current_frame, path, sz);
 }
 
+/* Private extension of our pinned fceumm build, NOT standard libretro VRAM.
+ * See patches/fceumm_capture_layers.patch for layout and mapper handling. */
+#define CAPTURE_PPU_MEMORY 0xFCE1
+#define CAPTURE_PPU_SIZE 0x31E0
+#define CAPTURE_OAM_OFFSET 0x3020
+static const unsigned char *get_capture_ppu(void) {
+    if (fn_retro_get_memory_size(CAPTURE_PPU_MEMORY) != CAPTURE_PPU_SIZE)
+        die("core lacks pinned PPU capture patch");
+    const unsigned char *data = fn_retro_get_memory_data(CAPTURE_PPU_MEMORY);
+    if (!data) die("PPU capture unavailable");
+    return data;
+}
+static void save_ppu(const char *path) {
+    const unsigned char *data = get_capture_ppu();
+    FILE *f = fopen(path, "wb");
+    if (!f) die("cannot open PPU capture %s", path);
+    if (fwrite(data, 1, CAPTURE_PPU_SIZE, f) != CAPTURE_PPU_SIZE || fclose(f))
+        die("cannot write PPU capture %s", path);
+    printf("PPU %u %s %u\n", current_frame, path, CAPTURE_PPU_SIZE);
+}
+
 static void *load_sym(const char *name) {
     void *s = dlsym(core, name);
     if (!s) die("missing symbol %s", name);
@@ -215,14 +249,16 @@ static void *load_sym(const char *name) {
 
 int main(int argc, char **argv) {
     const char *core_path=NULL,*rom_path=NULL,*out_dir="/tmp/nes_frames";
-    const char *inputs_path=NULL,*ram_dir=NULL,*wav_path=NULL;
+    const char *inputs_path=NULL,*ram_dir=NULL,*ppu_dir=NULL,*wav_path=NULL;
+    const char *ram_trace_path=NULL,*oam_trace_path=NULL,*audio_index_path=NULL;
     const char *load_state_path=NULL,*save_state_path=NULL;
     unsigned save_state_frame=0;
-    unsigned start_frame=0;
+    unsigned start_frame=0, ram_trace_start=0, oam_trace_start=0;
     const char *cheats[64]; size_t ncheats=0;
     unsigned total=1200;
     unsigned shots[4096]; size_t nshots=0;
     unsigned shot_every=0, shot_start=0;
+    unsigned ppu_every=0, ppu_start=0;
     for (int i=1;i<argc;i++) {
         if (!strcmp(argv[i],"--core") && i+1<argc) core_path=argv[++i];
         else if (!strcmp(argv[i],"--rom") && i+1<argc) rom_path=argv[++i];
@@ -230,9 +266,17 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i],"--frames") && i+1<argc) total=atoi(argv[++i]);
         else if (!strcmp(argv[i],"--inputs") && i+1<argc) inputs_path=argv[++i];
         else if (!strcmp(argv[i],"--ram-dir") && i+1<argc) ram_dir=argv[++i];
+        else if (!strcmp(argv[i],"--ppu-dir") && i+1<argc) ppu_dir=argv[++i];
+        else if (!strcmp(argv[i],"--ram-trace") && i+1<argc) ram_trace_path=argv[++i];
+        else if (!strcmp(argv[i],"--ram-trace-start") && i+1<argc) ram_trace_start=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"--oam-trace") && i+1<argc) oam_trace_path=argv[++i];
+        else if (!strcmp(argv[i],"--oam-trace-start") && i+1<argc) oam_trace_start=atoi(argv[++i]);
         else if (!strcmp(argv[i],"--wav") && i+1<argc) wav_path=argv[++i];
+        else if (!strcmp(argv[i],"--audio-index") && i+1<argc) audio_index_path=argv[++i];
         else if (!strcmp(argv[i],"--shot-every") && i+1<argc) shot_every=atoi(argv[++i]);
         else if (!strcmp(argv[i],"--shot-start") && i+1<argc) shot_start=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"--ppu-every") && i+1<argc) ppu_every=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"--ppu-start") && i+1<argc) ppu_start=atoi(argv[++i]);
         else if (!strcmp(argv[i],"--cheat") && i+1<argc && ncheats<64) cheats[ncheats++]=argv[++i];
         else if (!strcmp(argv[i],"--load-state") && i+1<argc) load_state_path=argv[++i];
         else if (!strcmp(argv[i],"--save-state") && i+1<argc) save_state_path=argv[++i];
@@ -245,8 +289,11 @@ int main(int argc, char **argv) {
         }
     }
     if (!core_path || !rom_path) die("usage: %s --core fceumm.so --rom game.nes [--frames N] [--shots 1,2] [--inputs i.csv] [--out dir] [--ram-dir dir]", argv[0]);
+    if (ppu_every && !ppu_dir) die("--ppu-every requires --ppu-dir");
+    if (audio_index_path && !wav_path) die("--audio-index requires --wav");
     ensure_dir(out_dir);
     if (ram_dir) ensure_dir(ram_dir);
+    if (ppu_dir) ensure_dir(ppu_dir);
     if (inputs_path) load_inputs(inputs_path);
 
     core = dlopen(core_path, RTLD_NOW);
@@ -292,6 +339,18 @@ int main(int argc, char **argv) {
     }
     fn_retro_get_system_av_info(&av);
     if (wav_path) wav_open(wav_path, (uint32_t)av.timing.sample_rate);
+    FILE *audio_index = NULL;
+    if (audio_index_path) {
+        audio_index = fopen(audio_index_path, "wb");
+        if (!audio_index) die("cannot open audio index %s", audio_index_path);
+        /* AFI1, first absolute emulator frame, WAV sample rate, then one
+         * little-endian uint64 cumulative stereo-sample count after each
+         * retro_run(). Boundary 0 is implicit before the first frame. */
+        uint32_t header[2] = {start_frame + 1, wav_rate};
+        if (fwrite("AFI1", 1, 4, audio_index) != 4 ||
+            fwrite(header, sizeof(header), 1, audio_index) != 1)
+            die("cannot write audio index header");
+    }
     if (load_state_path && fn_retro_unserialize) {
         FILE *sf = fopen(load_state_path, "rb");
         if (!sf) die("cannot open state %s", load_state_path);
@@ -300,6 +359,31 @@ int main(int argc, char **argv) {
         if (!fn_retro_unserialize(sbuf,(size_t)ssz)) die("unserialize failed %s", load_state_path);
         free(sbuf);
         printf("LOAD_STATE %s\n", load_state_path);
+    }
+
+    FILE *ram_trace = NULL;
+    size_t ram_trace_size = 0;
+    if (ram_trace_path) {
+        ram_trace_size = fn_retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+        if (!ram_trace_size || ram_trace_size > UINT32_MAX)
+            die("invalid system RAM size for trace");
+        ram_trace = fopen(ram_trace_path, "wb");
+        if (!ram_trace) die("cannot open RAM trace %s", ram_trace_path);
+        /* RRT1, first frame (inclusive), RAM bytes per frame; little-endian. */
+        if (ram_trace_start <= start_frame) ram_trace_start = start_frame + 1;
+        uint32_t header[2] = {ram_trace_start, (uint32_t)ram_trace_size};
+        fwrite("RRT1", 1, 4, ram_trace);
+        fwrite(header, sizeof(header), 1, ram_trace);
+    }
+
+    FILE *oam_trace = NULL;
+    if (oam_trace_path) {
+        oam_trace = fopen(oam_trace_path, "wb");
+        if (!oam_trace) die("cannot open OAM trace %s", oam_trace_path);
+        if (oam_trace_start <= start_frame) oam_trace_start = start_frame + 1;
+        uint32_t header[2] = {oam_trace_start, 0x100};
+        fwrite("OAT1", 1, 4, oam_trace);
+        fwrite(header, sizeof(header), 1, oam_trace);
     }
 
     size_t ie = 0;
@@ -314,15 +398,35 @@ int main(int argc, char **argv) {
             ie++;
         }
         fn_retro_run();
+        if (audio_index) {
+            uint64_t samples_after_frame = wav_samples;
+            if (fwrite(&samples_after_frame, sizeof(samples_after_frame), 1, audio_index) != 1)
+                die("audio index write failed at frame %u", f);
+        }
+        if (ram_trace && f >= ram_trace_start) {
+            const void *ram = fn_retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM);
+            if (!ram || fwrite(ram, 1, ram_trace_size, ram_trace) != ram_trace_size)
+                die("RAM trace write failed at frame %u", f);
+        }
+        if (oam_trace && f >= oam_trace_start) {
+            const unsigned char *ppu = get_capture_ppu();
+            if (fwrite(ppu + CAPTURE_OAM_OFFSET, 1, 0x100, oam_trace) != 0x100)
+                die("OAM trace write failed at frame %u", f);
+        }
         int take = (nshots && shot_wanted(f, shots, nshots));
         if (!take && shot_every && f >= shot_start && ((f-shot_start)%shot_every)==0) take=1;
         if (take && frame_buf) {
             char p[512]; snprintf(p,sizeof(p),"%s/frame_%05u.ppm",out_dir,f);
             save_ppm(p, frame_buf, frame_w, frame_h);
-            if (ram_dir) {
-                char rp[512]; snprintf(rp,sizeof(rp),"%s/ram_%05u.bin",ram_dir,f);
-                save_ram(rp);
-            }
+        }
+        int ppu_take = ppu_every && f >= ppu_start && (f-ppu_start)%ppu_every == 0;
+        if (ppu_dir && (take || ppu_take)) {
+            char pp[512]; snprintf(pp,sizeof(pp),"%s/ppu_%05u.bin",ppu_dir,f);
+            save_ppu(pp);
+        }
+        if (ram_dir && (take || ppu_take)) {
+            char rp[512]; snprintf(rp,sizeof(rp),"%s/ram_%05u.bin",ram_dir,f);
+            save_ram(rp);
         }
         if (save_state_path && fn_retro_serialize && save_state_frame && f == save_state_frame) {
             size_t ssz = fn_retro_serialize_size();
@@ -342,6 +446,21 @@ int main(int argc, char **argv) {
             if (sf) { fwrite(sbuf,1,ssz,sf); fclose(sf); printf("SAVE_STATE %u %s\n", total, save_state_path); }
         }
         free(sbuf);
+    }
+    if (ram_trace) {
+        if (fclose(ram_trace)) die("RAM trace close failed");
+        printf("RAM_TRACE %u..%u %u bytes/frame %s\n",
+               ram_trace_start, total, (unsigned)ram_trace_size, ram_trace_path);
+    }
+    if (oam_trace) {
+        if (fclose(oam_trace)) die("OAM trace close failed");
+        printf("OAM_TRACE %u..%u 256 bytes/frame %s\n",
+               oam_trace_start, total, oam_trace_path);
+    }
+    if (audio_index) {
+        if (fclose(audio_index)) die("audio index close failed");
+        printf("AUDIO_INDEX %u..%u %u stereo samples %s\n",
+               start_frame + 1, total, wav_samples, audio_index_path);
     }
     fn_retro_unload_game();
     fn_retro_deinit();

@@ -1,0 +1,18 @@
+# Stage 01 GML source — GameMaker Studio 1.4.1760
+
+**Open [`../../Stage01Restaurant.project.gmx`](../../Stage01Restaurant.project.gmx), not this folder, for the packaged prototype.** This folder is the editable source for its `scr_stage01_*.gml` scripts. Rebuild the native project with `python3 tools/extract/export_stage_01_gmx.py` after changes: the generator updates the five ROM-derived scripts here, then copies all `scr_stage01_*` files to the project-level `gms_export/scripts/` resource directory.
+
+The project already contains its one `rm_stage_01_restaurant` room (2048×2048, 256×240 view at `(0,512)`, 512×480 display), 10 palette-correct scenic/tileset Backgrounds, 21 multi-/single-frame Sprites, 19 Objects, a nonpersistent `obj_stage01_controller`, three labeled audio reference resources, and a room-first instance of the controller. **GMX XML and resource paths have been checked by Python, but the project has not been imported, compiled or run in actual GameMaker Studio 1.4.1760.** Report compiler/runtime errors before calling the prototype playable.
+
+## GML responsibilities
+
+- `scr_stage01_place_static` and `scr_stage01_hex_byte`: deterministic `FF`-sentinel metatile rows from the original ROM. Scenic wallpaper goes at depth 10000; only **non-scenic** placed tiles (furniture, appliances, platforms, trim) are added at depth 1000. `scr_stage01_collision_at(world_x,world_y)` queries a 128×128 grid; 0 empty, 1 downward-only platform, 2 solid. The grid uses the NES thresholds `$A0`/`$D0`, excluding `$F9`.
+- `scr_stage01_spawn_prizes` and `scr_stage01_spawn_actors`: exact **initial world coordinates** from ROM prize and actor lists. `obj_crate.hidden_drop` is 0/1/2 (ordinary/RR/acorn); `scr_stage01_crate_break` reveals the drop when broken. Actors spawn all at once (unlike the ROM's scroll-column insertion), and small cork/acorn/star sprites are obvious placeholders.
+- `scr_stage01_controller_*` / `scr_stage01_enter`: provisional chapter transitions **Seating → Kitchen → Grill → Monterey refill → Water Rabbit → stage-clear screen**, sink fill, HUD and camera. `ds_grid_destroy` runs on Room End. The idle Seating music excerpt plays once; the mixed clear reference plays once, and the boss mix is packaged as a reference only. **None** has verified loop points.
+- `scr_stage01_player_*`, `scr_stage01_crate_*`, `scr_stage01_enemy_*`, `scr_stage01_boss_*`, `scr_stage01_sink_step`, `scr_stage01_jet_step`, `scr_stage01_pickup_step`: prototype keyboard input, foot-based grid collision, pickups/throws, contact damage, enemy patrol, sink overlay and a six-hit box boss. They are **not** claims about the original NES AI, motion constants, contact masks, sound routing or animation timing.
+
+**Controls (pending runtime test):** Left/Right move; Z or Space jump; X pick up/throw a crate, activate the sink valve, or advance Monterey dialogue; R restart from clear/game over. At the Grill, approach world x≈1584, press X and wait for the sink meter to fill before leaving on the right. Boss boxes can hurt Water Rabbit by collision, consistent with box/boss contact at six observed OAM/HP hit frames, but the precise NES collision routine has not been recovered.
+
+The older `scr_player_step.gml`, `scr_crate_step.gml`, `scr_enemy_honeybee_step.gml`, `scr_enemy_slimeball_step.gml` and `scr_rre_collect.gml` are **unwired legacy sketches**. They still assume `obj_solid` or an inaccurate enemy and are deliberately excluded from the GMX. Use the `scr_stage01_*` files instead.
+
+See [`../../../docs/STAGE_01_RESTAURANT.md`](../../../docs/STAGE_01_RESTAURANT.md) for extraction, captured pose limitations, walkthrough provenance and verification boundaries.

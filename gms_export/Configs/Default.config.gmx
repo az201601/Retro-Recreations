@@ -1,0 +1,15 @@
+<!--GameMaker Studio 1.4 GMX import. Generated; see README.-->
+<Config>
+  <Options>
+    <option_gameguid>{E291CA02-05FA-480B-9DD1-91A4FBA40657}</option_gameguid>
+    <option_gameid>304011761</option_gameid>
+    <option_display_name>Stage 01 Restaurant prototype</option_display_name>
+    <option_interpolate>False</option_interpolate>
+    <option_windows_texture_page>2048</option_windows_texture_page>
+    <option_windows_use_splash>False</option_windows_use_splash>
+    <option_windows_game_icon>Configs\Default\windows\runner_icon.ico</option_windows_game_icon>
+    <option_scale>-1</option_scale>
+    <option_textureGroup_count>1</option_textureGroup_count>
+    <option_textureGroups0>Default</option_textureGroups0>
+  </Options>
+</Config>

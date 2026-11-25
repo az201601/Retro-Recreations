@@ -1,0 +1,29 @@
+<!--GameMaker Studio 1.4 GMX import. Generated; see README.-->
+<sound>
+  <kind>0</kind>
+  <extension>.wav</extension>
+  <origname>sound\audio\bgm_restaurant_stationary_excerpt.wav</origname>
+  <effects>0</effects>
+  <volume>
+    <volume>1</volume>
+  </volume>
+  <pan>0</pan>
+  <bitRates>
+    <bitRate>192</bitRate>
+  </bitRates>
+  <sampleRates>
+    <sampleRate>48000</sampleRate>
+  </sampleRates>
+  <types>
+    <type>0</type>
+  </types>
+  <bitDepths>
+    <bitDepth>16</bitDepth>
+  </bitDepths>
+  <preload>-1</preload>
+  <data>bgm_restaurant_stationary_excerpt.wav</data>
+  <compressed>0</compressed>
+  <streamed>0</streamed>
+  <uncompressOnLoad>0</uncompressOnLoad>
+  <audioGroup>0</audioGroup>
+</sound>
