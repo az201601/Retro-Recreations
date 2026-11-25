@@ -7,3 +7,18 @@ tools/out/
 # Python cache
 __pycache__/
 *.py[cod]
+
+# Emulator build artifacts
+tools/emu/fceumm_headless
+tools/emu/*.so
+
+# Research scratch and early raw/monochrome extraction candidates. These are
+# regenerable and NOT the palette-correct Stage 1 GMS import resources.
+image-search/
+assets/stages/stage_01_restaurant/**/bank_*_tiles/
+assets/stages/stage_01_restaurant/tilesets/chr_bank_*.png
+assets/stages/stage_01_restaurant/sprites/chr_bank_*.png
+assets/stages/stage_01_restaurant/sprites/raw_frame_*_sprites.png
+assets/stages/stage_01_restaurant/chr_tile_manifest.json
+assets/stages/stage_01_restaurant/background/stage_01_restaurant_bg_start.png
+assets/stages/stage_01_restaurant/audio/stage_01_playthrough_90s.wav
