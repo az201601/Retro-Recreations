@@ -57,19 +57,24 @@ The ROM's generic object collision checks use `metatile >= $A0` for landing on a
 
 See `previews/stage_01_sprite_overview.png`. For easier manual GameMaker import, `sprites/import_frames/` splits **87 curated individual PNGs** into 18 named sprite folders; `manifest.json` records cell sizes/origins and source pose IDs. Some rare/hurt frames flicker or are partly offscreen; the original strips are **sampled reference poses**, not a finished animation state machine or full list of unseen sprites. The boss capture reaches HP **6→5→4→3→2→1→0** (RAM `$3D7`), with player HP `$3D4` held at 3 in the successful safeguarded run. Gameplay is around frame 20400; victory/clear transition begins after frame 29729. The reliable boss run holds LEFT to avoid lethal floor holes. Frame-by-frame OAM traces show a falling box sprite **touching or overlapping the boss bounding area** on each of the six HP-decrement frames (22042, 22715, 26288, 27502, 28118, 29729); the first appears to touch at its left edge. This is consistent with unthrown falling boxes hitting the boss, although the exact ROM collision path has not been proven. **Do not infer that standing LEFT is the intended combat mechanic.** Intended fight: avoid water pulling Chip toward holes, pick up the one falling box at a time, and throw boxes for six hits ([walkthrough](https://gamefaqs.gamespot.com/nes/587566-disneys-chip-n-dale-rescue-rangers-2/faqs/30889)).
 
-### Cutscene brick wall
+### Cutscene / title brick walls
 
-The herringbone brick backdrop seen around the stage-clear "TV" frame
-(`background/full_frame_24400.png`) is **not** in the BG pattern table used by the
-playable rooms. Its 8×8 CHR tile is at 8 KiB bank 15, tile `425` (`0x1A9`) — i.e.
-4 KiB bank 31, the half normally mapped as the sprite pattern table. That is why
-a PPU viewer parked on a gameplay frame shows no brick tiles: MMC1 has swapped a
-different 4 KiB bank into BG, or the cutscene points BG at the other pattern table.
+The brick backdrops are **not** in the BG pattern table used by the playable
+rooms. During the post-copyright title sequence and the stage-clear screen, MMC1
+maps **4 KiB CHR bank 31** (the half normally used for sprites) to the pattern
+tables, so a PPU viewer parked on a gameplay frame shows no brick tiles at all.
 
-A seamless, palette-correct **32×32 px** sample of that wall (the verified repeat
-period) is provided as
-`assets/stages/stage_01_restaurant/tilesets/brick_wall_32x32.png` for recreation
-work. It is cut from the exact ROM-rendered frame, not redrawn.
+Two different brick patterns are used:
+
+- **Title sequence** (the spotlight circle that reveals Chip and Dale, from about
+  frame 900 onward): a staggered 16×16 pixel brick, seamless sample at
+  `assets/stages/stage_01_restaurant/tilesets/brick_wall_title_16x16.png`, cut
+  from the exact ROM-rendered frame `previews/title_screen_frame_01200.png`.
+- **Stage-clear "TV" screen**: a herringbone pattern with a 32×32 pixel repeat,
+  provided as `assets/stages/stage_01_restaurant/tilesets/brick_wall_32x32.png`.
+  Its 8×8 CHR tile is 8 KiB bank 15, tile `425` (`0x1A9`), i.e. 4 KiB bank 31.
+
+Both PNGs are cut from exact ROM-rendered frames, not redrawn.
 
 ### Audio
 
