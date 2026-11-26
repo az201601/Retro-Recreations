@@ -31,14 +31,15 @@ are preserved without adding blank rows that would widen line spacing.
 ```gml
 global.fnt_rr2 = font_add_sprite_ext(
     spr_font_rr2,
-    ' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:"@/.-~',
+    ' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:^@/.-~',
     false,
     0
 );
 ```
 
-In text strings, type `"` for the opening quote and `@` for the closing quote;
-`@` maps to frame 65's closed-quote glyph. Draw with `draw_set_font(global.fnt_rr2)`,
+In text strings, type `^` for the opening quote and `@` for the closing quote;
+they map to frames 64 and 65. Avoid using a literal `"` as a key: straight/curly
+quote confusion can make the glyph fail to draw. Draw with `draw_set_font(global.fnt_rr2)`,
 `draw_set_colour(c_white)`, `draw_set_halign(fa_left)`, `draw_set_valign(fa_top)`.
 With 8×10 frames, plain `draw_text()` already has a tight 10 px line pitch; no
 `sep` override is required.
