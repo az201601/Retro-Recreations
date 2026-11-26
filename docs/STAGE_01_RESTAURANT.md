@@ -64,8 +64,14 @@ rooms. During the post-copyright title sequence and the stage-clear screen, MMC1
 maps **4 KiB CHR bank 31** (the half normally used for sprites) to the pattern
 tables, so a PPU viewer parked on a gameplay frame shows no brick tiles at all.
 
-Two different brick patterns are used:
+Three different brick patterns are used:
 
+- **Post-copyright spotlight window** (the moving circle *before* the title
+  screen, e.g. frame 240): a pink/black staggered brick seen **inside the circle**.
+  Seamless 32×16 sample at
+  `assets/stages/stage_01_restaurant/tilesets/brick_wall_spotlight_32x16.png`,
+  cut from `previews/spotlight_frame_00240.png` (repeat verified: 32 px across,
+  16 px down).
 - **Title sequence** (the spotlight circle that reveals Chip and Dale, from about
   frame 900 onward): a staggered 16×16 pixel brick, seamless sample at
   `assets/stages/stage_01_restaurant/tilesets/brick_wall_title_16x16.png`, cut
