@@ -42,3 +42,12 @@ In text strings, type `"` for the opening quote and `@` for the closing quote;
 `draw_set_colour(c_white)`, `draw_set_halign(fa_left)`, `draw_set_valign(fa_top)`.
 With 8×10 frames, plain `draw_text()` already has a tight 10 px line pitch; no
 `sep` override is required.
+
+## Line pitch — important
+
+**Advance the next line by 10 px, not 8 px.** The cells are 8 px wide but 10 px
+tall (the extra 2 px hold the descenders). If you position lines manually, use
+`y + line_index * 10`. An 8 px step clips/crams the descenders into the next line.
+
+Also note that a bare `#` in a GML string means newline — use `\#` or `chr(35)`
+if you need a literal hash character in dialogue.
