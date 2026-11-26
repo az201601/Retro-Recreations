@@ -57,6 +57,20 @@ The ROM's generic object collision checks use `metatile >= $A0` for landing on a
 
 See `previews/stage_01_sprite_overview.png`. For easier manual GameMaker import, `sprites/import_frames/` splits **87 curated individual PNGs** into 18 named sprite folders; `manifest.json` records cell sizes/origins and source pose IDs. Some rare/hurt frames flicker or are partly offscreen; the original strips are **sampled reference poses**, not a finished animation state machine or full list of unseen sprites. The boss capture reaches HP **6→5→4→3→2→1→0** (RAM `$3D7`), with player HP `$3D4` held at 3 in the successful safeguarded run. Gameplay is around frame 20400; victory/clear transition begins after frame 29729. The reliable boss run holds LEFT to avoid lethal floor holes. Frame-by-frame OAM traces show a falling box sprite **touching or overlapping the boss bounding area** on each of the six HP-decrement frames (22042, 22715, 26288, 27502, 28118, 29729); the first appears to touch at its left edge. This is consistent with unthrown falling boxes hitting the boss, although the exact ROM collision path has not been proven. **Do not infer that standing LEFT is the intended combat mechanic.** Intended fight: avoid water pulling Chip toward holes, pick up the one falling box at a time, and throw boxes for six hits ([walkthrough](https://gamefaqs.gamespot.com/nes/587566-disneys-chip-n-dale-rescue-rangers-2/faqs/30889)).
 
+### Cutscene brick wall
+
+The herringbone brick backdrop seen around the stage-clear "TV" frame
+(`background/full_frame_24400.png`) is **not** in the BG pattern table used by the
+playable rooms. Its 8×8 CHR tile is at 8 KiB bank 15, tile `425` (`0x1A9`) — i.e.
+4 KiB bank 31, the half normally mapped as the sprite pattern table. That is why
+a PPU viewer parked on a gameplay frame shows no brick tiles: MMC1 has swapped a
+different 4 KiB bank into BG, or the cutscene points BG at the other pattern table.
+
+A seamless, palette-correct **32×32 px** sample of that wall (the verified repeat
+period) is provided as
+`assets/stages/stage_01_restaurant/tilesets/brick_wall_32x32.png` for recreation
+work. It is cut from the exact ROM-rendered frame, not redrawn.
+
 ### Audio
 
 `assets/stages/stage_01_restaurant/audio/` includes a 23.31-second **stationary Seating music excerpt**, an 18.32-second **mixed Water Rabbit fight reference**, and a 6.16-second **mixed stage-clear reference**. `stage_01_audio.json` records exact AFI1 sample ranges and checksums. **None** has verified loop points. Boss/clear samples contain game SFX and must not be passed off as isolated music or clean individual SFX. If you attach the supplied controller GML to your project, it plays the Seating excerpt **once**, without looping; the boss/clear WAVs are analysis references, not used by that code. Isolated boss BGM and per-action SFX still need dedicated extraction.
