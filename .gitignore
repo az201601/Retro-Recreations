@@ -10,6 +10,7 @@ __pycache__/
 
 # Emulator build artifacts
 tools/emu/fceumm_headless
+tools/emu/fceumm_capture
 tools/emu/*.so
 
 # Research scratch and early raw/monochrome extraction candidates. These are
