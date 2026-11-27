@@ -1,0 +1,19 @@
+{
+  "input": "Chip 'n Dale - Rescue Rangers 2 (USA).nes",
+  "mapper": 1,
+  "prg_rom_bytes": 131072,
+  "chr_rom_bytes": 131072,
+  "chr_bank_bytes": 8192,
+  "chr_bank_count": 16,
+  "tile_count": 8192,
+  "tile_size": [
+    8,
+    8
+  ],
+  "atlas": {
+    "file": "chr_atlas.png (convert chr_atlas.ppm to PNG if desired)",
+    "columns": 32,
+    "rows": 256
+  },
+  "note": "Raw CHR patterns only; correct scene appearance also depends on runtime CHR bank selection, nametables, palettes, sprite composition, and emulation."
+}
